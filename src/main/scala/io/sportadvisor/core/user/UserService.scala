@@ -1,6 +1,7 @@
 package io.sportadvisor.core.user
 
 import java.time.{LocalDateTime, ZoneId}
+import java.util.concurrent.TimeUnit
 
 import io.sportadvisor.util.MonadTransformers._
 import com.roundeights.hasher.Implicits._
@@ -19,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserService(userRepository: UserRepository, tokenRepository: TokenRepository, secretKey: String)
                  (implicit executionContext: ExecutionContext) {
 
-  private[this] val expPeriod = 30
+  private[this] val expPeriod = TimeUnit.HOURS.toMinutes(2)
 
   private[this] val rememberExp = 10
   private[this] val notRememberExp = 1

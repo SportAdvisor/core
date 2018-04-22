@@ -5,6 +5,7 @@ import io.sportadvisor.http.Response._
 import io.sportadvisor.http.Response.Error
 import io.circe._
 import io.circe.generic.extras.AutoDerivation
+import io.sportadvisor.core.user.AuthToken
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -30,7 +31,7 @@ object json extends AutoDerivation {
   implicit val collectionLinksEncoder: Encoder[CollectionLinks] = deriveEncoder
 
   implicit final def encoderObjectData[A](implicit e: Encoder[A]): Encoder[ObjectData[A]] = (a: ObjectData[A]) => {
-    Json.obj("data" -> e(a.data), "_links" -> objectLinksEncoder(a._links))
+    Json.obj("data" -> e(a.data), "_links" -> Encoder.encodeOption[ObjectLinks].apply(a._links))
   }
 
   implicit final def encoderCollectionData[A](implicit e: Encoder[A]): Encoder[CollectionData[A]] = (a: CollectionData[A]) => {
@@ -76,7 +77,7 @@ object json extends AutoDerivation {
   implicit final def objectDataDecoder[A](implicit d: Decoder[A]): Decoder[ObjectData[A]] = (c: HCursor) => {
     c.value.asObject.map {obj =>
       val data = obj("data").map(data => d(fromJson(data))).orNull.right.get
-      val links = obj("_links").map(links => objectLinksDecoder(fromJson(links))).orNull.right.get
+      val links = obj("_links").map(links => objectLinksDecoder(fromJson(links))).orNull.right.toOption
       Right(ObjectData[A](data, links))
     }.orNull
   }
@@ -107,6 +108,14 @@ object json extends AutoDerivation {
       DataResponse[A, D](code, data.asInstanceOf[D])
     }.orNull
     Right(res)
+  }
+
+  object Codecs {
+
+    import io.circe.java8.time._
+
+    implicit val authTokenEncoder: Encoder[AuthToken] = deriveEncoder
+    implicit val authTokenDecoder: Decoder[AuthToken] = deriveDecoder
   }
 
 }

@@ -19,6 +19,9 @@ trait BaseTest extends WordSpec with Matchers with ScalatestRouteTest with Mocki
   def awaitForResult[T](futureResult: Future[T]): T =
     Await.result(futureResult, 5.seconds)
 
-  def r[T](decoder: Decoder[T]): T = decoder(HCursor.fromJson(parse(responseAs[String]).right.get)).right.get
+  def r[T](implicit decoder: Decoder[T]): T = {
+    decoder(HCursor.fromJson(parse(responseAs[String]).toOption.get)).toOption
+      .getOrElse(null.asInstanceOf[T])
+  }
 
 }

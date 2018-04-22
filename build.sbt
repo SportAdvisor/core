@@ -47,6 +47,7 @@ libraryDependencies ++= {
     "io.circe" %% "circe-generic" % circeV,
     "io.circe" %% "circe-parser" % circeV,
     "io.circe" %% "circe-generic-extras" % circeV,
+    "io.circe" %% "circe-java8" % circeV,
 
     // Sugar for serialization and deserialization in akka-http with circe
     "de.heikoseeberger" %% "akka-http-circe" % "1.19.0",

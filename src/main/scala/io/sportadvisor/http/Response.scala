@@ -30,11 +30,11 @@ object Response {
   case class ObjectLinks(self: Link) extends Links
   case class CollectionLinks(self: Link, first: Link, last: Link, previous: Link, next: Link) extends Links
 
-  case class ObjectData[A](data: A, _links: ObjectLinks) extends Data[A]
+  case class ObjectData[A](data: A, _links: Option[ObjectLinks]) extends Data[A]
   case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data[A]
 
   def data[A](data: A, self: String) : ObjectData[A] = {
-    ObjectData(data, ObjectLinks(self))
+    ObjectData(data, if (self == null) None else Some(ObjectLinks(self)))
   }
 
   def data[A](data: List[A], selfGenerator: A => String, self: String, first: String,
@@ -63,8 +63,8 @@ object Response {
     DataResponse[A, CollectionData[A]](200, value)
   }
 
-  def errorResponse[E <: Error](errors: List[E]) : Response = {
-    ErrorResponse(400, errors)
+  def errorResponse[E <: Error](errors: List[E]) : ErrorResponse[E] = {
+    ErrorResponse[E](400, errors)
   }
 
   def failResponse(message: Option[String] = None) : Response = {

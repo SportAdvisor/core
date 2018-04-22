@@ -37,17 +37,20 @@ object json extends AutoDerivation {
     Json.obj("data" -> Encoder.encodeList[ObjectData[A]].apply(a.data), "_links" -> collectionLinksEncoder(a._links))
   }
 
-  implicit final def dataEncoder[A](implicit e: Encoder[A]): Encoder[Data] = {
+  implicit final def dataEncoder[A](implicit e: Encoder[A]): Encoder[Data[A]] = {
     case d@ObjectData(_, _) => encoderObjectData[A](e)(d.asInstanceOf[ObjectData[A]])
     case d@CollectionData(_, _) => encoderCollectionData[A](e)(d.asInstanceOf[CollectionData[A]])
   }
 
-  implicit final def encoder[A](implicit e: Encoder[A]): Encoder[Response] = {
+  implicit final def dataResponseEncoder[A](implicit e: Encoder[A]): Encoder[DataResponse[A, _]] = (a: DataResponse[A, _]) => {
+    Json.obj("code" -> Json.fromInt(a.code), "data" -> dataEncoder[A].apply(a.data.asInstanceOf[Data[A]]))
+  }
+
+  implicit final def encoder[A, D <: Data[A]](implicit e: Encoder[A]): Encoder[Response] = {
     case r@EmptyResponse(_) => emptyResponseEncoder(r)
     case r@FailResponse(_, _) => failResponseEncoder(r)
     case r@ErrorResponse(_,_) => errorResponseEncoder(errorEncoder)(r)
-    case r@DataResponse(_, _) => Json.obj("code" -> Json.fromInt(r.code),
-      "data" -> dataEncoder[A](e).apply(r.data))
+    case r@DataResponse(_, _) => dataResponseEncoder[A](e).apply(r.asInstanceOf[DataResponse[A, Data[A]]])
   }
 
 
@@ -86,7 +89,7 @@ object json extends AutoDerivation {
     }.orNull
   }
 
-  implicit final def dataDecoder[A](implicit d: Decoder[A]): Decoder[Data] = (c: HCursor) => {
+  implicit final def dataDecoder[A](implicit d: Decoder[A]): Decoder[Data[A]] = (c: HCursor) => {
     c.value.asObject.map { data =>
       val isCollection = data("data").exists(j => j.isArray)
       if (isCollection) {
@@ -97,11 +100,11 @@ object json extends AutoDerivation {
     }.orNull
   }
 
-  implicit final def dataResponseDecoder[A](implicit decoder: Decoder[A]): Decoder[DataResponse] = (c: HCursor) => {
+  implicit final def dataResponseDecoder[A, D <: Data[A]](implicit decoder: Decoder[A]): Decoder[DataResponse[A, D]] = (c: HCursor) => {
     val res = c.value.asObject.map { obj =>
       val code = obj("code").map(c => c.as[Int]).orNull.right.get
       val data = obj("data").map(d => dataDecoder[A](decoder).apply(fromJson(d))).orNull.right.get
-      DataResponse(code, data)
+      DataResponse[A, D](code, data.asInstanceOf[D])
     }.orNull
     Right(res)
   }

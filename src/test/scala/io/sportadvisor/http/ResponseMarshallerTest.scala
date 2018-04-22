@@ -42,7 +42,7 @@ class ResponseMarshallerTest extends BaseTest {
       "serialize and deserialize [ObjectData]" in {
         val resp = Response.dataResponse[D](D(1, true), "https://sportadvisor.io")
         val json = marshall(resp)
-        val data = unmarshall(json, dataResponseDecoder[D])
+        val data = unmarshall(json, dataResponseDecoder[D, ObjectData[D]])
         resp shouldEqual data
       }
 
@@ -51,7 +51,7 @@ class ResponseMarshallerTest extends BaseTest {
           "https://sportadvisor.io/api/d?page=3", "https://sportadvisor.io/api/d?page=1", "https://sportadvisor.io/api/d?page=7",
           "https://sportadvisor.io/api/d?page=2", "https://sportadvisor.io/api/d?page=4")
         val json = marshall(resp)
-        val data = unmarshall(json, dataResponseDecoder[D])
+        val data = unmarshall(json, dataResponseDecoder[D, CollectionData[D]])
         resp shouldEqual data
       }
     }

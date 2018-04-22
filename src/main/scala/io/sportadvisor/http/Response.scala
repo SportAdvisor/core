@@ -10,7 +10,7 @@ object Response {
     def code: Int
   }
 
-  sealed trait Data {}
+  sealed trait Data[A] {}
 
   case class Link(href: String)
 
@@ -21,7 +21,7 @@ object Response {
   sealed trait Error {}
 
   case class EmptyResponse(code: Int) extends Response
-  case class DataResponse(code: Int, data: Data) extends Response
+  case class DataResponse[A, D <: Data[A]](code: Int, data: D) extends Response
   case class ErrorResponse[E <: Error](code: Int, errors: List[E]) extends Response
   case class FailResponse(code: Int, message: Option[String]) extends Response
 
@@ -30,8 +30,8 @@ object Response {
   case class ObjectLinks(self: Link) extends Links
   case class CollectionLinks(self: Link, first: Link, last: Link, previous: Link, next: Link) extends Links
 
-  case class ObjectData[A](data: A, _links: ObjectLinks) extends Data
-  case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data
+  case class ObjectData[A](data: A, _links: ObjectLinks) extends Data[A]
+  case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data[A]
 
   def data[A](data: A, self: String) : ObjectData[A] = {
     ObjectData(data, ObjectLinks(self))
@@ -54,13 +54,13 @@ object Response {
 
   def dataResponse[A](data: A, self: String): Response = {
     val value : ObjectData[A] = Response.data(data, self)
-    DataResponse(200, value)
+    DataResponse[A, ObjectData[A]](200, value)
   }
 
   def dataResponse[A](data: List[A], selfGenerator: A => String, self: String, first: String,
                       last: String, previous: String, next: String) : Response = {
     val value = Response.data(data, selfGenerator, self, first, last, previous, next)
-    DataResponse(200, value)
+    DataResponse[A, CollectionData[A]](200, value)
   }
 
   def errorResponse[E <: Error](errors: List[E]) : Response = {

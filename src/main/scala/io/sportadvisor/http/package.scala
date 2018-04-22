@@ -1,7 +1,7 @@
 package io.sportadvisor
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directive1, Rejection, RejectionHandler, Route}
+import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
@@ -16,6 +16,10 @@ package object http extends FailFastCirceSupport {
   import akka.http.scaladsl.server.directives.RouteDirectives._
 
   case class ValidationError(errors: List[FormError]) extends Rejection
+
+  val exceptionHandler: ExceptionHandler = ExceptionHandler {
+    case a: Throwable => complete(StatusCodes.InternalServerError -> FailResponse(500, None))
+  }
 
   val rejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
     .handle {

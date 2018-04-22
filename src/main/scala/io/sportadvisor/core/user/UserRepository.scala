@@ -43,10 +43,12 @@ class UserRepositorySQL(val connector: DatabaseConnector)
       db.run(action.asTry).map {
         case Success(e) => Right(e)
         case Failure(e: SQLException) => if (e.getSQLState == "23505") Left(new DuplicateException) else throw e;
+        case Failure(e) => throw e
       }
     case u@UserData(_, _, _, _) => db.run(users.update(u).asTry).map {
       case Success(e) => Right(u)
       case Failure(e: SQLException) => if (e.getSQLState == "23505") Left(new DuplicateException) else throw e;
+      case Failure(e) => throw e
     }
   }
 

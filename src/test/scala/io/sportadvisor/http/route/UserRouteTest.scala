@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
 import akka.http.scaladsl.server.Route
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.{AuthToken, UserAlreadyExists, UserService}
-import io.sportadvisor.http.Response.{DataResponse, ErrorResponse, FormError, ObjectData}
+import io.sportadvisor.http.Response.{DataResponse, ErrorResponse, FailResponse, FormError, ObjectData}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 import org.mockito.Mockito._
@@ -81,6 +81,15 @@ class UserRouteTest extends BaseTest {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
           resp.errors should (contain(FormError("email", "0x1")) and contain(FormError("password", "0x1")) and have size 2)
+        }
+      }
+
+      "return 500 if was internal error" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test"}""")
+        when(userService.signUp("test@test.com", "test123Q", "test")).thenThrow(new RuntimeException)
+        Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[FailResponse]
+          resp.code should be(500)
         }
       }
     }

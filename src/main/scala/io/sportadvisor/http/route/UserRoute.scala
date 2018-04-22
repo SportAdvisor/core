@@ -24,11 +24,13 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
   import http._
 
   val route = pathPrefix("users") {
-    handleRejections(rejectionHandler) {
-      path("sign-up") {
-        pathEndOrSingleSlash {
-          post {
-            handleSignUp()
+    handleExceptions(exceptionHandler) {
+      handleRejections(rejectionHandler) {
+        path("sign-up") {
+          pathEndOrSingleSlash {
+            post {
+              handleSignUp()
+            }
           }
         }
       }

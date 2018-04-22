@@ -1,7 +1,7 @@
 package io.sportadvisor
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import io.circe.{Decoder, HCursor, Json}
+import io.circe.{Decoder, HCursor}
 import io.circe.parser._
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.mockito.MockitoSugar

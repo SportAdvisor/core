@@ -22,7 +22,7 @@ object Response {
 
   case class EmptyResponse(code: Int) extends Response
   case class DataResponse(code: Int, data: Data) extends Response
-  case class ErrorResponse(code: Int, errors: List[Error]) extends Response
+  case class ErrorResponse[E <: Error](code: Int, errors: List[E]) extends Response
   case class FailResponse(code: Int, message: Option[String]) extends Response
 
   case class FormError(field: String, code: String) extends Error

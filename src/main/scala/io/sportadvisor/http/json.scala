@@ -20,7 +20,10 @@ object json extends AutoDerivation {
 
   implicit val emptyResponseEncoder: Encoder[EmptyResponse] = deriveEncoder[EmptyResponse]
   implicit val failResponseEncoder: Encoder[FailResponse] = deriveEncoder[FailResponse]
-  implicit val errorResponseEncoder: Encoder[ErrorResponse] = deriveEncoder[ErrorResponse]
+
+  implicit final def errorResponseEncoder[E <: Error](implicit encoder: Encoder[E]): Encoder[ErrorResponse[E]] = (a: ErrorResponse[E]) => {
+    Json.obj("code" -> Json.fromInt(a.code), "errors" -> Encoder.encodeList[E].apply(a.errors))
+  }
 
   implicit val linkEncoder: Encoder[Link] = deriveEncoder
   implicit val objectLinksEncoder: Encoder[ObjectLinks] = deriveEncoder
@@ -42,7 +45,7 @@ object json extends AutoDerivation {
   implicit final def encoder[A](implicit e: Encoder[A]): Encoder[Response] = {
     case r@EmptyResponse(_) => emptyResponseEncoder(r)
     case r@FailResponse(_, _) => failResponseEncoder(r)
-    case r@ErrorResponse(_,_) => errorResponseEncoder(r)
+    case r@ErrorResponse(_,_) => errorResponseEncoder(errorEncoder)(r)
     case r@DataResponse(_, _) => Json.obj("code" -> Json.fromInt(r.code),
       "data" -> dataEncoder[A](e).apply(r.data))
   }
@@ -55,7 +58,14 @@ object json extends AutoDerivation {
   implicit val failResponseDecoder: Decoder[FailResponse] = deriveDecoder[FailResponse]
   implicit val formErrorDecoder: Decoder[FormError] = deriveDecoder[FormError]
   implicit val errorDecoder: Decoder[Error] = (c: HCursor) => formErrorDecoder(c)
-  implicit val errorResponseDecoder: Decoder[ErrorResponse] = deriveDecoder[ErrorResponse]
+  implicit final def errorResponseDecoder[E <: Error](implicit e: Decoder[E]): Decoder[ErrorResponse[E]] = (c:HCursor) => {
+    c.value.asObject.map { obj =>
+      val code = obj("code").map(Decoder[Int].decodeJson).orNull.right.get
+      val errors = obj("errors").map(v => Decoder.decodeVector[E].decodeJson(v)).orNull.right.get.toList
+      Right(ErrorResponse[E](code, errors))
+    }.orNull
+  }
+
   implicit val linkDecoder: Decoder[Link] = deriveDecoder
   implicit val objectLinksDecoder: Decoder[ObjectLinks] = deriveDecoder
   implicit val collectionLinksDecoder: Decoder[CollectionLinks] = deriveDecoder

@@ -5,6 +5,8 @@ version := "0.1"
 
 scalaVersion := "2.12.5"
 
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+
 libraryDependencies ++= {
   val akkaHttpV = "10.0.11"
   val scalaTestV = "3.0.4"
@@ -44,6 +46,8 @@ libraryDependencies ++= {
     "io.circe" %% "circe-core" % circeV,
     "io.circe" %% "circe-generic" % circeV,
     "io.circe" %% "circe-parser" % circeV,
+    "io.circe" %% "circe-generic-extras" % circeV,
+    "io.circe" %% "circe-java8" % circeV,
 
     // Sugar for serialization and deserialization in akka-http with circe
     "de.heikoseeberger" %% "akka-http-circe" % "1.19.0",

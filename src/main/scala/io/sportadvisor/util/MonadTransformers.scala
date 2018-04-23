@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 object MonadTransformers {
 
-  /*implicit class FutureOptionMonadTransformer[A](t: Future[Option[A]])(implicit executionContext: ExecutionContext) {
+  implicit class FutureOptionMonadTransformer[A](t: Future[Option[A]])(implicit executionContext: ExecutionContext) {
 
     def mapT[B](f: A => B): Future[Option[B]] =
       t.map(_.map(f))
@@ -39,10 +39,6 @@ object MonadTransformers {
     def flatMapTInner[B](f: A => Option[B]): Future[Option[B]] =
       t.map(_.flatMap(f))
 
-    def flatMapT() : Future[A] = {
-      t.map(_.orNull)
-    }
-
-  }*/
+  }
 
 }

@@ -1,0 +1,30 @@
+FORMAT: 1A
+
+# sportadvisor-api
+
+
+## Accounts [/api/users]
+
+### Sign up [POST /api/users/sign-in]
+
++ Request (application/json)
+    
+        {
+            "email": "string", 
+            "password": "string", 
+            "name": "string"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "code":  200,
+            "data": {
+                "data": {
+                    "token": "string",
+                    "refreshToken": "string",
+                    "expireAt": "datetime"
+                },
+                "_links": null
+            }
+        }

@@ -25,5 +25,7 @@ package object user {
   final case class AuthTokenContent(userID: UserID)
   final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
 
+  final case class RefreshToken(userId: UserID, token: Token, remember: Boolean, lastTouch: LocalDateTime)
+
   final class UserAlreadyExists extends Exception
 }

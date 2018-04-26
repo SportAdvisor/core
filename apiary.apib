@@ -5,7 +5,7 @@ FORMAT: 1A
 
 ## Accounts [/api/users]
 
-### Sign up [POST /api/users/sign-in]
+### Sign up [POST /api/users/sign-up]
 
 + Request (application/json)
     
@@ -27,4 +27,46 @@ FORMAT: 1A
                 },
                 "_links": null
             }
+        }
+
++ Response 400 (application/json)
+
+        {
+            "code":  400,
+            "errors": [
+                {
+                    "field": "string",
+                    "code": "string"
+                }
+            ]
+        }
+
+### Sign in [POST /api/users/sign-in]
+
++ Request (application/json)
+
+        {
+            "email": "string",
+            "password": "string",
+            "remember": true
+        }
+
++ Response 200 (application/json)
+
+        {
+            "code":  200,
+            "data": {
+                "data": {
+                    "token": "string",
+                    "refreshToken": "string",
+                    "expireAt": "datetime"
+                },
+                "_links": null
+            }
+        }
+
++ Response 400 (application/json)
+
+        {
+            "code":  400
         }

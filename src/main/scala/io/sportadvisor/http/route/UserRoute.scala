@@ -13,7 +13,7 @@ import io.sportadvisor.http.Response.{FormError, Response}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -23,13 +23,19 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
   import userService._
   import http._
 
-  val route = pathPrefix("users") {
+  val route: Route = pathPrefix("users") {
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
         path("sign-up") {
           pathEndOrSingleSlash {
             post {
               handleSignUp()
+            }
+          }
+        } ~ path("sign-in") {
+          pathEndOrSingleSlash {
+            post {
+              handleSignIn()
             }
           }
         }
@@ -50,9 +56,22 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
     }
   }
 
+  def handleSignIn() : Route = {
+    entity(as[EmailPassword]) { req =>
+      complete(
+        signIn(req.email, req.password, req.remember).map {
+          case Some(token) => r(Response.dataResponse(token, null))
+          case None => r(Response.emptyResponse(400))
+        }
+      )
+    }
+  }
+
   def r(response: Response) : (StatusCode, Json) = StatusCode.int2StatusCode(response.code) -> response.asJson
 
   case class UsernamePasswordEmail(name: String, email: String, password: String)
+
+  case class EmailPassword(email: String, password: String, remember: Boolean)
 
   private implicit val regValidator: Validator[UsernamePasswordEmail] = Validator[UsernamePasswordEmail](
     u => if (u.name.isEmpty) {Some(FormError("name", ErrorCode.invalidField))} else None,
@@ -62,4 +81,5 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
   )
 
   implicit val userNamePasswordDecoder: Decoder[UsernamePasswordEmail] = deriveDecoder
+  implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
 }

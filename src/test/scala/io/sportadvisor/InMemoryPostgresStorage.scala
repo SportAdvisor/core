@@ -19,13 +19,12 @@ object InMemoryPostgresStorage {
   val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
 
   val psqlConfig = new PostgresConfig(
-    Version.V9_6_3, new Net(dbHost, dbPort),
+    Version.V9_6_8, new Net(dbHost, dbPort),
     new Storage(dbName), new Timeout(),
     new Credentials(dbUser, dbPassword)
   )
   val psqlInstance = PostgresStarter.getDefaultInstance
   val flywayService = new DatabaseMigration(jdbcUrl, dbUser, dbPassword)
-
   val process = psqlInstance.prepare(psqlConfig).start()
   flywayService.dropDatabase()
   flywayService.migrateDatabaseSchema()

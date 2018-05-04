@@ -1,6 +1,5 @@
 package io.sportadvisor.core.user
 
-import io.sportadvisor.exception.DuplicateException
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
 /**

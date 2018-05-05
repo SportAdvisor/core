@@ -9,7 +9,6 @@ jobs:
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "build.sbt" }}
-      - run: whoami
       - run: sbt test
       - run: sbt assembly
       - save_cache:
@@ -18,9 +17,8 @@ jobs:
             - ~/.sbt
             - ~/.ivy2/cache
             - ~/.m2
-            - ~/.embedpostgresql
       - persist_to_workspace:
-          root: /root/sport-advisor-api/
+          root: /home/node/sport-advisor-api/
           paths:
             - target/scala-2.12/sportadvisor-api.jar
             - Dockerfile
@@ -42,6 +40,6 @@ workflows:
    build-and-deploy:
     jobs:
       - build
-#      - deploy-docker:
-#          requires:
-#            - build
+      - deploy-docker:
+          requires:
+            - build

@@ -26,10 +26,10 @@ deploy_cluster() {
     for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
         echo "attempt $attempt"
         if stale=$(aws ecs describe-services --cluster sportadvisor-api --services sportadvisor-api-service | \
-                       $JQ ".services[0].deployments | .[] | select(.taskDefinition != \"$revision\") | .taskDefinition"); then
+                       $JQ ".services[0:1].deployments | .[] | select(.taskDefinition != \"$revision\") | .taskDefinition"); then
             echo "Waiting for stale deployments:"
             echo "$stale"
-            sleep 10
+            sleep 5
         else
             echo "Deployed!"
             return 0

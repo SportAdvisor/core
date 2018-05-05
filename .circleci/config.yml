@@ -9,6 +9,7 @@ jobs:
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "build.sbt" }}
+      - run: whoami
       - run: sbt test
       - run: sbt assembly
       - save_cache:

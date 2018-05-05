@@ -51,8 +51,8 @@ make_task_def(){
                     "protocol": "tcp"
                 }
             ],
-			"memory": 900,
-			"cpu": 900,
+			"memory": 400,
+			"cpu": 400,
 			 "environment": [
                 {
                     "name": "JDBC_URL",

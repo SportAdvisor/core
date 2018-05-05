@@ -1,5 +1,7 @@
 package io.sportadvisor
 
+import java.nio.file.Paths
+
 import de.flapdoodle.embed.process.runtime.Network._
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 import ru.yandex.qatools.embed.postgresql.PostgresStarter
@@ -20,7 +22,7 @@ object InMemoryPostgresStorage {
 
   val psqlConfig = new PostgresConfig(
     Version.V9_6_8, new Net(dbHost, dbPort),
-    new Storage(dbName), new Timeout(),
+    new Storage(dbName, Paths.get(System.getProperty("java.io.tmpdir"), "pgembed").toAbsolutePath.toString), new Timeout(),
     new Credentials(dbUser, dbPassword)
   )
   val psqlInstance = PostgresStarter.getDefaultInstance

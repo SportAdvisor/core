@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
 import akka.http.scaladsl.server.Route
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.{AuthToken, UserAlreadyExists, UserService}
-import io.sportadvisor.http.Response.{DataResponse, ErrorResponse, FailResponse, FormError, ObjectData}
+import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FailResponse, FormError, ObjectData}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 import org.mockito.Mockito._
@@ -88,6 +88,44 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test"}""")
         when(userService.signUp("test@test.com", "test123Q", "test")).thenThrow(new RuntimeException)
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[FailResponse]
+          resp.code should be(500)
+        }
+      }
+    }
+
+    "POST /users/sign-in" should {
+      "return 200 and token if auth successful" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q",
+             |"remember":true}""".stripMargin)
+        when(userService.signIn("test@test.com", "test123Q", remember = true))
+          .thenReturn(Future.successful(Some(AuthToken("t", "t", LocalDateTime.now()))))
+        Post("/users/sign-in", requestEntity) ~> userRoute ~> check {
+          val resp = r[DataResponse[AuthToken, ObjectData[AuthToken]]]
+          resp.code should be(200)
+          resp.data.data.token should not be null
+        }
+      }
+
+      "return 400 and empty response if auth invalid" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q",
+             |"remember":true}""".stripMargin)
+        when(userService.signIn("test@test.com", "test123Q", remember = true))
+          .thenReturn(Future.successful(None))
+        Post("/users/sign-in", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code should be(400)
+        }
+      }
+
+      "return 500 if was internal error" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q", "name":"test",
+             |"remember":true}""".stripMargin)
+        when(userService.signIn("test@test.com", "test123Q", remember = true)).thenThrow(new RuntimeException)
+        Post("/users/sign-in", requestEntity) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code should be(500)
         }

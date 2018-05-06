@@ -3,12 +3,13 @@ package io.sportadvisor
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import io.sportadvisor.core.user.{TokenRepositorySQL, UserRepositorySQL, UserService}
+import io.sportadvisor.core.user.{TokenCleaner, TokenRepositorySQL, UserRepositorySQL, UserService}
 import io.sportadvisor.http.HttpRoute
 import io.sportadvisor.util.Config
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -38,6 +39,9 @@ object Application extends App {
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
     val usersService = new UserService(userRepository, tokenRepository, config.secretKey)
     val httpRoute = new HttpRoute(usersService)
+
+    val tokenCleaner = new TokenCleaner(tokenRepository)
+    actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
 
     Http().bindAndHandle(httpRoute.route, config.http.host, config.http.port)
   }

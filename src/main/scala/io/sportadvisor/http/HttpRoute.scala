@@ -1,5 +1,6 @@
 package io.sportadvisor.http
 
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
@@ -19,6 +20,10 @@ class HttpRoute(userService: UserService)(implicit executionContext: ExecutionCo
     cors() {
       pathPrefix("api") {
         userRoute.route
+      } ~ pathPrefix("healthcheck") {
+        pathEndOrSingleSlash {
+          complete(StatusCodes.OK -> "OK")
+        }
       }
     }
 

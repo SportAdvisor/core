@@ -2,9 +2,7 @@ package io.sportadvisor
 
 import de.flapdoodle.embed.process.runtime.Network._
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
-import ru.yandex.qatools.embed.postgresql.PostgresStarter
-import ru.yandex.qatools.embed.postgresql.config.AbstractPostgresConfig.{Credentials, Net, Storage, Timeout}
-import ru.yandex.qatools.embed.postgresql.config.PostgresConfig
+import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
 import ru.yandex.qatools.embed.postgresql.distribution.Version
 
 /**
@@ -18,15 +16,9 @@ object InMemoryPostgresStorage {
   val dbPassword = "password"
   val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
 
-  val psqlConfig = new PostgresConfig(
-    Version.V9_6_3, new Net(dbHost, dbPort),
-    new Storage(dbName), new Timeout(),
-    new Credentials(dbUser, dbPassword)
-  )
-  val psqlInstance = PostgresStarter.getDefaultInstance
   val flywayService = new DatabaseMigration(jdbcUrl, dbUser, dbPassword)
-
-  val process = psqlInstance.prepare(psqlConfig).start()
+  val process: String = new EmbeddedPostgres(Version.V9_6_8).start(dbHost, dbPort, dbName, dbUser, dbPassword)
+  println(process)
   flywayService.dropDatabase()
   flywayService.migrateDatabaseSchema()
 
@@ -35,4 +27,5 @@ object InMemoryPostgresStorage {
     InMemoryPostgresStorage.dbUser,
     InMemoryPostgresStorage.dbPassword
   )
+
 }

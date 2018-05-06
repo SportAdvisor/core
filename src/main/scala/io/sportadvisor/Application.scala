@@ -1,7 +1,9 @@
 package io.sportadvisor
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
 import io.sportadvisor.core.user.{TokenRepositorySQL, UserRepositorySQL, UserService}
 import io.sportadvisor.http.HttpRoute
@@ -39,7 +41,8 @@ object Application extends App {
     val usersService = new UserService(userRepository, tokenRepository, config.secretKey)
     val httpRoute = new HttpRoute(usersService)
 
-    Http().bindAndHandle(httpRoute.route, config.http.host, config.http.port)
+    val clientRouteLogged = DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
+    Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
   }
 
   startApplication()

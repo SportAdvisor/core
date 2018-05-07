@@ -3,6 +3,9 @@ package io.sportadvisor.core.user
 import java.time.{Duration, LocalDateTime}
 
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
+import java.time.LocalDateTime
+import scala.concurrent.duration._
+import java.time.Duration
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -20,10 +23,6 @@ class TokenRepositoryTest extends BaseTest {
     "remove" should {
       "removeByDate" in new Context {
 
-        import java.time.LocalDateTime
-        import scala.concurrent.duration._
-        import java.time.Duration
-
         val rememberTime: FiniteDuration = 14.days
         val notRememberTime: FiniteDuration = 12.hour
         val currentTime: LocalDateTime = LocalDateTime.now()
@@ -37,13 +36,13 @@ class TokenRepositoryTest extends BaseTest {
 
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
 
-        val tokens1 : Seq[RefreshToken] = awaitForResult(tokenRepository.get(1L))
+        val tokens1 : Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(1L))
         tokens1 shouldBe Vector(RefreshToken(1L, "token", remember = true, currentTime))
-        val tokens2 : Seq[RefreshToken] = awaitForResult(tokenRepository.get(2L))
+        val tokens2 : Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(2L))
         tokens2 shouldBe Vector()
-        val tokens3 : Seq[RefreshToken] = awaitForResult(tokenRepository.get(3L))
+        val tokens3 : Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(3L))
         tokens3 shouldBe Vector(RefreshToken(3L, "token", remember = false, currentTime))
-        val tokens4 : Seq[RefreshToken] = awaitForResult(tokenRepository.get(4L))
+        val tokens4 : Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(4L))
         tokens4 shouldBe Vector()
       }
     }

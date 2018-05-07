@@ -1,0 +1,22 @@
+msgid ""
+msgstr "Plural-Forms: nplurals=2; plural=n>1;"
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Your Name <email@example.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "language"
+msgstr "Русский"
+
+msgctxt "Casual"
+msgid "language"
+msgstr "Рашн"
+
+msgid "I have one apple"
+msgid_plural "I have %d apples"
+msgstr[0] "Я имею 1 яблоко"
+msgstr[1] "Я имею несколько(%d) яблок"

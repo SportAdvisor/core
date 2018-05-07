@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Route
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.{AuthToken, UserAlreadyExists, UserService}
 import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FailResponse, FormError, ObjectData}
+import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 import org.mockito.Mockito._
@@ -42,7 +43,7 @@ class UserRouteTest extends BaseTest {
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("name", "0x1")) and have size 1)
+          resp.errors should (contain(FormError("name", "Name is required")) and have size 1)
         }
       }
 
@@ -51,7 +52,7 @@ class UserRouteTest extends BaseTest {
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "0x1")) and have size 1)
+          resp.errors should (contain(FormError("email", "Email is invalid")) and have size 1)
         }
       }
 
@@ -60,7 +61,7 @@ class UserRouteTest extends BaseTest {
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("password", "0x1")) and have size 1)
+          resp.errors should (contain(FormError("password", "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number")) and have size 1)
         }
       }
 
@@ -71,7 +72,7 @@ class UserRouteTest extends BaseTest {
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "0x2")) and have size 1)
+          resp.errors should (contain(FormError("email", "Email address is already registered")) and have size 1)
         }
       }
 
@@ -80,7 +81,7 @@ class UserRouteTest extends BaseTest {
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "0x1")) and contain(FormError("password", "0x1")) and have size 2)
+          resp.errors should (contain(FormError("email", "Email is invalid")) and contain(FormError("password", "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number")) and have size 2)
         }
       }
 
@@ -135,6 +136,6 @@ class UserRouteTest extends BaseTest {
 
   trait Context {
     val userService: UserService = mock[UserService]
-    val userRoute: Route = new UserRoute(userService).route
+    val userRoute: Route = (new UserRoute(userService) with I18nStub).route
   }
 }

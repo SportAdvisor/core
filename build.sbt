@@ -55,7 +55,8 @@ val dependencies = Seq (
   "com.roundeights" %% "hasher" % "1.2.0",
   "com.pauldijou" %% "jwt-core" % "0.14.0",
   "com.github.pureconfig" %% "pureconfig" % "0.9.0",
-  "com.wix" %% "accord-core" % "0.7.1"
+  "com.wix" %% "accord-core" % "0.7.1",
+  "tv.cntt" %% "scaposer" % "1.10",
 )
 
 libraryDependencies ++= dependencies ++ akkaDependencies ++ dbDependencies ++ circeDependencies ++ testDependencies ++ loggingDependencies

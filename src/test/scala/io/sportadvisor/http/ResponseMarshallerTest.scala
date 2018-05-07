@@ -31,7 +31,7 @@ class ResponseMarshallerTest extends BaseTest {
 
     "ErrorResponse" should {
       "serialize and deserialize" in {
-        val resp = Response.errorResponse(List(FormError("test", ErrorCode.invalidField)))
+        val resp = Response.errorResponse(List(FormError("test", "test")))
         val json = marshall(resp)
         val response = unmarshall(json, implicitly[Decoder[ErrorResponse[FormError]]])
         resp shouldEqual response

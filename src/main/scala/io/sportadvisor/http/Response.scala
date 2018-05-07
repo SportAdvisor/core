@@ -25,7 +25,7 @@ object Response {
   case class ErrorResponse[E <: Error](code: Int, errors: List[E]) extends Response
   case class FailResponse(code: Int, message: Option[String]) extends Response
 
-  case class FormError(field: String, code: String) extends Error
+  case class FormError(field: String, msg: String) extends Error
 
   case class ObjectLinks(self: Link) extends Links
   case class CollectionLinks(self: Link, first: Link, last: Link, previous: Link, next: Link) extends Links

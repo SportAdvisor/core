@@ -14,23 +14,27 @@ import io.sportadvisor.util.MonadTransformers._
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-class UserService(userRepository: UserRepository, tokenRepository: TokenRepository, secretKey: String)
-                 (implicit executionContext: ExecutionContext) {
+class UserService(userRepository: UserRepository,
+                  tokenRepository: TokenRepository,
+                  secretKey: String)(implicit executionContext: ExecutionContext) {
 
   private[this] val expPeriod = 2.hour.toMinutes
 
-  def signUp(email: String, password: String, name: String) : Future[Either[UserAlreadyExists, AuthToken]] =
+  def signUp(email: String,
+             password: String,
+             name: String): Future[Either[UserAlreadyExists, AuthToken]] =
     userRepository
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
-        case Left(e) => Future.successful(Left(new UserAlreadyExists))
+        case Left(e)  => Future.successful(Left(new UserAlreadyExists))
         case Right(u) => createAndSaveToken(u, Boolean.box(true)).map(t => Right(t))
       }
 
   def signIn(email: String, password: String, remember: Boolean): Future[Option[AuthToken]] =
-    userRepository.find(email)
-        .filterT(u => password.sha256.hex == u.password)
-        .flatMapTOuter(u => createAndSaveToken(u, remember))
+    userRepository
+      .find(email)
+      .filterT(u => password.sha256.hex == u.password)
+      .flatMapTOuter(u => createAndSaveToken(u, remember))
 
   private def createAndSaveToken(user: UserData, remember: Boolean): Future[AuthToken] = {
     val token = createToken(user, remember)
@@ -38,7 +42,7 @@ class UserService(userRepository: UserRepository, tokenRepository: TokenReposito
       .map(_ => token)
   }
 
-  private def createToken(user: UserData, remember: Boolean) : AuthToken = {
+  private def createToken(user: UserData, remember: Boolean): AuthToken = {
     val time = LocalDateTime.now()
     val expTime = time.plusMinutes(expPeriod)
     val token = JwtUtil.encode(AuthTokenContent(user.id), secretKey, Option(expTime))
@@ -46,9 +50,11 @@ class UserService(userRepository: UserRepository, tokenRepository: TokenReposito
     AuthToken(token, refreshToken, expTime)
   }
 
-  private def saveToken(user: UserData, refreshToken: Token, remember: Boolean, creation: LocalDateTime): Future[RefreshToken] = {
+  private def saveToken(user: UserData,
+                        refreshToken: Token,
+                        remember: Boolean,
+                        creation: LocalDateTime): Future[RefreshToken] = {
     tokenRepository.save(RefreshToken(user.id, refreshToken, remember, creation))
   }
 
 }
-

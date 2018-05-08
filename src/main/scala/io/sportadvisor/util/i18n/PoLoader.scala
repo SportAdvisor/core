@@ -12,7 +12,7 @@ import scala.io.Source
   */
 private[i18n] object PoLoader extends Logging {
 
-  private case class CacheKey(language: String, bundle:String)
+  private case class CacheKey(language: String, bundle: String)
 
   private val cache = MMap.empty[CacheKey, scaI18n]
 
@@ -21,11 +21,12 @@ private[i18n] object PoLoader extends Logging {
     if (cache.isDefinedAt(key)) return cache(key)
 
     synchronized {
-      val urlEnum = Thread.currentThread.getContextClassLoader.getResources("i18n/" + bundle + "/" + language + ".po")
-      val buffer  = ArrayBuffer.empty[scaI18n]
+      val urlEnum = Thread.currentThread.getContextClassLoader
+        .getResources("i18n/" + bundle + "/" + language + ".po")
+      val buffer = ArrayBuffer.empty[scaI18n]
       while (urlEnum.hasMoreElements) {
-        val url    = urlEnum.nextElement()
-        val is     = url.openStream()
+        val url = urlEnum.nextElement()
+        val is = url.openStream()
         val string = Source.fromInputStream(is).mkString
         Parser.parse(string) match {
           case Left(parseFailure) =>
@@ -37,7 +38,9 @@ private[i18n] object PoLoader extends Logging {
         }
       }
 
-      val ret = buffer.foldLeft(new scaI18n(Map.empty)) { (acc, e) => acc ++ e}
+      val ret = buffer.foldLeft(new scaI18n(Map.empty)) { (acc, e) =>
+        acc ++ e
+      }
       cache(key) = ret
       ret
     }

@@ -16,7 +16,7 @@ package object user {
   }
 
   final case class AuthToken(token: Token, refreshToken: Token, expireAt: LocalDateTime) {
-    def updateRefreshToken(r: Token) : AuthToken = AuthToken(token, r, expireAt)
+    def updateRefreshToken(r: Token): AuthToken = AuthToken(token, r, expireAt)
   }
 
   final case class CreateUser(email: String, password: String, name: String) extends User
@@ -25,7 +25,10 @@ package object user {
   final case class AuthTokenContent(userID: UserID)
   final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
 
-  final case class RefreshToken(userId: UserID, token: Token, remember: Boolean, lastTouch: LocalDateTime)
+  final case class RefreshToken(userId: UserID,
+                                token: Token,
+                                remember: Boolean,
+                                lastTouch: LocalDateTime)
 
   final class UserAlreadyExists extends Exception
 }

@@ -41,7 +41,8 @@ object Application extends App {
     val usersService = new UserService(userRepository, tokenRepository, config.secretKey)
     val httpRoute = new HttpRoute(usersService)
 
-    val clientRouteLogged = DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
+    val clientRouteLogged =
+      DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
     Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
   }
 

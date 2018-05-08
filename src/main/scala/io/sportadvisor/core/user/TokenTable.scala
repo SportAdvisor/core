@@ -26,7 +26,8 @@ private[user] trait TokenTable {
     def remember = column[Boolean]("remember")
     def lastTouch = column[LocalDateTime]("last_touch")
 
-    override def * = (userId, token, remember, lastTouch) <> (RefreshToken.tupled, RefreshToken.unapply)
+    override def * =
+      (userId, token, remember, lastTouch) <> (RefreshToken.tupled, RefreshToken.unapply)
 
     def pk = primaryKey("pk_refresh_tokens", (userId, token))
   }

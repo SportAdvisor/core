@@ -6,7 +6,6 @@ import pureconfig.loadConfig
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-
 case class Config(secretKey: String, http: HttpConfig, database: DatabaseConfig)
 
 object Config {
@@ -16,8 +15,7 @@ object Config {
 
   def load(): Config = loadConfig[Config] match {
     case Right(c) => c
-    case Left(e) => throw new RuntimeException("Cannot read config file, errors:\n" + e.toList.mkString("\n"))
+    case Left(e) =>
+      throw new RuntimeException("Cannot read config file, errors:\n" + e.toList.mkString("\n"))
   }
 }
-
-

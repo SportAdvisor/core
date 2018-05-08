@@ -24,21 +24,23 @@ trait I18n {
 
   def tn(singular: String, plural: String, n: Long): String = po.tn(singular, plural, n)
 
-  def tcn(ctx: String, singular: String, plural: String, n: Long): String = po.tcn(ctx, singular, plural, n)
+  def tcn(ctx: String, singular: String, plural: String, n: Long): String =
+    po.tcn(ctx, singular, plural, n)
 
   /** `formatLocal` using the current locale. */
-  def t(singular: String, args: Any*): String = po.t(singular).formatLocal(locale, args:_*)
+  def t(singular: String, args: Any*): String = po.t(singular).formatLocal(locale, args: _*)
 
   /** `formatLocal` using the current locale. */
-  def tc(ctx: String, singular: String, args: Any*): String = po.tc(ctx, singular).formatLocal(locale, args:_*)
+  def tc(ctx: String, singular: String, args: Any*): String =
+    po.tc(ctx, singular).formatLocal(locale, args: _*)
 
   /** `formatLocal` using the current locale. */
   def tn(singular: String, plural: String, n: Long, args: Any*): String =
-    po.tn(singular, plural, n).formatLocal(locale, args:_*)
+    po.tn(singular, plural, n).formatLocal(locale, args: _*)
 
   /** `formatLocal` using the current locale. */
   def tcn(ctx: String, singular: String, plural: String, n: Long, args: Any*): String =
-    po.tcn(ctx, singular, plural, n).formatLocal(locale, args:_*)
+    po.tcn(ctx, singular, plural, n).formatLocal(locale, args: _*)
 
   protected def po: scaposer.I18n
 }

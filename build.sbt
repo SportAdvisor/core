@@ -68,3 +68,6 @@ assemblyMergeStrategy in assembly := {
   case "reference.conf"              => MergeStrategy.concat
   case x                             => MergeStrategy.first
 }
+
+scalastyleFailOnError := true
+scalastyleFailOnWarning := true

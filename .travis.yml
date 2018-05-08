@@ -7,4 +7,5 @@ scala:
 - 2.12.5
 jdk:
 - oraclejdk8
-script: sbt scalafmtSbtCheck scalafmtCheck test
+script: sbt clean scalafmtSbtCheck scalafmtCheck coverage test
+after_success: sbt coverageReport coveralls

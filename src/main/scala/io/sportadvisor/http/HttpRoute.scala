@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
   */
 class HttpRoute(userService: UserService)(implicit executionContext: ExecutionContext) {
 
-  private val userRoute = new UserRoute(userService)
+  private val userRoute = new UserRoute(userService) with I18nServiceImpl
 
   val route: Route =
     cors() {

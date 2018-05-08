@@ -1,0 +1,22 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Your Name <email@example.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Email address is already registered"
+msgstr "Email address is already registered"
+
+msgid "Email is invalid"
+msgstr "Email is invalid"
+
+msgid "Name is required"
+msgstr "Name is required"
+
+msgid "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
+msgstr "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"

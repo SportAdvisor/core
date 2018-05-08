@@ -13,7 +13,7 @@ msgid "Email address is already registered"
 msgstr "Пользователь с таким email уже зарегистрирован"
 
 msgid "Email is invalid"
-msgstr "Невалидный email"
+msgstr "Указан неверный адрес электронной почты"
 
 msgid "Name is required"
 msgstr "Имя должно быть заполнено"

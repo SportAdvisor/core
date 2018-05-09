@@ -39,7 +39,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   private val insertQuery = users returning users.map(_.id) into ((user, id) => user.copy(id = id))
 
   override def save(user: User): Future[Either[DuplicateException, UserData]] = user match {
-    case u @ CreateUser(_, _, _) => createUser(u)
+    case u @ CreateUser(_, _, _)  => createUser(u)
     case u @ UserData(_, _, _, _) => updateUser(u)
   }
 

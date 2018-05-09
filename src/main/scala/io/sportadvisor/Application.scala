@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext
   */
 object Application extends App {
 
-  def startApplication() = {
+  def startApplication(): Unit = {
     implicit val actorSystem: ActorSystem = ActorSystem()
     implicit val executor: ExecutionContext = actorSystem.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()

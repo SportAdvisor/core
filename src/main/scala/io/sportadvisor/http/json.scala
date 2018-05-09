@@ -10,6 +10,7 @@ import io.sportadvisor.core.user.AuthToken
 /**
   * @author sss3 (Vladimir Alekseev)
   */
+// scalastyle:off object.name
 object json extends AutoDerivation {
 
   import io.circe.generic.semiauto._

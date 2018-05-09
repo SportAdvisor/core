@@ -15,6 +15,7 @@ private[user] trait UserTable {
       name: varchar(255),
       email: varchar(255) UNIQUE,
     */
+  // scalastyle:off
   class UserScheme(tag: Tag) extends Table[UserData](tag, "ACCOUNTS") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name", O.Length(255))
@@ -23,6 +24,7 @@ private[user] trait UserTable {
 
     override def * = (id, email, password, name) <> ((UserData.apply _).tupled, UserData.unapply)
   }
+  // scalastyle:on
 
   protected val users = TableQuery[UserScheme]
 }

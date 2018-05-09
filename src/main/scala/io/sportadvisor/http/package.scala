@@ -25,7 +25,7 @@ package object http extends FailFastCirceSupport {
   }
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
-    case a: Throwable => complete(StatusCodes.InternalServerError -> FailResponse(500, None))
+    case _: Throwable => complete(StatusCodes.InternalServerError -> Response.failResponse())
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler

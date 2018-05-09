@@ -18,32 +18,33 @@ private[i18n] object PoLoader extends Logging {
 
   def get(language: String, bundle: String): scaI18n = {
     val key = CacheKey(language, bundle)
-    if (cache.isDefinedAt(key)) return cache(key)
+    if (cache.isDefinedAt(key)) {
+      cache(key)
+    } else {
+      synchronized {
+        val urlEnum = Thread.currentThread.getContextClassLoader
+          .getResources("i18n/" + bundle + "/" + language + ".po")
+        val buffer = ArrayBuffer.empty[scaI18n]
+        while (urlEnum.hasMoreElements) {
+          val url = urlEnum.nextElement()
+          val is = url.openStream()
+          val string = Source.fromInputStream(is).mkString
+          Parser.parse(string) match {
+            case Left(parseFailure) =>
+              log.warn(s"Could not load $url: $parseFailure")
 
-    synchronized {
-      val urlEnum = Thread.currentThread.getContextClassLoader
-        .getResources("i18n/" + bundle + "/" + language + ".po")
-      val buffer = ArrayBuffer.empty[scaI18n]
-      while (urlEnum.hasMoreElements) {
-        val url = urlEnum.nextElement()
-        val is = url.openStream()
-        val string = Source.fromInputStream(is).mkString
-        Parser.parse(string) match {
-          case Left(parseFailure) =>
-            log.warn(s"Could not load $url: $parseFailure")
-
-          case Right(translations) =>
-            val i18n = scaI18n(translations)
-            buffer.append(i18n)
+            case Right(translations) =>
+              val i18n = scaI18n(translations)
+              buffer.append(i18n)
+          }
         }
-      }
 
-      val ret = buffer.foldLeft(new scaI18n(Map.empty)) { (acc, e) =>
-        acc ++ e
+        val ret = buffer.foldLeft(new scaI18n(Map.empty)) { (acc, e) =>
+          acc ++ e
+        }
+        cache(key) = ret
+        ret
       }
-      cache(key) = ret
-      ret
     }
-
   }
 }

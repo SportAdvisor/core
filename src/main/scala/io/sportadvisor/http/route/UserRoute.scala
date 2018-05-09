@@ -1,6 +1,6 @@
 package io.sportadvisor.http.route
 
-import akka.http.scaladsl.model.StatusCode
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -62,7 +62,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
                 r(
                   Response.errorResponse(
                     List(FormError("email", errors(lang).t(emailDuplication)))))
-              case Right(token) => r(Response.dataResponse(token, null))
+              case Right(token) => r(Response.dataResponse(token, None))
             }
           )
         }
@@ -74,8 +74,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[EmailPassword]) { req =>
       complete(
         signIn(req.email, req.password, req.remember).map {
-          case Some(token) => r(Response.dataResponse(token, null))
-          case None        => r(Response.emptyResponse(400))
+          case Some(token) => r(Response.dataResponse(token, None))
+          case None        => r(Response.emptyResponse(StatusCodes.BadRequest.intValue))
         }
       )
     }
@@ -91,13 +91,20 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private implicit val regValidator: Validator[UsernamePasswordEmail] =
     Validator[UsernamePasswordEmail](
       u => if (u.name.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None,
-      u =>
-        if (!u.email.matches(".+@.+\\..+")) { Some(ValidationResult("email", emailInvalid)) } else
-        None,
-      u =>
+      u => {
+        if (!u.email.matches(".+@.+\\..+")) {
+          Some(ValidationResult("email", emailInvalid))
+        } else {
+          None
+        }
+      },
+      u => {
         if (!u.password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")) {
           Some(ValidationResult("password", passwordIsWeak))
-        } else None
+        } else {
+          None
+        }
+      }
     )
 
   implicit val userNamePasswordDecoder: Decoder[UsernamePasswordEmail] = deriveDecoder

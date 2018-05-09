@@ -20,6 +20,7 @@ private[user] trait TokenTable {
       d => d.toLocalDateTime
     )
 
+  // scalastyle:off
   class TokenScheme(tag: Tag) extends Table[RefreshToken](tag, "REFRESH_TOKENS") {
     def userId = column[Long]("user_id")
     def token = column[String]("token", O.Length(255))
@@ -31,6 +32,7 @@ private[user] trait TokenTable {
 
     def pk = primaryKey("pk_refresh_tokens", (userId, token))
   }
+  // scalastyle:on
 
   protected val tokens = TableQuery[TokenScheme]
 

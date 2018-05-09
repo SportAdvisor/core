@@ -1,5 +1,7 @@
 package io.sportadvisor.http
 
+import akka.http.scaladsl.model.StatusCodes
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -33,8 +35,8 @@ object Response {
   case class ObjectData[A](data: A, _links: Option[ObjectLinks]) extends Data[A]
   case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data[A]
 
-  def data[A](data: A, self: String): ObjectData[A] = {
-    ObjectData(data, if (self == null) None else Some(ObjectLinks(self)))
+  def data[A](data: A, self: Option[String]): ObjectData[A] = {
+    ObjectData(data, self.map(ObjectLinks(_)))
   }
 
   def data[A](data: List[A],
@@ -44,7 +46,7 @@ object Response {
               last: String,
               previous: String,
               next: String): CollectionData[A] = {
-    val objectWrappers = data.map(e => Response.data(e, selfGenerator(e)))
+    val objectWrappers = data.map(e => Response.data(e, Some(selfGenerator(e))))
     val _links = CollectionLinks(self, first, last, previous, next)
     CollectionData[A](objectWrappers, _links)
   }
@@ -57,9 +59,9 @@ object Response {
     }
   }
 
-  def dataResponse[A](data: A, self: String): Response = {
+  def dataResponse[A](data: A, self: Option[String]): Response = {
     val value: ObjectData[A] = Response.data(data, self)
-    DataResponse[A, ObjectData[A]](200, value)
+    DataResponse[A, ObjectData[A]](StatusCodes.OK.intValue, value)
   }
 
   def dataResponse[A](data: List[A],
@@ -70,15 +72,15 @@ object Response {
                       previous: String,
                       next: String): Response = {
     val value = Response.data(data, selfGenerator, self, first, last, previous, next)
-    DataResponse[A, CollectionData[A]](200, value)
+    DataResponse[A, CollectionData[A]](StatusCodes.OK.intValue, value)
   }
 
   def errorResponse[E <: Error](errors: List[E]): ErrorResponse[E] = {
-    ErrorResponse[E](400, errors)
+    ErrorResponse[E](StatusCodes.BadRequest.intValue, errors)
   }
 
   def failResponse(message: Option[String] = None): Response = {
-    FailResponse(500, message)
+    FailResponse(StatusCodes.InternalServerError.intValue, message)
   }
 
   private[this] implicit def stringToLink(link: String): Link = Link(link)

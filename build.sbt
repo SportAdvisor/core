@@ -71,3 +71,5 @@ assemblyMergeStrategy in assembly := {
 
 scalastyleFailOnError := true
 scalastyleFailOnWarning := true
+wartremoverErrors ++= Warts.all
+wartremoverWarnings ++= Warts.all

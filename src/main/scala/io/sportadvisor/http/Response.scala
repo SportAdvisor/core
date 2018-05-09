@@ -39,6 +39,10 @@ object Response {
     ObjectData(data, self.map(ObjectLinks(_)))
   }
 
+  def data[A](data: A, self: String): ObjectData[A] = {
+    Response.data(data, Option(self))
+  }
+
   def data[A](data: List[A],
               selfGenerator: A => String,
               self: String,
@@ -62,6 +66,10 @@ object Response {
   def dataResponse[A](data: A, self: Option[String]): Response = {
     val value: ObjectData[A] = Response.data(data, self)
     DataResponse[A, ObjectData[A]](StatusCodes.OK.intValue, value)
+  }
+
+  def dataResponse[A](data: A, self: String): Response = {
+    dataResponse(data, Option(self))
   }
 
   def dataResponse[A](data: List[A],

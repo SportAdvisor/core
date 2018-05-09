@@ -6,6 +6,7 @@ import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
+import io.sportadvisor.http.json.Codecs._
 import io.circe.syntax._
 import io.sportadvisor.util.i18n.I18n
 

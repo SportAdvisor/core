@@ -5,6 +5,7 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class DatabaseConnector(jdbcUrl: String, dbUser: String, dbPassword: String) {
 
   private val hikariDataSource = {

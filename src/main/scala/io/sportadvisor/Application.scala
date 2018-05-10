@@ -10,14 +10,14 @@ import io.sportadvisor.http.HttpRoute
 import io.sportadvisor.util.Config
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
 object Application extends App {
 
-  def startApplication() = {
+  def startApplication(): Unit = {
     implicit val actorSystem: ActorSystem = ActorSystem()
     implicit val executor: ExecutionContext = actorSystem.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -41,8 +41,10 @@ object Application extends App {
     val usersService = new UserService(userRepository, tokenRepository, config.secretKey)
     val httpRoute = new HttpRoute(usersService)
 
-    val clientRouteLogged = DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
-    Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
+    val clientRouteLogged =
+      DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
+    val _: Future[_] = Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
+    ()
   }
 
   startApplication()

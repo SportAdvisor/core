@@ -5,6 +5,7 @@ import io.circe.generic.semiauto._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.http.Response.{CollectionData, EmptyResponse, ErrorResponse, FailResponse, FormError, ObjectData}
 import io.sportadvisor.http.json._
+import io.sportadvisor.http.Decoders._
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -40,14 +41,14 @@ class ResponseMarshallerTest extends BaseTest {
 
     "DataResponse" should {
       "serialize and deserialize [ObjectData]" in {
-        val resp = Response.dataResponse[D](D(1, true), "https://sportadvisor.io")
+        val resp = Response.objectResponse[D](D(1, true), Option("https://sportadvisor.io"))
         val json = marshall(resp)
         val data = unmarshall(json, dataResponseDecoder[D, ObjectData[D]])
         resp shouldEqual data
       }
 
       "serialize and deserialize [CollectionData]" in {
-        val resp = Response.dataResponse[D](List(D(1, true), D(2, false)), (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
+        val resp = Response.collectionResponse[D](List(D(1, true), D(2, false)), (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
           "https://sportadvisor.io/api/d?page=3", "https://sportadvisor.io/api/d?page=1", "https://sportadvisor.io/api/d?page=7",
           "https://sportadvisor.io/api/d?page=2", "https://sportadvisor.io/api/d?page=4")
         val json = marshall(resp)
@@ -60,7 +61,7 @@ class ResponseMarshallerTest extends BaseTest {
   "Data" when {
     "ObjectData" should {
       "serialize and deserealize" in {
-        val data = Response.data[D](D(1, true), "https://sportadvisor.io")
+        val data = Response.objectData[D](D(1, true), Option("https://sportadvisor.io"))
         val json = marshall(data)
         val response = unmarshall(json, implicitly[Decoder[ObjectData[D]]])
         data shouldEqual response
@@ -69,7 +70,7 @@ class ResponseMarshallerTest extends BaseTest {
 
     "CollectionData" should {
       "serialize and deserealize" in {
-        val data = Response.data[D](List(D(1, true), D(2, false)), (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
+        val data = Response.collectionData[D](List(D(1, true), D(2, false)), (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
           "https://sportadvisor.io/api/d?page=3", "https://sportadvisor.io/api/d?page=1", "https://sportadvisor.io/api/d?page=7",
           "https://sportadvisor.io/api/d?page=2", "https://sportadvisor.io/api/d?page=4")
         val json = marshall(data)

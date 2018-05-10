@@ -17,10 +17,10 @@ private[user] trait UserTable {
     */
   // scalastyle:off
   class UserScheme(tag: Tag) extends Table[UserData](tag, "ACCOUNTS") {
-    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def name = column[String]("name", O.Length(255))
-    def email = column[String]("email", O.Length(255), O.Unique)
-    def password = column[String]("password", O.Length(255))
+    def id: Rep[UserID] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name: Rep[String] = column[String]("name", O.Length(255))
+    def email: Rep[String] = column[String]("email", O.Length(255), O.Unique)
+    def password: Rep[String] = column[String]("password", O.Length(255))
 
     override def * = (id, email, password, name) <> ((UserData.apply _).tupled, UserData.unapply)
   }

@@ -8,11 +8,13 @@ import io.circe.{Decoder, Json}
 import io.circe.syntax._
 import io.circe.generic.semiauto._
 import io.sportadvisor.core.user.UserService
+import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http
 import io.sportadvisor.http.I18nService
 import io.sportadvisor.http.Response.{FormError, Response}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
+import org.slf4s.Logging
 
 import scala.concurrent.ExecutionContext
 
@@ -21,7 +23,7 @@ import scala.concurrent.ExecutionContext
   */
 abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext)
     extends FailFastCirceSupport
-    with I18nService {
+    with I18nService with Logging {
 
   private val emailDuplication = "Email address is already registered"
   private val emailInvalid = "Email is invalid"
@@ -58,11 +60,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         validatorDirective(entity, regValidator, this) { request =>
           complete(
             signUp(request.email, request.password, request.name).map {
-              case Left(e) =>
-                r(
-                  Response.errorResponse(
-                    List(FormError("email", errors(lang).t(emailDuplication)))))
-              case Right(token) => r(Response.dataResponse(token, None))
+              case Left(e) => r(handleApiErrorOnSignUp(e, lang))
+              case Right(token) => r(Response.objectResponse(token, None))
             }
           )
         }
@@ -74,14 +73,25 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[EmailPassword]) { req =>
       complete(
         signIn(req.email, req.password, req.remember).map {
-          case Some(token) => r(Response.dataResponse(token, None))
+          case Some(token) => r(Response.objectResponse(token, None))
           case None        => r(Response.emptyResponse(StatusCodes.BadRequest.intValue))
         }
       )
     }
   }
 
-  def r(response: Response): (StatusCode, Json) =
+  private def handleApiErrorOnSignUp(err: ApiError, lang: String): Response = {
+    err.exception.map {
+      case DuplicateException() =>
+        Response.errorResponse(
+          List(FormError("email", errors(lang).t(emailDuplication))))
+      case e @ _ =>
+        e.error.foreach(t => log.warn("signUp error", t))
+        Response.failResponse(None)
+    }.fold(Response.failResponse(None))(r => r)
+  }
+
+  private def r(response: Response): (StatusCode, Json) =
     StatusCode.int2StatusCode(response.code) -> response.asJson
 
   case class UsernamePasswordEmail(name: String, email: String, password: String)

@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 import io.sportadvisor.util.db.DatabaseConnector
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
+import slick.lifted.{PrimaryKey, ProvenShape}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -22,15 +23,15 @@ private[user] trait TokenTable {
 
   // scalastyle:off
   class TokenScheme(tag: Tag) extends Table[RefreshToken](tag, "REFRESH_TOKENS") {
-    def userId = column[Long]("user_id")
-    def token = column[String]("token", O.Length(255))
-    def remember = column[Boolean]("remember")
-    def lastTouch = column[LocalDateTime]("last_touch")
+    def userId: Rep[UserID] = column[Long]("user_id")
+    def token: Rep[String] = column[String]("token", O.Length(255))
+    def remember: Rep[Boolean] = column[Boolean]("remember")
+    def lastTouch: Rep[LocalDateTime] = column[LocalDateTime]("last_touch")
 
-    override def * =
+    override def * : ProvenShape[RefreshToken] =
       (userId, token, remember, lastTouch) <> (RefreshToken.tupled, RefreshToken.unapply)
 
-    def pk = primaryKey("pk_refresh_tokens", (userId, token))
+    def pk: PrimaryKey = primaryKey("pk_refresh_tokens", (userId, token))
   }
   // scalastyle:on
 

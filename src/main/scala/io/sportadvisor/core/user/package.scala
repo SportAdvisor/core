@@ -30,5 +30,4 @@ package object user {
                                 remember: Boolean,
                                 lastTouch: LocalDateTime)
 
-  final class UserAlreadyExists extends Exception
 }

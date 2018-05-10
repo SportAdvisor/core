@@ -18,15 +18,15 @@ package object http extends FailFastCirceSupport {
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._
 
-  case class ValidationError(errors: List[FormError]) extends Rejection
-  case class ValidationResult(field: String, msgId: String) {
+  final case class ValidationError(errors: List[FormError]) extends Rejection
+  final case class ValidationResult(field: String, msgId: String) {
     def toFormError(i18n: I18n): FormError = {
       FormError(field, i18n.t(msgId))
     }
   }
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
-    case _: Throwable => complete(StatusCodes.InternalServerError -> Response.failResponse())
+    case _: Throwable => complete(StatusCodes.InternalServerError -> Response.failResponse(None))
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler
@@ -42,10 +42,7 @@ package object http extends FailFastCirceSupport {
 
   final class DefaultValidator[T](rules: Seq[T => Option[ValidationResult]]) extends Validator[T] {
     override def apply(v1: T): List[ValidationResult] = {
-      rules
-        .map(rule => rule(v1))
-        .filter(o => o.isDefined)
-        .map(o => o.get)
+      rules.flatMap(rule => rule(v1))
         .toList
     }
   }

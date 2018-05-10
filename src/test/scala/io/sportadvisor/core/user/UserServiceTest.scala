@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.exception.DuplicateException
+import io.sportadvisor.exception.{ApiError, DuplicateException}
 import pdi.jwt.{Jwt, JwtAlgorithm}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
@@ -24,7 +24,7 @@ class UserServiceTest extends BaseTest {
             .thenReturn(Future.successful(Right(testUser)))
         when(tokenRepository.save(any[RefreshToken]()))
           .thenReturn(Future.successful(RefreshToken(1L, "", remember = false, LocalDateTime.now())))
-        val value: Either[UserAlreadyExists, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
+        val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
         value.isRight shouldBe true
         Jwt.decodeRaw(value.right.get.token, testSecretKey, Seq(JwtAlgorithm.HS256)).isSuccess shouldBe true
       }
@@ -32,7 +32,7 @@ class UserServiceTest extends BaseTest {
       "return user already registered" in new Context {
         when(userRepository.save(CreateUser(testEmail, testPassword.sha256.hex, testName)))
           .thenReturn(Future.successful(Left(new DuplicateException)))
-        val value: Either[UserAlreadyExists, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
+        val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
         value.isLeft shouldBe true
       }
     }

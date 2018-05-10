@@ -12,7 +12,7 @@ import scala.io.Source
   */
 private[i18n] object PoLoader extends Logging {
 
-  private case class CacheKey(language: String, bundle: String)
+  private final case class CacheKey(language: String, bundle: String)
 
   private val cache = MMap.empty[CacheKey, scaI18n]
 

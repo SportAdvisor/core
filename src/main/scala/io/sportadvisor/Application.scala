@@ -10,7 +10,7 @@ import io.sportadvisor.http.HttpRoute
 import io.sportadvisor.util.Config
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -43,7 +43,8 @@ object Application extends App {
 
     val clientRouteLogged =
       DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
-    Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
+    val _: Future[_] = Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
+    ()
   }
 
   startApplication()

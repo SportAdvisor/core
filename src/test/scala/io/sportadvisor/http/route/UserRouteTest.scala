@@ -5,10 +5,12 @@ import java.time.LocalDateTime
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
 import akka.http.scaladsl.server.Route
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.{AuthToken, UserAlreadyExists, UserService}
+import io.sportadvisor.core.user.{AuthToken, UserService}
+import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FailResponse, FormError, ObjectData}
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.json._
+import io.sportadvisor.http.Decoders._
 import io.sportadvisor.http.json.Codecs._
 import org.mockito.Mockito._
 
@@ -67,7 +69,7 @@ class UserRouteTest extends BaseTest {
 
       "return 400 if email is exists" in new Context {
         when(userService.signUp("test@test.com", "test123Q", "test"))
-          .thenReturn(Future.successful(Left(new UserAlreadyExists)))
+          .thenReturn(Future.successful(Left(ApiError(Option(DuplicateException())))))
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test"}""")
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]

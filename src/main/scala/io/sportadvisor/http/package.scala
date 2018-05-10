@@ -40,10 +40,10 @@ package object http extends FailFastCirceSupport {
 
   trait Validator[T] extends (T => List[ValidationResult])
 
+  @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
   final class DefaultValidator[T](rules: Seq[T => Option[ValidationResult]]) extends Validator[T] {
     override def apply(v1: T): List[ValidationResult] = {
-      rules.flatMap(rule => rule(v1))
-        .toList
+      rules.flatMap(rule => rule(v1)).toList
     }
   }
 

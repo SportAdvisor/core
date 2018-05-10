@@ -3,6 +3,8 @@ package io.sportadvisor.http
 import akka.http.scaladsl.model.StatusCodes
 import org.slf4s.Logging
 
+import scala.language.implicitConversions
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -34,7 +36,8 @@ object Response extends Logging {
       extends Links
 
   final case class ObjectData[A](data: A, _links: Option[ObjectLinks]) extends Data[A]
-  final case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data[A]
+  final case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks)
+      extends Data[A]
 
   def objectData[A](data: A, self: Option[String]): ObjectData[A] = {
     ObjectData(data, self.map(ObjectLinks(_)))

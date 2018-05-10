@@ -5,6 +5,7 @@ import java.util.Locale
 /**
   * @author sss3 (Vladimir Alekseev)
   */
+@SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 trait I18n {
 
   def language: String

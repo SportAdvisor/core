@@ -8,6 +8,7 @@ import io.sportadvisor.util.db.DatabaseConnector
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.io
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -61,7 +62,9 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
     db.run(users.update(u).asTry).map {
       case Success(e) => Right(u)
       case Failure(e: SQLException) =>
-        if (e.getSQLState.reverse == "23505") Left(new DuplicateException) else Left(UnhandledException(e));
+        if (e.getSQLState == "23505") { Left(new DuplicateException) } else {
+          Left(UnhandledException(e))
+        }
       case Failure(e) => Left(UnhandledException(e))
     }
   }

@@ -18,17 +18,16 @@ import org.slf4s.Logging
   */
 class UserService(userRepository: UserRepository,
                   tokenRepository: TokenRepository,
-                  secretKey: String)(implicit executionContext: ExecutionContext) extends Logging {
+                  secretKey: String)(implicit executionContext: ExecutionContext)
+    extends Logging {
 
   private[this] val expPeriod: Long = 2.hour.toMinutes
 
-  def signUp(email: String,
-             password: String,
-             name: String): Future[Either[ApiError, AuthToken]] =
+  def signUp(email: String, password: String, name: String): Future[Either[ApiError, AuthToken]] =
     userRepository
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
-        case Left(e)  => Future.successful(Left(new ApiError(Option(e))))
+        case Left(e)  => Future.successful(Left(ApiError(Option(e))))
         case Right(u) => createAndSaveToken(u, Boolean.box(true)).map(t => Right(t))
       }
 
@@ -48,7 +47,8 @@ class UserService(userRepository: UserRepository,
     val time = LocalDateTime.now()
     val expTime = time.plusMinutes(expPeriod)
     val token = JwtUtil.encode(AuthTokenContent(user.id), secretKey, Option(expTime))
-    val refreshToken = JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secretKey, None)
+    val refreshToken =
+      JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secretKey, None)
     AuthToken(token, refreshToken, expTime)
   }
 

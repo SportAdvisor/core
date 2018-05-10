@@ -23,7 +23,8 @@ import scala.concurrent.ExecutionContext
   */
 abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext)
     extends FailFastCirceSupport
-    with I18nService with Logging {
+    with I18nService
+    with Logging {
 
   private val emailDuplication = "Email address is already registered"
   private val emailInvalid = "Email is invalid"
@@ -60,7 +61,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         validatorDirective(entity, regValidator, this) { request =>
           complete(
             signUp(request.email, request.password, request.name).map {
-              case Left(e) => r(handleApiErrorOnSignUp(e, lang))
+              case Left(e)      => r(handleApiErrorOnSignUp(e, lang))
               case Right(token) => r(Response.objectResponse(token, None))
             }
           )
@@ -81,14 +82,15 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   private def handleApiErrorOnSignUp(err: ApiError, lang: String): Response = {
-    err.exception.map {
-      case DuplicateException() =>
-        Response.errorResponse(
-          List(FormError("email", errors(lang).t(emailDuplication))))
-      case e @ _ =>
-        e.error.foreach(t => log.warn("signUp error", t))
-        Response.failResponse(None)
-    }.fold(Response.failResponse(None))(r => r)
+    err.exception
+      .map {
+        case DuplicateException() =>
+          Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication))))
+        case e @ _ =>
+          e.error.foreach(t => log.warn("signUp error", t))
+          Response.failResponse(None)
+      }
+      .fold(Response.failResponse(None))(r => r)
   }
 
   private def r(response: Response): (StatusCode, Json) =

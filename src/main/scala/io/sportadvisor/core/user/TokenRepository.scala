@@ -16,8 +16,10 @@ trait TokenRepository {
   def getByUserId(userID: UserID) : Future[Seq[RefreshToken]]
 }
 
-class TokenRepositorySQL(val connector: DatabaseConnector)
-                        (implicit executionContext: ExecutionContext) extends TokenTable with TokenRepository {
+class TokenRepositorySQL(val connector: DatabaseConnector)(
+    implicit executionContext: ExecutionContext)
+    extends TokenTable
+    with TokenRepository {
 
   import connector._
   import connector.profile.api._

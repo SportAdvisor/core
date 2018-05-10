@@ -1,14 +1,16 @@
 package io.sportadvisor
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
 import io.sportadvisor.core.user.{TokenCleaner, TokenRepositorySQL, UserRepositorySQL, UserService}
 import io.sportadvisor.http.HttpRoute
 import io.sportadvisor.util.Config
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 /**
@@ -16,7 +18,7 @@ import scala.concurrent.duration._
   */
 object Application extends App {
 
-  def startApplication() = {
+  def startApplication(): Unit = {
     implicit val actorSystem: ActorSystem = ActorSystem()
     implicit val executor: ExecutionContext = actorSystem.dispatcher
     implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -43,7 +45,10 @@ object Application extends App {
     val tokenCleaner = new TokenCleaner(tokenRepository)
     actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
 
-    Http().bindAndHandle(httpRoute.route, config.http.host, config.http.port)
+    val clientRouteLogged =
+      DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
+    val _: Future[_] = Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
+    ()
   }
 
   startApplication()

@@ -1,6 +1,6 @@
 package io.sportadvisor
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.DebuggingDirectives
@@ -43,7 +43,8 @@ object Application extends App {
     val httpRoute = new HttpRoute(usersService)
 
     val tokenCleaner = new TokenCleaner(tokenRepository)
-    actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
+    val cancellable: Cancellable =
+      actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
 
     val clientRouteLogged =
       DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)

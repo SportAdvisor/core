@@ -1,7 +1,5 @@
 package io.sportadvisor.core.user
 
-import java.time.{Duration, LocalDateTime}
-
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 import java.time.LocalDateTime
 import scala.concurrent.duration._
@@ -22,7 +20,7 @@ class TokenRepositoryTest extends BaseTest {
 
     "save" should {
       "return token " in new Context {
-        val token: RefreshToken = awaitForResult(tokenRepository.save(RefreshToken(1L, "token", remember = true, LocalDateTime.now())))
+        val token: RefreshToken = awaitForResult(tokenRepository.save(RefreshToken(0L, "token", remember = true, LocalDateTime.now())))
         token should not be null
       }
     }

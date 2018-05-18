@@ -73,15 +73,15 @@ abstract class UserService(
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendChangeMailTokenToUser(user: UserData,
-                                  email: String,
-                                  redirectUrl: String): Future[Either[ApiError, Unit]] = {
+                                        email: String,
+                                        redirectUrl: String): Future[Either[ApiError, Unit]] = {
     val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
     val token =
       JwtUtil.encode(ChangeMailTokenContent(user.email, email), mailChangeSecret, Option(time))
     val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
-                   "user" -> user,
-                   "expAt" -> dateToString(time),
-                   "email" -> email)
+                                "user" -> user,
+                                "expAt" -> dateToString(time),
+                                "email" -> email)
     val body = mailService.mailRender.renderI18n("mails/mail-change.ssp", args, messages(user.lang))
     val subject = messages(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))

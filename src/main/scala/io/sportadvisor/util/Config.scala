@@ -6,7 +6,10 @@ import pureconfig.loadConfig
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-final case class Config(secretKey: String, http: HttpConfig, database: DatabaseConfig, mail: MailConfig)
+final case class Config(secretKey: String,
+                        http: HttpConfig,
+                        database: DatabaseConfig,
+                        mail: MailConfig)
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
 object Config {

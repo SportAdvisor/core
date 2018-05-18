@@ -91,7 +91,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           validatorDirective(req, changeMailValidator, this) { entity =>
             complete(
               changeEmail(userId, entity.email, entity.redirectUrl).map {
-                case Left(e) => r(handleApiErrorOnEmailDuplication(e, lang))
+                case Left(e)  => r(handleApiErrorOnEmailDuplication(e, lang))
                 case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
               }
             )

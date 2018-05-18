@@ -5,9 +5,9 @@ import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
-import io.sportadvisor.core.user.{MailChangesTokenRepositorySQL, TokenRepositorySQL, UserRepositorySQL, UserService}
+import io.sportadvisor.core.user._
 import io.sportadvisor.http.HttpRoute
-import io.sportadvisor.util.{Config, I18nServiceImpl}
+import io.sportadvisor.util.Config
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 import io.sportadvisor.util.mail.MailService
 

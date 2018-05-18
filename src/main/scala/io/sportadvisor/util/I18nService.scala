@@ -11,7 +11,7 @@ trait I18nService {
 
   def messages(lang: String): I18n
 
-  def mails(lang: String) : I18n
+  def mails(lang: String): I18n
 
 }
 

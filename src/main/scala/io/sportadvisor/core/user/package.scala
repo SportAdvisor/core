@@ -23,7 +23,8 @@ package object user {
   }
 
   final case class CreateUser(email: String, password: String, name: String) extends User
-  final case class UserData(id: UserID, email: String, password: String, name: String) extends User {
+  final case class UserData(id: UserID, email: String, password: String, name: String)
+      extends User {
     def lang: String = "ru"
   }
 

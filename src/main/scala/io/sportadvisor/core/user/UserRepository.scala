@@ -7,7 +7,6 @@ import io.sportadvisor.util.db.DatabaseConnector
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import scala.io
 
 /**
   * @author sss3 (Vladimir Alekseev)

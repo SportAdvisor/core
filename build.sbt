@@ -6,6 +6,8 @@ lazy val commonSettings = Seq(
 name := "SportAdvisor-Core"
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
+resolvers += "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
+
 val akkaHttpV = "10.0.11"
 val scalaTestV = "3.0.4"
 val slickVersion = "3.2.1"
@@ -51,15 +53,20 @@ val loggingDependencies = Seq(
   "ch.qos.logback" % "logback-classic" % "1.3.0-alpha4"
 )
 
+val mailDependencies = Seq(
+  "ch.lightshed" %% "courier" % "0.1.4",
+  "org.scalatra.scalate" %% "scalate-core" % "1.8.0"
+)
+
 val dependencies = Seq(
   "com.roundeights" %% "hasher" % "1.2.0",
   "com.pauldijou" %% "jwt-core" % "0.14.0",
   "com.github.pureconfig" %% "pureconfig" % "0.9.0",
   "com.wix" %% "accord-core" % "0.7.1",
-  "tv.cntt" %% "scaposer" % "1.10",
+  "tv.cntt" %% "scaposer" % "1.10"
 )
 
-libraryDependencies ++= dependencies ++ akkaDependencies ++ dbDependencies ++ circeDependencies ++ testDependencies ++ loggingDependencies
+libraryDependencies ++= dependencies ++ akkaDependencies ++ dbDependencies ++ circeDependencies ++ testDependencies ++ loggingDependencies ++ mailDependencies
 mainClass in assembly := Some("io.sportadvisor.Application")
 test in assembly := {}
 assemblyJarName in assembly := "sportadvisor-api.jar"

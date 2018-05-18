@@ -17,6 +17,10 @@ package object exception {
     override def error: Option[Throwable] = Option(err)
   }
 
+  final case class UserNotFound() extends SAException {
+    override def error: Option[Throwable] = None
+  }
+
   final case class ApiError(exception: Option[SAException])
 
 }

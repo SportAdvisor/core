@@ -1,0 +1,12 @@
+<%@ val i18n:io.sportadvisor.util.i18n.I18n%>
+<%@ val user:io.sportadvisor.core.user.UserData %>
+<%@ val redirect: String %>
+<%@ val expAt: String %>
+<%@ val email: String %>
+
+<h2>${i18n.t("Hello, %s!", user.name)}</h2>
+<br/>
+${i18n.t("You change email from %s to %s.", user.email, email)}
+${i18n.t("For approval click to")} <a href="${redirect}">${i18n.t("link")}</a>.
+${i18n.t("Link is active up to %s.", expAt)}
+${i18n.t("If you did not initiate a change of email, please contact support:")} <a href="mailto:support@sportadvisor.io">support@sportadvisor.io</a>

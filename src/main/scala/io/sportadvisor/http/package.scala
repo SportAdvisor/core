@@ -8,6 +8,8 @@ import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 import io.circe.syntax._
+import io.sportadvisor.core.user.{AuthTokenContent, UserID}
+import io.sportadvisor.util.{I18nService, JwtUtil}
 import io.sportadvisor.util.i18n.I18n
 
 /**
@@ -17,6 +19,7 @@ package object http extends FailFastCirceSupport {
 
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._
+  import akka.http.scaladsl.server.directives.HeaderDirectives._
 
   final case class ValidationError(errors: List[FormError]) extends Rejection
   final case class ValidationResult(field: String, msgId: String) {
@@ -24,6 +27,8 @@ package object http extends FailFastCirceSupport {
       FormError(field, i18n.t(msgId))
     }
   }
+
+  val authorizationHeader = "Authorization"
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case _: Throwable => complete(StatusCodes.InternalServerError -> Response.failResponse(None))
@@ -34,6 +39,9 @@ package object http extends FailFastCirceSupport {
     .handle {
       case ValidationError(errors) =>
         complete((StatusCodes.BadRequest, Response.errorResponse(errors).asJson))
+      case AuthorizationFailedRejection =>
+        complete(
+          (StatusCodes.Unauthorized, Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
     }
     .result()
     .withFallback(RejectionHandler.default)
@@ -72,6 +80,17 @@ package object http extends FailFastCirceSupport {
         .find(l => l.matches(pickLanguage))
         .map(l => l.primaryTag)
         .getOrElse("en")
+    }
+  }
+
+  def authenticate(secretKey: String): Directive1[UserID] = {
+    optionalHeaderValueByName(authorizationHeader).flatMap {
+      case Some(token) =>
+        JwtUtil.decode[AuthTokenContent](token, secretKey) match {
+          case Some(r) => provide(r.userID)
+          case _       => reject(AuthorizationFailedRejection)
+        }
+      case None => reject(AuthorizationFailedRejection)
     }
   }
 

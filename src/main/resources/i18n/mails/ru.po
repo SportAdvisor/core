@@ -1,0 +1,28 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Your Name <email@example.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, %s!"
+msgstr "Привет, %s!"
+
+msgid "You change email from %s to %s."
+msgstr "Вы изменили электронную почту с %s на %s."
+
+msgid "For approval click to"
+msgstr "Для подверждения нажмите на"
+
+msgid "link"
+msgstr "ссылку"
+
+msgid "Link is active up to %s."
+msgstr "ссылка активна до %s."
+
+msgid "If you did not initiate a change of email, please contact support:"
+msgstr "Если вы не меняли электронную почту - обратитесь в службу поддержки:"

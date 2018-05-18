@@ -5,10 +5,11 @@ import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
-import io.sportadvisor.core.user.{TokenRepositorySQL, UserRepositorySQL, UserService}
+import io.sportadvisor.core.user.{MailChangesTokenRepositorySQL, TokenRepositorySQL, UserRepositorySQL, UserService}
 import io.sportadvisor.http.HttpRoute
-import io.sportadvisor.util.Config
+import io.sportadvisor.util.{Config, I18nServiceImpl}
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
+import io.sportadvisor.util.mail.MailService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,15 +31,18 @@ object Application extends App {
       config.database.password
     ).migrateDatabaseSchema()
 
-    val databaseConnector = new DatabaseConnector(
+    implicit val databaseConnector: DatabaseConnector = new DatabaseConnector(
       config.database.jdbcUrl,
       config.database.username,
       config.database.password
     )
 
+    val mailService = MailService(config.mail)
+
     val userRepository = new UserRepositorySQL(databaseConnector)
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
-    val usersService = new UserService(userRepository, tokenRepository, config.secretKey)
+    val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
+    val usersService = UserService(config, databaseConnector, mailService)
     val httpRoute = new HttpRoute(usersService)
 
     val clientRouteLogged =

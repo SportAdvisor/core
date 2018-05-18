@@ -1,19 +1,19 @@
-package io.sportadvisor.http.route
+package io.sportadvisor.http.route.user
 
 import akka.http.scaladsl.model.{StatusCode, StatusCodes}
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.{entity, _}
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Decoder, Json}
 import io.circe.syntax._
-import io.circe.generic.semiauto._
+import io.circe.Json
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http
-import io.sportadvisor.http.I18nService
 import io.sportadvisor.http.Response.{FormError, Response}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
+import io.sportadvisor.http.route.user.UserRouteValidators._
+import io.sportadvisor.util.I18nService
 import org.slf4s.Logging
 
 import scala.concurrent.ExecutionContext
@@ -27,13 +27,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     with Logging {
 
   private val emailDuplication = "Email address is already registered"
-  private val emailInvalid = "Email is invalid"
-  private val nameIsEmpty = "Name is required"
-  private val passwordIsWeak =
-    "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
 
-  import userService._
   import http._
+  import userService._
+  import UserRouteProtocol._
 
   val route: Route = pathPrefix("users") {
     handleExceptions(exceptionHandler) {
@@ -50,6 +47,12 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               handleSignIn()
             }
           }
+        } ~ path("email") {
+          pathEndOrSingleSlash {
+            put {
+              handleChangeEmail()
+            }
+          }
         }
       }
     }
@@ -61,7 +64,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         validatorDirective(entity, regValidator, this) { request =>
           complete(
             signUp(request.email, request.password, request.name).map {
-              case Left(e)      => r(handleApiErrorOnSignUp(e, lang))
+              case Left(e)      => r(handleApiErrorOnEmailDuplication(e, lang))
               case Right(token) => r(Response.objectResponse(token, None))
             }
           )
@@ -81,7 +84,24 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private def handleApiErrorOnSignUp(err: ApiError, lang: String): Response = {
+  def handleChangeEmail(): Route = {
+    entity(as[EmailChange]) { req =>
+      authenticate(userService.secret) { userId =>
+        selectLanguage() { lang =>
+          validatorDirective(req, changeMailValidator, this) { entity =>
+            complete(
+              changeEmail(userId, entity.email, entity.redirectUrl).map {
+                case Left(e) => r(handleApiErrorOnEmailDuplication(e, lang))
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+            )
+          }
+        }
+      }
+    }
+  }
+
+  private def handleApiErrorOnEmailDuplication(err: ApiError, lang: String): Response = {
     err.exception
       .map {
         case DuplicateException() =>
@@ -96,29 +116,4 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def r(response: Response): (StatusCode, Json) =
     StatusCode.int2StatusCode(response.code) -> response.asJson
 
-  case class UsernamePasswordEmail(name: String, email: String, password: String)
-
-  case class EmailPassword(email: String, password: String, remember: Boolean)
-
-  private implicit val regValidator: Validator[UsernamePasswordEmail] =
-    Validator[UsernamePasswordEmail](
-      u => if (u.name.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None,
-      u => {
-        if (!u.email.matches(".+@.+\\..+")) {
-          Some(ValidationResult("email", emailInvalid))
-        } else {
-          None
-        }
-      },
-      u => {
-        if (!u.password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")) {
-          Some(ValidationResult("password", passwordIsWeak))
-        } else {
-          None
-        }
-      }
-    )
-
-  implicit val userNamePasswordDecoder: Decoder[UsernamePasswordEmail] = deriveDecoder
-  implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
 }

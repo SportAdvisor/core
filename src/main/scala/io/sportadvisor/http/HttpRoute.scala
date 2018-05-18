@@ -5,7 +5,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import io.sportadvisor.core.user.UserService
-import io.sportadvisor.http.route.UserRoute
+import io.sportadvisor.http.route.user.UserRoute
+import io.sportadvisor.util.I18nServiceImpl
 
 import scala.concurrent.ExecutionContext
 

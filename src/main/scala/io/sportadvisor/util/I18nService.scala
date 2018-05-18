@@ -1,4 +1,4 @@
-package io.sportadvisor.http
+package io.sportadvisor.util
 
 import io.sportadvisor.util.i18n.{I18n, I18nImpl}
 
@@ -11,6 +11,8 @@ trait I18nService {
 
   def messages(lang: String): I18n
 
+  def mails(lang: String) : I18n
+
 }
 
 trait I18nServiceImpl extends I18nService {
@@ -18,5 +20,7 @@ trait I18nServiceImpl extends I18nService {
   override def errors(lang: String): I18n = new I18nImpl(lang, "error")
 
   override def messages(lang: String): I18n = new I18nImpl(lang, "messages")
+
+  override def mails(lang: String): I18n = new I18nImpl(lang, "mails")
 
 }

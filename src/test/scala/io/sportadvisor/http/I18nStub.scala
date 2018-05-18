@@ -1,5 +1,6 @@
 package io.sportadvisor.http
 
+import io.sportadvisor.util.I18nService
 import io.sportadvisor.util.i18n.I18n
 
 /**
@@ -10,6 +11,8 @@ trait I18nStub extends I18nService {
   override def errors(lang: String): I18n = new StubI18n(lang)
 
   override def messages(lang: String): I18n = new StubI18n(lang)
+
+  override def mails(lang: String): I18n = new StubI18n(lang)
 
 }
 

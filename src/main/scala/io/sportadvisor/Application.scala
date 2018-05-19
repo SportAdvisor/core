@@ -1,6 +1,6 @@
 package io.sportadvisor
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.DebuggingDirectives
@@ -12,6 +12,7 @@ import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 import io.sportadvisor.util.mail.MailService
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -44,6 +45,10 @@ object Application extends App {
     val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
     val usersService = UserService(config, databaseConnector, mailService)
     val httpRoute = new HttpRoute(usersService)
+
+    val tokenCleaner = new TokenCleaner(tokenRepository)
+    val cancellable: Cancellable =
+      actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
 
     val clientRouteLogged =
       DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)

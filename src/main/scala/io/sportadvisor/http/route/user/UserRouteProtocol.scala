@@ -11,8 +11,10 @@ object UserRouteProtocol {
   final case class UsernamePasswordEmail(name: String, email: String, password: String)
   final case class EmailChange(email: String, redirectUrl: String)
   final case class EmailPassword(email: String, password: String, remember: Boolean)
+  final case class EmailToken(token: String)
 
   implicit val userNamePasswordDecoder: Decoder[UsernamePasswordEmail] = deriveDecoder
   implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
   implicit val emailChangeDecoder: Decoder[EmailChange] = deriveDecoder
+  implicit val emailTokenDecoder: Decoder[EmailToken] = deriveDecoder
 }

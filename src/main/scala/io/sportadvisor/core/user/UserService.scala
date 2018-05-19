@@ -4,19 +4,22 @@ import java.time.LocalDateTime
 import java.util.Date
 
 import com.roundeights.hasher.Implicits._
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.sportadvisor.core.user.UserService._
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import org.slf4s.Logging
-
 import io.sportadvisor.util.MonadTransformers._
 import io.sportadvisor.util.db.DatabaseConnector
 import io.sportadvisor.util.i18n.I18n
-import io.sportadvisor.util.mail.{MailService, _}
+import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
 import io.sportadvisor.util._
 import io.sportadvisor.core.user._
+
+import scala.util.Success
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -26,12 +29,11 @@ abstract class UserService(
     tokenRepository: TokenRepository,
     secretKey: String,
     mailService: MailService[I18n, Throwable, _],
-    mailTokenService: MailChangesTokenRepository)(implicit executionContext: ExecutionContext)
+    mailTokenRepository: MailChangesTokenRepository)(implicit executionContext: ExecutionContext)
     extends Logging
     with I18nService {
 
   private[this] val expPeriod = 2.hour
-  private[this] val mailChangeSecret = this.secret.toUpperCase.reverse
   private[this] val mailChangeExpPeriod = 1.day
 
   def secret: String = secretKey
@@ -59,6 +61,25 @@ abstract class UserService(
     }
   }
 
+  def approvalChangeEmail(token: String): Future[Boolean] = {
+    mailTokenRepository
+      .get(token)
+      .flatMapTInner(t => encodeChangeEmailToken(t.token, secret))
+      .flatMapT { t =>
+        userRepository
+          .find(t.from)
+          .mapT(u => u.copy(email = t.to))
+          .flatMapTOuter(u => userRepository.save(u))
+          .flatMapTInner(e => e.toOption)
+          .flatMapTOuter(u => sendChangeEmailMail(u, t.from).map(_ => u))
+          .flatMapTOuter(u => tokenRepository.removeByUser(u.id).transform(_ => Success(u)))
+      }
+      .map {
+        case Some(_) => true
+        case None    => false
+      }
+  }
+
   private def sendChangeMailToken(userID: UserID,
                                   email: String,
                                   redirectUrl: String): Future[Either[ApiError, Unit]] = {
@@ -76,18 +97,17 @@ abstract class UserService(
                                         email: String,
                                         redirectUrl: String): Future[Either[ApiError, Unit]] = {
     val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
-    val token =
-      JwtUtil.encode(ChangeMailTokenContent(user.email, email), mailChangeSecret, Option(time))
+    val token = generateChangeEmailToken(user.email, email, secret, time)
     val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
                                 "user" -> user,
                                 "expAt" -> dateToString(time),
                                 "email" -> email)
-    val body = mailService.mailRender.renderI18n("mails/mail-change.ssp", args, messages(user.lang))
-    val subject = messages(user.lang).t("Change email on SportAdvisor")
+    val body = mailService.mailRender.renderI18n("mails/mail-change.ssp", args, mails(user.lang))
+    val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
     mailService.mailSender.send(msg).flatMap {
       case Left(t)  => Future.successful(Left(ApiError(Option(UnhandledException(t)))))
-      case Right(_) => mailTokenService.save(ChangeMailToken(token, time)).map(_ => Right())
+      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right())
     }
   }
 
@@ -121,12 +141,30 @@ abstract class UserService(
     tokenRepository.save(RefreshToken(user.id, refreshToken, remember, creation))
   }
 
-  private final case class ChangeMailTokenContent(from: String, to: String)
-  private implicit val changeMailTokenContentEncoder: Encoder[ChangeMailTokenContent] =
-    deriveEncoder
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  private def sendChangeEmailMail(user: UserData,
+                                  oldEmail: String): Future[Either[ApiError, Unit]] = {
+    val args = Map[String, Any]("user" -> user, "oldEmail" -> oldEmail)
+    val body =
+      mailService.mailRender.renderI18n("mails/mail-change-approve.ssp", args, mails(user.lang))
+    val subject = mails(user.lang).t("Change email on SportAdvisor")
+    val msg = MailMessage(List(oldEmail), List(), List(user.email), subject, HtmlContent(body))
+    mailService.mailSender.send(msg).map {
+      case Left(t)  => Left(ApiError(Option(UnhandledException(t))))
+      case Right(_) => Right(())
+    }
+  }
+
 }
 
 object UserService {
+
+  private[user] final case class ChangeMailTokenContent(from: String, to: String)
+  private implicit val changeMailTokenContentEncoder: Encoder[ChangeMailTokenContent] =
+    deriveEncoder
+  private implicit val changeMailTokenContentDecoder: Decoder[ChangeMailTokenContent] =
+    deriveDecoder
+
   def apply(config: Config,
             databaseConnector: DatabaseConnector,
             mailService: MailService[I18n, Throwable, Unit])(
@@ -140,4 +178,14 @@ object UserService {
                     mailService,
                     mailTokenRepository) with I18nServiceImpl
   }
+
+  private[user] def generateChangeEmailToken(from: String,
+                                             to: String,
+                                             secret: String,
+                                             exp: LocalDateTime): String =
+    JwtUtil.encode(ChangeMailTokenContent(from, to), secret, Option(exp))
+
+  private[user] def encodeChangeEmailToken(token: String,
+                                           secret: String): Option[ChangeMailTokenContent] =
+    JwtUtil.decode[ChangeMailTokenContent](token, secret)
 }

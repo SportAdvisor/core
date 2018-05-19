@@ -51,6 +51,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           pathEndOrSingleSlash {
             put {
               handleChangeEmail()
+            } ~ post {
+              handleApprovalChangeEmail()
             }
           }
         }
@@ -98,6 +100,18 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           }
         }
       }
+    }
+  }
+
+  def handleApprovalChangeEmail(): Route = {
+    entity(as[EmailToken]) { entity =>
+      complete(
+        approvalChangeEmail(entity.token).map { res =>
+          r(
+            Response.emptyResponse(
+              if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))
+        }
+      )
     }
   }
 

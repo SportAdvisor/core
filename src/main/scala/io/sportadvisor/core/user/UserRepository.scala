@@ -34,7 +34,8 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   override def find(email: String): Future[Option[UserData]] =
     db.run(users.filter(u => u.email === email).take(1).result.headOption)
 
-  override def get(userID: UserID): Future[Option[UserData]] = Future.successful(None)
+  override def get(userID: UserID): Future[Option[UserData]] =
+    db.run(users.filter(u => u.id === userID).take(1).result.headOption)
 
   private val insertQuery = users returning users.map(_.id) into ((user, id) => user.copy(id = id))
 

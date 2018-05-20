@@ -87,3 +87,4 @@ wartremoverErrors in (Compile, compile) ++= Seq(Wart.FinalCaseClass,
 wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Nothing,
                                                            Wart.ImplicitParameter,
                                                            Wart.PublicInference)
+coverageEnabled in Test := true

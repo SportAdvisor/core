@@ -66,7 +66,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         validatorDirective(entity, regValidator, this) { request =>
           complete(
             signUp(request.email, request.password, request.name).map {
-              case Left(e)      => r(handleApiErrorOnEmailDuplication(e, lang))
+              case Left(e)      => r(handleApiError(e, lang))
               case Right(token) => r(Response.objectResponse(token, None))
             }
           )
@@ -93,7 +93,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           validatorDirective(req, changeMailValidator, this) { entity =>
             complete(
               changeEmail(userId, entity.email, entity.redirectUrl).map {
-                case Left(e)  => r(handleApiErrorOnEmailDuplication(e, lang))
+                case Left(e)  => r(handleApiError(e, lang))
                 case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
               }
             )
@@ -115,13 +115,13 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private def handleApiErrorOnEmailDuplication(err: ApiError, lang: String): Response = {
+  private def handleApiError(err: ApiError, lang: String): Response = {
     err.exception
       .map {
         case DuplicateException() =>
           Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication))))
         case e @ _ =>
-          e.error.foreach(t => log.warn("signUp error", t))
+          e.error.foreach(t => log.warn("API ERROR", t))
           Response.failResponse(None)
       }
       .fold(Response.failResponse(None))(r => r)

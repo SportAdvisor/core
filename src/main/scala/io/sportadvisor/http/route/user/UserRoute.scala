@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import io.circe.Json
-import io.sportadvisor.core.user.UserService
+import io.sportadvisor.core.user.{UserID, UserService}
 import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http
 import io.sportadvisor.http.Response.{FormError, Response}
@@ -36,24 +36,22 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
         path("sign-up") {
-          pathEndOrSingleSlash {
-            post {
-              handleSignUp()
-            }
+          post {
+            handleSignUp()
           }
         } ~ path("sign-in") {
-          pathEndOrSingleSlash {
-            post {
-              handleSignIn()
+          post {
+            handleSignIn()
+          }
+        } ~ pathPrefix(LongNumber) { userId =>
+          path("email") {
+            put {
+              handleChangeEmail(userId)
             }
           }
-        } ~ path("email") {
-          pathEndOrSingleSlash {
-            put {
-              handleChangeEmail()
-            } ~ post {
-              handleApprovalChangeEmail()
-            }
+        } ~ path("email-approve") {
+          post {
+            handleApprovalChangeEmail()
           }
         }
       }
@@ -86,17 +84,19 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleChangeEmail(): Route = {
+  def handleChangeEmail(id: UserID): Route = {
     entity(as[EmailChange]) { req =>
       authenticate(userService.secret) { userId =>
-        selectLanguage() { lang =>
-          validatorDirective(req, changeMailValidator, this) { entity =>
-            complete(
-              changeEmail(userId, entity.email, entity.redirectUrl).map {
-                case Left(e)  => r(handleApiError(e, lang))
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-              }
-            )
+        checkAccess(id, userId) {
+          selectLanguage() { lang =>
+            validatorDirective(req, changeMailValidator, this) { entity =>
+              complete(
+                changeEmail(userId, entity.email, entity.redirectUrl).map {
+                  case Left(e)  => r(handleApiError(e, lang))
+                  case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+                }
+              )
+            }
           }
         }
       }

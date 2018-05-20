@@ -44,7 +44,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
     case u @ UserData(_, _, _, _) => updateUser(u)
   }
 
-  override def remove(userID: UserID): Future[Option[UserData]] = Future.successful(None)
+  override def remove(userID: UserID): Future[Option[UserData]] = ???
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def createUser(u: CreateUser): Future[Either[SAException, UserData]] = {

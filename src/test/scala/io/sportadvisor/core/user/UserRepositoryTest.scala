@@ -32,6 +32,19 @@ class UserRepositoryTest extends BaseTest {
         updatedUser.id shouldEqual user.id
       }
     }
+
+    "get" should {
+      "return Some(user)" in new Context {
+        val id: UserID = awaitForResult(userRepository.save(CreateUser("some", "some", "some"))).right.get.id
+        val maybeData: Option[UserData] = awaitForResult(userRepository.get(id))
+        maybeData.isDefined shouldBe true
+        maybeData.get.email shouldEqual "some"
+      }
+
+      "return None" in new Context {
+        awaitForResult(userRepository.get(Long.MaxValue - 100)).isDefined shouldBe false
+      }
+    }
   }
 
 

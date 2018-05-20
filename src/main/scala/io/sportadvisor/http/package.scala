@@ -1,6 +1,6 @@
 package io.sportadvisor
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.model.headers.Language
 import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -27,6 +27,12 @@ package object http extends FailFastCirceSupport {
       FormError(field, i18n.t(msgId))
     }
   }
+  trait SARejection extends Rejection {
+    def code: StatusCode
+  }
+  final case class Forbidden() extends SARejection {
+    override def code: StatusCode = StatusCodes.Forbidden
+  }
 
   val authorizationHeader = "Authorization"
 
@@ -42,6 +48,8 @@ package object http extends FailFastCirceSupport {
       case AuthorizationFailedRejection =>
         complete(
           (StatusCodes.Unauthorized, Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
+      case rejection: SARejection =>
+        complete(rejection.code, Response.emptyResponse(rejection.code.intValue()))
     }
     .result()
     .withFallback(RejectionHandler.default)
@@ -91,6 +99,15 @@ package object http extends FailFastCirceSupport {
           case _       => reject(AuthorizationFailedRejection)
         }
       case None => reject(AuthorizationFailedRejection)
+    }
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  def checkAccess(pathId: UserID, fromToken: UserID): Directive0 = {
+    if (pathId == fromToken) {
+      pass
+    } else {
+      reject(Forbidden())
     }
   }
 

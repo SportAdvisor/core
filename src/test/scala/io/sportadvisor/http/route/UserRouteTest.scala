@@ -137,13 +137,13 @@ class UserRouteTest extends BaseTest {
       }
     }
 
-    "PUT /users/email" should {
+    "PUT /users/{id}/email" should {
       "return 400 if email is exists" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(ApiError(Option(DuplicateException())))))
-        Put("/users/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("email", "Email address is already registered")) and have size 1)
@@ -155,7 +155,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "testtest.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(ApiError(Option(DuplicateException())))))
-        Put("/users/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("email", "Email is invalid")) and have size 1)
@@ -165,7 +165,7 @@ class UserRouteTest extends BaseTest {
       "return 401 if user unauthorized" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "testtest.com", "redirectUrl":"test"}""")
-        Put("/users/email", requestEntity) ~> userRoute ~> check {
+        Put(s"/users/$testUserId/email", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
           response.status.intValue shouldBe StatusCodes.Unauthorized.intValue
@@ -177,7 +177,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Right()))
-        Put("/users/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -188,7 +188,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(ApiError(Option(UserNotFound())))))
-        Put("/users/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500
         }
@@ -199,7 +199,7 @@ class UserRouteTest extends BaseTest {
       "return 200 if change success" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"token":"test"}""")
         when(userService.approvalChangeEmail("test")).thenReturn(Future.successful(true))
-        Post("/users/email", requestEntity) ~> userRoute ~> check {
+        Post("/users/email-approve", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -208,7 +208,7 @@ class UserRouteTest extends BaseTest {
       "return 400 if token invalid" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"token":"test"}""")
         when(userService.approvalChangeEmail("test")).thenReturn(Future.successful(false))
-        Post("/users/email", requestEntity) ~> userRoute ~> check {
+        Post("/users/email-approve", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 400
         }

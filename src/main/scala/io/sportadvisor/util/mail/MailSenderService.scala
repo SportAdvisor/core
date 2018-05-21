@@ -1,8 +1,8 @@
 package io.sportadvisor.util.mail
 
-import courier.{Envelope, Mailer, Text}
+import courier.{Content, Envelope, Mailer, Multipart, Text}
 import io.sportadvisor.util.Config.MailConfig
-import javax.mail.internet.InternetAddress
+import javax.mail.internet.{InternetAddress, MimeBodyPart}
 import org.slf4s.Logging
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,13 +30,18 @@ class CourierMailSenderService(val smtp: String,
     .startTtls(true)()
 
   override def send(mail: MailMessage): Future[Either[Throwable, Unit]] = {
+    val content: Content = mail.content match {
+      case RawContent(t)  => Text(t)
+      case HtmlContent(h) => html(h)
+    }
+
     val envelope = Envelope
       .from(new InternetAddress(user))
       .to(mapAddresses(mail.to): _*)
       .cc(mapAddresses(mail.cc): _*)
       .bcc(mapAddresses(mail.bcc): _*)
       .subject(mail.subject)
-      .content(Text(mail.content.content))
+      .content(content)
     mailer(envelope).transform(expand())
   }
 
@@ -51,6 +56,12 @@ class CourierMailSenderService(val smtp: String,
     case Success(v) => Success(Right(v))
   }
 
+  private def html(str: String): Content = {
+    val part = new MimeBodyPart {
+      setContent(str, "text/html; charset=utf-8")
+    }
+    Multipart().add(part)
+  }
 }
 
 object CourierMailSenderService {

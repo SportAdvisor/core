@@ -19,7 +19,7 @@ msgid "You change email from %s to %s."
 msgstr "Вы изменили электронную почту с %s на %s."
 
 msgid "For approval click to"
-msgstr "Для подверждения нажмите на"
+msgstr "Для подтверждения нажмите на"
 
 msgid "link"
 msgstr "ссылку"

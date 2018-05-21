@@ -76,6 +76,20 @@ class DirectivesTest extends BaseTest {
     }
   }
 
+  "check access" should {
+    "reject 403" in new Context {
+      Get("/access/2").withHeaders(authHeader(1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
+        r[EmptyResponse].code shouldBe 403
+      }
+    }
+
+    "return true" in new Context {
+      Get("/access/1").withHeaders(authHeader(1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
+        r[Boolean] shouldBe true
+      }
+    }
+  }
+
   def langHeader(locale: Option[String], langs: Lang*): HttpHeader = {
     val language = langs.map(l => l._1 + ";q=" + l._2).mkString(", ")
     val headerValue = (locale.map(l => l + ", ") getOrElse "") + language
@@ -101,6 +115,16 @@ class DirectivesTest extends BaseTest {
         handleRejections(rejectionHandler) {
           authenticate(secretKey) { userId =>
             complete(userId)
+          }
+        }
+      }
+    }
+
+    val checkAccessRoute: Route = path("access" / LongNumber) { id =>
+      handleRejections(rejectionHandler) {
+        authenticate(secretKey) { userId =>
+          checkAccess(id, userId) {
+            complete(id == userId)
           }
         }
       }

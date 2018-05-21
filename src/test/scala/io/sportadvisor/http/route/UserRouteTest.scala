@@ -172,6 +172,15 @@ class UserRouteTest extends BaseTest {
         }
       }
 
+      "return 403" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        Put(s"/users/1$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 403
+        }
+      }
+
       "return 200 if all success" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")

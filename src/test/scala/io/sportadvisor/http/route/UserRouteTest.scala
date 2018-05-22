@@ -207,8 +207,8 @@ class UserRouteTest extends BaseTest {
     "POST /users/email" should {
       "return 200 if change success" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"token":"test"}""")
-        when(userService.approvalChangeEmail("test")).thenReturn(Future.successful(true))
-        Post("/users/email-approve", requestEntity) ~> userRoute ~> check {
+        when(userService.confirmEmail("test")).thenReturn(Future.successful(true))
+        Post("/users/email-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -216,8 +216,8 @@ class UserRouteTest extends BaseTest {
 
       "return 400 if token invalid" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"token":"test"}""")
-        when(userService.approvalChangeEmail("test")).thenReturn(Future.successful(false))
-        Post("/users/email-approve", requestEntity) ~> userRoute ~> check {
+        when(userService.confirmEmail("test")).thenReturn(Future.successful(false))
+        Post("/users/email-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 400
         }

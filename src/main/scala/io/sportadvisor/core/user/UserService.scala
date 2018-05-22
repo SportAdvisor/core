@@ -57,11 +57,17 @@ abstract class UserService(
                   redirectUrl: String): Future[Either[ApiError, Unit]] = {
     userRepository.find(email).flatMap {
       case Some(_) => Future.successful(Left(ApiError(Option(new DuplicateException))))
-      case None    => sendChangeMailToken(userID, email, redirectUrl)
+      case None =>
+        userRepository
+          .get(userID)
+          .flatMap {
+            case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
+            case None    => Future.successful(Left(ApiError(Option(UserNotFound()))))
+          }
     }
   }
 
-  def approvalChangeEmail(token: String): Future[Boolean] = {
+  def confirmEmail(token: String): Future[Boolean] = {
     mailTokenRepository
       .get(token)
       .flatMapTInner(t => encodeChangeEmailToken(t.token, secret))
@@ -71,7 +77,7 @@ abstract class UserService(
           .mapT(u => u.copy(email = t.to))
           .flatMapTOuter(u => userRepository.save(u))
           .flatMapTInner(e => e.toOption)
-          .flatMapTOuter(u => sendChangeEmailMail(u, t.from).map(_ => u))
+          .flatMapTOuter(u => sendChangeEmailConfirmation(u, t.from).map(_ => u))
           .flatMapTOuter(u => tokenRepository.removeByUser(u.id).transform(_ => Success(u)))
       }
       .map {
@@ -80,22 +86,10 @@ abstract class UserService(
       }
   }
 
-  private def sendChangeMailToken(userID: UserID,
-                                  email: String,
-                                  redirectUrl: String): Future[Either[ApiError, Unit]] = {
-    userRepository
-      .get(userID)
-      .flatMap {
-        case Some(u) => sendChangeMailTokenToUser(u, email, redirectUrl)
-        case None    => Future.successful(Left(ApiError(Option(UserNotFound()))))
-      }
-
-  }
-
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  private def sendChangeMailTokenToUser(user: UserData,
-                                        email: String,
-                                        redirectUrl: String): Future[Either[ApiError, Unit]] = {
+  private def sendRequestOfChangeEmail(user: UserData,
+                                       email: String,
+                                       redirectUrl: String): Future[Either[ApiError, Unit]] = {
     val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
     val token = generateChangeEmailToken(user.email, email, secret, time)
     val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
@@ -142,11 +136,11 @@ abstract class UserService(
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  private def sendChangeEmailMail(user: UserData,
-                                  oldEmail: String): Future[Either[ApiError, Unit]] = {
+  private def sendChangeEmailConfirmation(user: UserData,
+                                          oldEmail: String): Future[Either[ApiError, Unit]] = {
     val args = Map[String, Any]("user" -> user, "oldEmail" -> oldEmail)
     val body =
-      mailService.mailRender.renderI18n("mails/mail-change-approve.ssp", args, mails(user.lang))
+      mailService.mailRender.renderI18n("mails/mail-change-confirm.ssp", args, mails(user.lang))
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(oldEmail), List(), List(user.email), subject, HtmlContent(body))
     mailService.mailSender.send(msg).map {

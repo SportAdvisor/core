@@ -49,9 +49,9 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               handleChangeEmail(userId)
             }
           }
-        } ~ path("email-approve") {
+        } ~ path("email-confirm") {
           post {
-            handleApprovalChangeEmail()
+            handleConfirmEmail()
           }
         }
       }
@@ -103,10 +103,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleApprovalChangeEmail(): Route = {
+  def handleConfirmEmail(): Route = {
     entity(as[EmailToken]) { entity =>
       complete(
-        approvalChangeEmail(entity.token).map { res =>
+        confirmEmail(entity.token).map { res =>
           r(
             Response.emptyResponse(
               if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))

@@ -114,13 +114,13 @@ class UserServiceTest extends BaseTest {
     "approvalChangeEmail" should {
       "return false if token not found" in new Context {
         when(mailChangesTokenRepository.get("test")).thenReturn(Future.successful(None))
-        awaitForResult(userService.approvalChangeEmail("test")) shouldBe false
+        awaitForResult(userService.confirmEmail("test")) shouldBe false
       }
 
       "return false if token is invalid" in new Context {
         when(mailChangesTokenRepository.get("test"))
           .thenReturn(Future.successful(Some(ChangeMailToken("test", LocalDateTime.now()))))
-        awaitForResult(userService.approvalChangeEmail("test")) shouldBe false
+        awaitForResult(userService.confirmEmail("test")) shouldBe false
       }
 
       "return false if token expired" in new Context {
@@ -128,7 +128,7 @@ class UserServiceTest extends BaseTest {
         val token: String = UserService.generateChangeEmailToken("test", "test", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
-        awaitForResult(userService.approvalChangeEmail(token)) shouldBe false
+        awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
 
       "return false is user not found" in new Context {
@@ -137,7 +137,7 @@ class UserServiceTest extends BaseTest {
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
         when(userRepository.find("test")).thenReturn(Future.successful(None))
-        awaitForResult(userService.approvalChangeEmail(token)) shouldBe false
+        awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
 
       "return 200 if all success" in new Context {
@@ -146,12 +146,12 @@ class UserServiceTest extends BaseTest {
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
         when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", ""))))
-        when(render.renderI18n(Matchers.eq("mails/mail-change-approve.ssp"), any[Map[String, Any]](), any[I18n]()))
+        when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right()))
         when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", ""))))
         when(tokenRepository.removeByUser(any[UserID]())).thenReturn(Future.successful(()))
-        awaitForResult(userService.approvalChangeEmail(token)) shouldBe true
+        awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
 
       "return 200 if remove tokens return error" in new Context {
@@ -161,7 +161,7 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
         when(userRepository.find("test"))
           .thenReturn(Future.successful(Some(UserData(1L, "test", "", ""))))
-        when(render.renderI18n(Matchers.eq("mails/mail-change-approve.ssp"), any[Map[String, Any]](), any[I18n]()))
+        when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]()))
           .thenReturn(Future.successful(Right()))
@@ -169,7 +169,7 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Right(UserData(1L, "", "", ""))))
         when(tokenRepository.removeByUser(any[UserID]()))
           .thenReturn(Future.failed[Unit](new IllegalStateException()))
-        awaitForResult(userService.approvalChangeEmail(token)) shouldBe true
+        awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
     }
   }

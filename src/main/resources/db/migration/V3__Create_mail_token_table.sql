@@ -1,0 +1,5 @@
+CREATE TABLE "MAIL_TOKENS" (
+  "token" VARCHAR(255) NOT NULL,
+  "expire_at" TIMESTAMP WITH TIME ZONE,
+  PRIMARY KEY ("token")
+);

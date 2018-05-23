@@ -1,0 +1,28 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Your Name <email@example.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Change email on SportAdvisor"
+msgstr "Смена электронной почты на сайте SportAdvisor"
+
+msgid "Hello, %s!"
+msgstr "Привет, %s!"
+
+msgid "You change email from %s to %s."
+msgstr "Вы изменили электронную почту с %s на %s."
+
+msgid "Click on link to confirm"
+msgstr "Для подтверждения нажмите на ссылку"
+
+msgid "Link is active up to %s."
+msgstr "ссылка активна до %s."
+
+msgid "If you did not authorize the change of email address, please contact support"
+msgstr "Если вы не меняли электронную почту, обратитесь в службу поддержки"

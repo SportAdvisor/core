@@ -1,0 +1,23 @@
+<%@ val i18n:io.sportadvisor.util.i18n.I18n%>
+<%@ val user:io.sportadvisor.core.user.UserData %>
+<%@ val redirect: String %>
+<%@ val expAt: String %>
+<%@ val email: String %>
+
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<h3>${i18n.t("Hello, %s!", user.name)}</h3>
+<br/>
+${i18n.t("You change email from %s to %s.", user.email, email)}
+${i18n.t("Click on link to confirm")} ${redirect}
+<br/>
+${i18n.t("Link is active up to %s.", expAt)}
+<br/>
+${i18n.t("If you did not authorize the change of email address, please contact support")} <a href="mailto:support@sportadvisor.io">support@sportadvisor.io</a>
+</body>
+</html>

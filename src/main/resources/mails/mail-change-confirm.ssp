@@ -1,0 +1,18 @@
+<%@ val i18n:io.sportadvisor.util.i18n.I18n%>
+<%@ val user:io.sportadvisor.core.user.UserData %>
+<%@ val oldEmail: String %>
+
+<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<h2>${i18n.t("Hello, %s!", user.name)}</h2>
+<br/>
+${i18n.t("You change email from %s to %s.", oldEmail, user.email)}
+<br/>
+${i18n.t("If you did not authorize the change of email address, please contact support")} <a href="mailto:support@sportadvisor.io">support@sportadvisor.io</a>
+</body>
+</html>

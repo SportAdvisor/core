@@ -2,16 +2,18 @@ package io.sportadvisor.http.route
 
 import java.time.LocalDateTime
 
-import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
+import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.{AuthToken, UserService}
-import io.sportadvisor.exception.{ApiError, DuplicateException}
+import io.sportadvisor.core.user.{AuthToken, UserID, UserService}
+import io.sportadvisor.exception.{ApiError, DuplicateException, UserNotFound}
 import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FailResponse, FormError, ObjectData}
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.Decoders._
 import io.sportadvisor.http.json.Codecs._
+import io.sportadvisor.http.route.user.UserRoute
+import io.sportadvisor.http.HttpTestUtils._
 import org.mockito.Mockito._
 
 import scala.concurrent.Future
@@ -134,10 +136,101 @@ class UserRouteTest extends BaseTest {
         }
       }
     }
+
+    "PUT /users/{id}/email" should {
+      "return 400 if email is exists" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.changeEmail(testUserId, "test@test.com", "test"))
+          .thenReturn(Future.successful(Left(ApiError(Option(DuplicateException())))))
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code shouldBe 400
+          resp.errors should (contain(FormError("email", "Email address is already registered")) and have size 1)
+        }
+      }
+
+      "return 400 if email is invalid" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "testtest.com", "redirectUrl":"test"}""")
+        when(userService.changeEmail(testUserId, "test@test.com", "test"))
+          .thenReturn(Future.successful(Left(ApiError(Option(DuplicateException())))))
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code shouldBe 400
+          resp.errors should (contain(FormError("email", "Email is invalid")) and have size 1)
+        }
+      }
+
+      "return 401 if user unauthorized" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "testtest.com", "redirectUrl":"test"}""")
+        Put(s"/users/$testUserId/email", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 401
+          response.status.intValue shouldBe StatusCodes.Unauthorized.intValue
+        }
+      }
+
+      "return 403" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        Put(s"/users/1$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 403
+        }
+      }
+
+      "return 200 if all success" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.changeEmail(testUserId, "test@test.com", "test"))
+          .thenReturn(Future.successful(Right()))
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 200
+        }
+      }
+
+      "return 500 if user not found" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.changeEmail(testUserId, "test@test.com", "test"))
+          .thenReturn(Future.successful(Left(ApiError(Option(UserNotFound())))))
+        Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 500
+        }
+      }
+    }
+
+    "POST /users/email" should {
+      "return 200 if change success" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"token":"test"}""")
+        when(userService.confirmEmail("test")).thenReturn(Future.successful(true))
+        Post("/users/email-confirm", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 200
+        }
+      }
+
+      "return 400 if token invalid" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"token":"test"}""")
+        when(userService.confirmEmail("test")).thenReturn(Future.successful(false))
+        Post("/users/email-confirm", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 400
+        }
+      }
+    }
   }
 
   trait Context {
+    val testSecret: String = "secret"
+    val testUserId: UserID = 1L
     val userService: UserService = mock[UserService]
+    when(userService.secret).thenReturn(testSecret)
+
     val userRoute: Route = (new UserRoute(userService) with I18nStub).route
   }
 }

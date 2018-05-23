@@ -65,12 +65,28 @@ make_task_def(){
                 {
                     "name": "JDBC_PASSWORD",
                     "value": "%s"
+                },
+                {
+                    "name":"MAIL_SMTP",
+                    "value":"%s"
+                },
+                {
+                    "name":"MAIL_SMPT_PORT",
+                    "value":"%s"
+                },
+                {
+                    "name":"MAIL_USER",
+                    "value":"%s"
+                },
+                {
+                    "name":"MAIL_PASS",
+                    "value":"%s"
                 }
             ]
 		}
 	]'
 
-	task_def=$(printf "$task_template" $AWS_ACCOUNT_ID $RDS_URL $RDS_USER $RDS_PASS)
+	task_def=$(printf "$task_template" $AWS_ACCOUNT_ID $RDS_URL $RDS_USER $RDS_PASS $SMTP_ADDRESS $SMTP_PORT $SMTP_USER $SMTP_PASS)
 }
 
 push_ecr_image(){

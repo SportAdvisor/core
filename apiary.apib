@@ -70,3 +70,63 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
         {
             "code":  400
         }
+
+### Change email [PUT /api/users/{id}/email]
+
++ Parameters
+    + id - user id
+
++ Request (application/json)
+
+    + Headers
+        Authorization: token
+
+    + Body
+        {
+            "email": "string",
+            "redirectUrl": "string"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "code":  200
+        }
+
++ Response 400 (application/json)
+
+        {
+            "code":  400,
+            "errors": [
+                {
+                    "field": "string",
+                    "msg": "string"
+                }
+            ]
+        }
+
++ Response 401 (application/json)
+
+        {
+            "code": 401
+        }
+
+### Confirm email [POST /api/users/email-confirm]
+
++ Request (application/json)
+
+        {
+            "token": "string",
+        }
+
++ Response 200 (application/json)
+
+        {
+            "code":  200
+        }
+
++ Response 400 (application/json)
+
+        {
+            "code":  400
+        }

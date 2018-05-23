@@ -7,7 +7,6 @@ import io.sportadvisor.util.db.DatabaseConnector
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import scala.io
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -35,7 +34,8 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   override def find(email: String): Future[Option[UserData]] =
     db.run(users.filter(u => u.email === email).take(1).result.headOption)
 
-  override def get(userID: UserID): Future[Option[UserData]] = Future.successful(None)
+  override def get(userID: UserID): Future[Option[UserData]] =
+    db.run(users.filter(u => u.id === userID).take(1).result.headOption)
 
   private val insertQuery = users returning users.map(_.id) into ((user, id) => user.copy(id = id))
 
@@ -44,7 +44,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
     case u @ UserData(_, _, _, _) => updateUser(u)
   }
 
-  override def remove(userID: UserID): Future[Option[UserData]] = Future.successful(None)
+  override def remove(userID: UserID): Future[Option[UserData]] = ???
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def createUser(u: CreateUser): Future[Either[SAException, UserData]] = {
@@ -59,7 +59,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def updateUser(u: UserData): Future[Either[SAException, UserData]] = {
-    db.run(users.update(u).asTry).map {
+    db.run(users.filter(user => user.id === u.id).update(u).asTry).map {
       case Success(e) => Right(u)
       case Failure(e: SQLException) =>
         if (e.getSQLState == "23505") { Left(new DuplicateException) } else {

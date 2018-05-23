@@ -2,6 +2,9 @@ package io.sportadvisor.core
 
 import java.time.LocalDateTime
 
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -20,7 +23,10 @@ package object user {
   }
 
   final case class CreateUser(email: String, password: String, name: String) extends User
-  final case class UserData(id: UserID, email: String, password: String, name: String) extends User
+  final case class UserData(id: UserID, email: String, password: String, name: String)
+      extends User {
+    def lang: String = "ru"
+  }
 
   final case class AuthTokenContent(userID: UserID)
   final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
@@ -30,4 +36,10 @@ package object user {
                                 remember: Boolean,
                                 lastTouch: LocalDateTime)
 
+  final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
+
+  implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
+  implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder
+  implicit val refreshTokenDecoder: Decoder[RefreshTokenContent] = deriveDecoder
+  implicit val refreshTokenEncoder: Encoder[RefreshTokenContent] = deriveEncoder
 }

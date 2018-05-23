@@ -1,6 +1,6 @@
 package io.sportadvisor
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.model.headers.Language
 import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -8,6 +8,8 @@ import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 import io.circe.syntax._
+import io.sportadvisor.core.user.{AuthTokenContent, UserID}
+import io.sportadvisor.util.{I18nService, JwtUtil}
 import io.sportadvisor.util.i18n.I18n
 
 /**
@@ -17,6 +19,7 @@ package object http extends FailFastCirceSupport {
 
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._
+  import akka.http.scaladsl.server.directives.HeaderDirectives._
 
   final case class ValidationError(errors: List[FormError]) extends Rejection
   final case class ValidationResult(field: String, msgId: String) {
@@ -24,6 +27,14 @@ package object http extends FailFastCirceSupport {
       FormError(field, i18n.t(msgId))
     }
   }
+  trait SARejection extends Rejection {
+    def code: StatusCode
+  }
+  final case class Forbidden() extends SARejection {
+    override def code: StatusCode = StatusCodes.Forbidden
+  }
+
+  val authorizationHeader = "Authorization"
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case _: Throwable => complete(StatusCodes.InternalServerError -> Response.failResponse(None))
@@ -34,6 +45,11 @@ package object http extends FailFastCirceSupport {
     .handle {
       case ValidationError(errors) =>
         complete((StatusCodes.BadRequest, Response.errorResponse(errors).asJson))
+      case AuthorizationFailedRejection =>
+        complete(
+          (StatusCodes.Unauthorized, Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
+      case rejection: SARejection =>
+        complete(rejection.code, Response.emptyResponse(rejection.code.intValue()))
     }
     .result()
     .withFallback(RejectionHandler.default)
@@ -72,6 +88,26 @@ package object http extends FailFastCirceSupport {
         .find(l => l.matches(pickLanguage))
         .map(l => l.primaryTag)
         .getOrElse("en")
+    }
+  }
+
+  def authenticate(secretKey: String): Directive1[UserID] = {
+    optionalHeaderValueByName(authorizationHeader).flatMap {
+      case Some(token) =>
+        JwtUtil.decode[AuthTokenContent](token, secretKey) match {
+          case Some(r) => provide(r.userID)
+          case _       => reject(AuthorizationFailedRejection)
+        }
+      case None => reject(AuthorizationFailedRejection)
+    }
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  def checkAccess(pathId: UserID, fromToken: UserID): Directive0 = {
+    if (pathId == fromToken) {
+      pass
+    } else {
+      reject(Forbidden())
     }
   }
 

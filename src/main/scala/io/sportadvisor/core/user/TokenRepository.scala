@@ -11,6 +11,8 @@ trait TokenRepository {
 
   def save(token: RefreshToken): Future[RefreshToken]
 
+  def removeByUser(id: UserID): Future[Unit]
+
   def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Unit]
 
   def getByUserId(userID: UserID): Future[Seq[RefreshToken]]
@@ -26,6 +28,11 @@ class TokenRepositorySQL(val connector: DatabaseConnector)(
 
   override def save(token: RefreshToken): Future[RefreshToken] = {
     db.run(tokens += token).map(_ => token)
+  }
+
+  override def removeByUser(id: UserID): Future[Unit] = {
+    val query = tokens.filter(t => t.userId === id)
+    db.run(query.delete).map(_ => ())
   }
 
   override def removeByDate(dateRemember: LocalDateTime,

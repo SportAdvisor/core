@@ -13,6 +13,6 @@
 <br/>
 ${i18n.t("You change email from %s to %s.", oldEmail, user.email)}
 <br/>
-${i18n.t("If you did not initiate a change of email, please contact support:")} <a href="mailto:support@sportadvisor.io">support@sportadvisor.io</a>
+${i18n.t("If you did not authorize the change of email address, please contact support")} <a href="mailto:support@sportadvisor.io">support@sportadvisor.io</a>
 </body>
 </html>

@@ -59,7 +59,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleSignUp(): Route = {
-    entity(as[UsernamePasswordEmail]) { entity =>
+    entity(as[RegistrationModel]) { entity =>
       selectLanguage() { lang =>
         validatorDirective(entity, regValidator, this) { request =>
           complete(

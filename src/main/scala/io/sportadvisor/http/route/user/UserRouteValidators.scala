@@ -13,7 +13,7 @@ object UserRouteValidators {
   val nameIsEmpty = "Name is required"
   val passwordIsWeak =
     "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
-  val EUALIsRequired = ""
+  val EUALIsRequired = "You must accept the end-user license agreement"
 
   val regValidator: Validator[RegistrationModel] =
     Validator[RegistrationModel](
@@ -28,7 +28,7 @@ object UserRouteValidators {
       },
       u =>
         if (!u.EULA) {
-          Some(ValidationResult("EULA", "You need to agree to the end-user license agreement"))
+          Some(ValidationResult("EULA", EUALIsRequired))
         } else {
           None
       }

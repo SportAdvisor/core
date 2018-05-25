@@ -103,7 +103,7 @@ class UserRouteTest extends BaseTest {
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("EULA", "You need to agree to the end-user license agreement")) and have size 1)
+          resp.errors should (contain(FormError("EULA", "You must accept the end-user license agreement")) and have size 1)
         }
       }
     }

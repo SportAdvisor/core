@@ -121,7 +121,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[AccountSettings]) { req =>
       authenticate(userService.secret) { userId =>
         checkAccess(id, userId) {
-          validatorDirective(req, accountSettingsValidator, this) { m =>
+          validatorDirective(req, accountSettingsValidator, this) {
             onComplete(changeAccount(userId, req.name, req.language)) {
               case Success(o) =>
                 o match {

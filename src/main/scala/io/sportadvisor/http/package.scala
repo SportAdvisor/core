@@ -71,10 +71,10 @@ package object http extends FailFastCirceSupport {
 
   def validatorDirective[T](model: T,
                             validator: Validator[T],
-                            i18nService: I18nService): Directive1[T] = {
+                            i18nService: I18nService): Directive0 = {
     selectLanguage().tflatMap(t =>
       validator(model) match {
-        case Nil => provide(model)
+        case Nil => pass
         case errors: List[ValidationResult] =>
           reject(ValidationError(errors.map(_.toFormError(i18nService.errors(t._1)))))
     })

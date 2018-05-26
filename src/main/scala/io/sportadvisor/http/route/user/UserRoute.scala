@@ -61,9 +61,9 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleSignUp(): Route = {
-    entity(as[UsernamePasswordEmail]) { entity =>
+    entity(as[UsernamePasswordEmail]) { request =>
       selectLanguage() { lang =>
-        validatorDirective(entity, regValidator, this) { request =>
+        validatorDirective(request, regValidator, this) {
           complete(
             signUp(request.email, request.password, request.name).map {
               case Left(e)      => r(handleApiError(e, lang))
@@ -87,13 +87,13 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangeEmail(id: UserID): Route = {
-    entity(as[EmailChange]) { req =>
+    entity(as[EmailChange]) { request =>
       authenticate(userService.secret) { userId =>
         checkAccess(id, userId) {
           selectLanguage() { lang =>
-            validatorDirective(req, changeMailValidator, this) { entity =>
+            validatorDirective(request, changeMailValidator, this) {
               complete(
-                changeEmail(userId, entity.email, entity.redirectUrl).map {
+                changeEmail(userId, request.email, request.redirectUrl).map {
                   case Left(e)  => r(handleApiError(e, lang))
                   case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
                 }

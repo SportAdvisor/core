@@ -16,7 +16,7 @@ object json extends AutoDerivation {
 
   implicit val formErrorEncoder: Encoder[FormError] = deriveEncoder[FormError]
   implicit val errorEncoder: Encoder[Error] = {
-    case e @ FormError(_, _) => formErrorEncoder(e)
+    case e: FormError => formErrorEncoder(e)
   }
 
   implicit val emptyResponseEncoder: Encoder[EmptyResponse] = deriveEncoder[EmptyResponse]
@@ -42,25 +42,22 @@ object json extends AutoDerivation {
                "_links" -> collectionLinksEncoder(a._links))
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit final def dataEncoder[A](implicit e: Encoder[A]): Encoder[Data[A]] = {
-    case d @ ObjectData(_, _)     => encoderObjectData[A](e)(d.asInstanceOf[ObjectData[A]])
-    case d @ CollectionData(_, _) => encoderCollectionData[A](e)(d.asInstanceOf[CollectionData[A]])
+    case d: ObjectData[A]     => encoderObjectData[A](e)(d)
+    case d: CollectionData[A] => encoderCollectionData[A](e)(d)
   }
 
-  implicit final def dataResponseEncoder[A](implicit e: Encoder[A]): Encoder[DataResponse[A, _]] =
-    (a: DataResponse[A, _]) => {
-      Json.obj("code" -> Json.fromInt(a.code),
-               "data" -> dataEncoder[A].apply(a.data.asInstanceOf[Data[A]]))
+  implicit final def dataResponseEncoder[A](
+      implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
+    (a: DataResponse[A, Data[A]]) => {
+      Json.obj("code" -> Json.fromInt(a.code), "data" -> dataEncoder[A].apply(a.data))
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  implicit final def encoder[A, D <: Data[A]](implicit e: Encoder[A]): Encoder[Response] = {
-    case r @ EmptyResponse(_)    => emptyResponseEncoder(r)
-    case r @ FailResponse(_, _)  => failResponseEncoder(r)
-    case r @ ErrorResponse(_, _) => errorResponseEncoder(errorEncoder)(r)
-    case r @ DataResponse(_, _) =>
-      dataResponseEncoder[A](e).apply(r.asInstanceOf[DataResponse[A, Data[A]]])
+  implicit final def encoder[A](implicit e: Encoder[A]): Encoder[Response] = {
+    case r: EmptyResponse            => emptyResponseEncoder(r)
+    case r: FailResponse             => failResponseEncoder(r)
+    case r: ErrorResponse[Error]     => errorResponseEncoder(errorEncoder)(r)
+    case r: DataResponse[A, Data[A]] => dataResponseEncoder[A](e).apply(r)
   }
 
   object Codecs {
@@ -72,3 +69,4 @@ object json extends AutoDerivation {
   }
 
 }
+// scalastyle:on object.name

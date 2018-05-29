@@ -5,6 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
 import io.sportadvisor.core.user.{UserID, UserService}
 import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http
@@ -66,7 +67,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         validatorDirective(request, regValidator, this) {
           complete(
             signUp(request.email, request.password, request.name).map {
-              case Left(e)      => r(handleApiError(e, lang))
+              case Left(e)      => handleApiError(e, lang)
               case Right(token) => r(Response.objectResponse(token, None))
             }
           )
@@ -94,7 +95,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             validatorDirective(request, changeMailValidator, this) {
               complete(
                 changeEmail(userId, request.email, request.redirectUrl).map {
-                  case Left(e)  => r(handleApiError(e, lang))
+                  case Left(e)  => handleApiError(e, lang)
                   case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
                 }
               )
@@ -140,16 +141,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private def handleApiError(err: ApiError, lang: String): Response = {
+  private def handleApiError(err: ApiError, lang: String): (StatusCode, Json) = {
     err.exception
       .map {
         case DuplicateException() =>
-          Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication))))
+          r(Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication)))))
         case e @ _ =>
           e.error.foreach(t => log.warn("API ERROR", t))
-          Response.failResponse(None)
+          r(Response.failResponse(None))
       }
-      .fold(Response.failResponse(None))(r => r)
+      .fold(r(Response.failResponse(None)))(r => r)
   }
 
 }

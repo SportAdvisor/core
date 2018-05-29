@@ -86,6 +86,8 @@ abstract class UserService(
       }
   }
 
+  def getById(id: UserID): Future[Option[UserData]] = userRepository.get(id)
+
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendRequestOfChangeEmail(user: UserData,
                                        email: String,

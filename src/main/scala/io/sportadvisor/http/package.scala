@@ -11,11 +11,12 @@ import io.circe.syntax._
 import io.sportadvisor.core.user.{AuthTokenContent, UserID}
 import io.sportadvisor.util.{I18nService, JwtUtil}
 import io.sportadvisor.util.i18n.I18n
+import org.slf4s.Logging
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-package object http extends FailFastCirceSupport {
+package object http extends FailFastCirceSupport with Logging {
 
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._
@@ -37,7 +38,9 @@ package object http extends FailFastCirceSupport {
   val authorizationHeader = "Authorization"
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
-    case _: Throwable => complete(StatusCodes.InternalServerError -> Response.failResponse(None))
+    case e: Throwable =>
+      log.error("request failed", e)
+      complete(StatusCodes.InternalServerError -> Response.failResponse(None))
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler

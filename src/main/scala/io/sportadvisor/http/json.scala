@@ -53,11 +53,11 @@ object json extends AutoDerivation {
       Json.obj("code" -> Json.fromInt(a.code), "data" -> dataEncoder[A].apply(a.data))
     }
 
-  implicit final def encoder[A](implicit e: Encoder[A]): Encoder[Response] = {
+  implicit final def encoder[A](implicit e: Encoder[A]): Encoder[Response[A]] = {
     case r: EmptyResponse            => emptyResponseEncoder(r)
     case r: FailResponse             => failResponseEncoder(r)
     case r: ErrorResponse[Error]     => errorResponseEncoder(errorEncoder)(r)
-    case r: DataResponse[A, Data[A]] => dataResponseEncoder[A](e).apply(r)
+    case r: DataResponse[A, Data[A]] => dataResponseEncoder[A].apply(r)
   }
 
   object Codecs {

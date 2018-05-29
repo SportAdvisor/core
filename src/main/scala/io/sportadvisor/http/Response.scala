@@ -10,7 +10,7 @@ import scala.language.implicitConversions
   */
 object Response extends Logging {
 
-  sealed trait Response {
+  sealed trait Response[A] {
     def code: Int
   }
 
@@ -24,10 +24,10 @@ object Response extends Logging {
 
   sealed trait Error {}
 
-  final case class EmptyResponse(code: Int) extends Response
-  final case class DataResponse[A, D <: Data[A]](code: Int, data: D) extends Response
-  final case class ErrorResponse[E <: Error](code: Int, errors: List[E]) extends Response
-  final case class FailResponse(code: Int, message: Option[String]) extends Response
+  final case class EmptyResponse(code: Int) extends Response[Unit]
+  final case class DataResponse[A, D <: Data[A]](code: Int, data: D) extends Response[A]
+  final case class ErrorResponse[E <: Error](code: Int, errors: List[E]) extends Response[E]
+  final case class FailResponse(code: Int, message: Option[String]) extends Response[Unit]
 
   final case class FormError(field: String, msg: String) extends Error
 
@@ -55,7 +55,7 @@ object Response extends Logging {
     CollectionData[A](objectWrappers, _links)
   }
 
-  def emptyResponse(code: Int): Response = {
+  def emptyResponse(code: Int): Response[Unit] = {
     if (code >= 100 && code < 600) {
       EmptyResponse(code)
     } else {
@@ -64,7 +64,7 @@ object Response extends Logging {
     }
   }
 
-  def objectResponse[A](data: A, self: Option[String]): Response = {
+  def objectResponse[A](data: A, self: Option[String]): Response[A] = {
     val value: ObjectData[A] = Response.objectData(data, self)
     DataResponse[A, ObjectData[A]](StatusCodes.OK.intValue, value)
   }
@@ -75,16 +75,16 @@ object Response extends Logging {
                             first: String,
                             last: String,
                             previous: String,
-                            next: String): Response = {
+                            next: String): Response[A] = {
     val value = Response.collectionData(data, selfGenerator, self, first, last, previous, next)
     DataResponse[A, CollectionData[A]](StatusCodes.OK.intValue, value)
   }
 
-  def errorResponse[E <: Error](errors: List[E]): ErrorResponse[E] = {
+  def errorResponse[E <: Error](errors: List[E]): Response[E] = {
     ErrorResponse[E](StatusCodes.BadRequest.intValue, errors)
   }
 
-  def failResponse(message: Option[String]): Response = {
+  def failResponse(message: Option[String]): Response[Unit] = {
     FailResponse(StatusCodes.InternalServerError.intValue, message)
   }
 

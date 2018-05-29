@@ -9,9 +9,9 @@ import io.circe.Json
 import io.sportadvisor.core.user.{UserID, UserService}
 import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http
-import io.sportadvisor.http.Response.{FormError, Response}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
+import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteValidators._
 import io.sportadvisor.util.I18nService
 import org.slf4s.Logging

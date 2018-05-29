@@ -40,7 +40,7 @@ class ResponseMarshallerTest extends BaseTest {
     }
 
     "DataResponse" should {
-      "serialize and deserialize [ObjectData]" in {
+      "serialize and deserialize [ObjectData[D]]" in {
         val resp = Response.objectResponse[D](D(1, true), Option("https://sportadvisor.io"))
         val json = marshall(resp)
         val data = unmarshall(json, dataResponseDecoder[D, ObjectData[D]])
@@ -53,6 +53,13 @@ class ResponseMarshallerTest extends BaseTest {
           "https://sportadvisor.io/api/d?page=2", "https://sportadvisor.io/api/d?page=4")
         val json = marshall(resp)
         val data = unmarshall(json, dataResponseDecoder[D, CollectionData[D]])
+        resp shouldEqual data
+      }
+
+      "serialize and deserialize [ObjectData[C]]" in {
+        val resp = Response.objectResponse[C](C("str"), Option("https://sportadvisor.io"))
+        val json = marshall(resp)
+        val data = unmarshall(json, dataResponseDecoder[C, ObjectData[C]])
         resp shouldEqual data
       }
     }
@@ -90,8 +97,11 @@ class ResponseMarshallerTest extends BaseTest {
   }
 
   case class D(int: Int, boolean: Boolean)
-
+  case class C(str: String)
 
   implicit val dEncoder: Encoder[D] = deriveEncoder[D]
-  implicit val dDecoder: Decoder[D] = deriveDecoder
+  implicit val dDecoder: Decoder[D] = deriveDecoder[D]
+
+  implicit val cEncoder: Encoder[C] = deriveEncoder[C]
+  implicit val cDecoder: Decoder[C] = deriveDecoder[C]
 }

@@ -263,9 +263,14 @@ class UserRouteTest extends BaseTest {
         when(userService.getById(testUserId))
           .thenReturn(Future.successful(Option(UserData(testUserId, "testemail", "testpassword", "testname"))))
         Get(s"/api/users/$testUserId").withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
-          println(response)
           val resp = r[DataResponse[UserView, ObjectData[UserView]]]
           resp.code shouldBe 200
+          val data = resp.data
+          data._links.isDefined shouldBe true
+          data._links.get.self.href shouldBe "/api/users/1"
+          data.data.id shouldBe 1L
+          data.data.email shouldBe "testemail"
+          data.data.name shouldBe "testname"
         }
       }
     }

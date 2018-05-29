@@ -1,7 +1,7 @@
 package io.sportadvisor.http.route.user
 
 import akka.http.scaladsl.model.{StatusCode, StatusCodes}
-import akka.http.scaladsl.server.Directives.{entity, _}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
@@ -123,9 +123,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleGetMe(): Route = {
     authenticate(userService.secret) { userId =>
-      extractUri { uri =>
-        redirect(s"/api/users/$userId", StatusCodes.SeeOther)
-      }
+      redirect(s"/api/users/$userId", StatusCodes.SeeOther)
     }
   }
 

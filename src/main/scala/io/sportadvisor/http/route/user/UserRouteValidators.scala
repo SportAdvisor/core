@@ -14,10 +14,11 @@ object UserRouteValidators {
   val nameIsEmpty = "Name is required"
   val passwordIsWeak =
     "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
+  val EUALIsRequired = "You must accept the end-user license agreement"
   val langNotSupported = "Selected language not supported"
 
-  val regValidator: Validator[UsernamePasswordEmail] =
-    Validator[UsernamePasswordEmail](
+  val regValidator: Validator[RegistrationModel] =
+    Validator[RegistrationModel](
       u => nameValidator("name")(u.name),
       u => emailValidator("email")(u.email),
       u => {
@@ -26,6 +27,12 @@ object UserRouteValidators {
         } else {
           None
         }
+      },
+      u =>
+        if (!u.EULA) {
+          Some(ValidationResult("EULA", EUALIsRequired))
+        } else {
+          None
       }
     )
 

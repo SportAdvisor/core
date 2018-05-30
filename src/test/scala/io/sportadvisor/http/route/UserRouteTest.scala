@@ -26,7 +26,7 @@ class UserRouteTest extends BaseTest {
   "UserRoute" when {
     "POST /users/sign-up" should {
       "return 200 and token if sign up successful" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test"}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         when(userService.signUp("test@test.com", "test123Q", "test"))
           .thenReturn(Future.successful(Right(AuthToken("", "", LocalDateTime.now()))))
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
@@ -43,7 +43,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 400 if name invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":""}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"", "EULA":true}""")
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
@@ -52,7 +52,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 400 if email invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "testtest.com", "password": "test123Q", "name":"test"}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "testtest.com", "password": "test123Q", "name":"test", "EULA":true}""")
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
@@ -61,7 +61,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 400 if password invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123", "name":"test"}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123", "name":"test", "EULA":true}""")
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
@@ -72,7 +72,7 @@ class UserRouteTest extends BaseTest {
       "return 400 if email is exists" in new Context {
         when(userService.signUp("test@test.com", "test123Q", "test"))
           .thenReturn(Future.successful(Left(ApiError(Option(DuplicateException())))))
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test"}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
@@ -81,7 +81,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 400 if email and password invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "testtest.com", "password": "test123", "name":"test"}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "testtest.com", "password": "test123", "name":"test", "EULA":true}""")
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
@@ -90,11 +90,20 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 500 if was internal error" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test"}""")
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         when(userService.signUp("test@test.com", "test123Q", "test")).thenThrow(new RuntimeException)
         Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code should be(500)
+        }
+      }
+
+      "return 400 if user not agree EULA" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":false}""")
+        Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code should be(400)
+          resp.errors should (contain(FormError("EULA", "You must accept the end-user license agreement")) and have size 1)
         }
       }
     }

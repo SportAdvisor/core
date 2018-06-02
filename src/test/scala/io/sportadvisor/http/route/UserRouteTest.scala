@@ -102,7 +102,7 @@ class UserRouteTest extends BaseTest {
 
       "return 400 if user not agree EULA" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":false}""")
-        Post("/users/sign-up", requestEntity) ~> userRoute ~> check {
+        Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
           resp.errors should (contain(FormError("EULA", "You must accept the end-user license agreement")) and have size 1)
@@ -268,9 +268,18 @@ class UserRouteTest extends BaseTest {
         }
       }
 
+      "return 404 if user not found" in new Context {
+        when(userService.getById(testUserId))
+          .thenReturn(Future.successful(None))
+        Get(s"/api/users/$testUserId").withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 404
+        }
+      }
+
       "return 200 and user data" in new Context {
         when(userService.getById(testUserId))
-          .thenReturn(Future.successful(Option(UserData(testUserId, "testemail", "testpassword", "testname"))))
+          .thenReturn(Future.successful(Option(UserData(testUserId, "testemail", "testpassword", "testname", Some("ru")))))
         Get(s"/api/users/$testUserId").withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[DataResponse[UserView, ObjectData[UserView]]]
           resp.code shouldBe 200
@@ -280,6 +289,10 @@ class UserRouteTest extends BaseTest {
           data.data.id shouldBe 1L
           data.data.email shouldBe "testemail"
           data.data.name shouldBe "testname"
+          data.data.language.isDefined shouldBe true
+          data.data.language.get shouldBe "ru"
+
+          println(response)
         }
       }
     }

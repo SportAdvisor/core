@@ -170,3 +170,68 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
         {
             "code":  400
         }
+
+### Get information about the authorized user [GET /api/users/me]
+
++ Request
+
+    + Headers
+        Authorization: token
+
++ Response 303
+
+    + Headers
+        Location: /api/users/{id}
+
++ Response 401 (application/json)
+
+        {
+            "code": 401
+        }
+
+### Get information about user [GET /api/users/{id}]
+
++ Parameters
+    + id - user id
+
++ Request
+
+    + Headers
+        Authorization: token
+
++ Response 200 (application/json)
+
+    {
+        "code":200,
+        "data": {
+            "data": {
+                "id": 1,
+                "email": "email@email.emal",
+                "name":" "name",
+                "language": "ru"
+            },
+            "_links": {
+                "self": {
+                    "href":"/api/users/1"
+                }
+            }
+        }
+    }
+
++ Response 401 (application/json)
+
+        {
+            "code": 401
+        }
+
++ Response 403 (application/json)
+
+        {
+            "code": 403
+        }
+
++ Response 404 (application/json)
+
+        {
+            "code": 404
+        }

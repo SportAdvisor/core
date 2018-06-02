@@ -15,7 +15,7 @@ object UserRouteProtocol {
   final case class EmailToken(token: String)
   final case class AccountSettings(name: String, language: Option[String])
 
-  final case class UserView(id: Long, email: String, name: String)
+  final case class UserView(id: Long, email: String, name: String, language: Option[String])
 
   implicit val userNamePasswordDecoder: Decoder[RegistrationModel] = deriveDecoder
   implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
@@ -25,6 +25,6 @@ object UserRouteProtocol {
 
   implicit val userViewEncoder: Encoder[UserView] = deriveEncoder
 
-  def userView(user: UserData): UserView = UserView(user.id, user.email, user.name)
+  def userView(user: UserData): UserView = UserView(user.id, user.email, user.name, user.language)
 
 }

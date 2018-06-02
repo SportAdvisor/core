@@ -13,7 +13,8 @@ val scalaTestV = "3.0.4"
 val slickVersion = "3.2.1"
 val circeV = "0.9.1"
 val sttpV = "1.1.5"
-//ch.qos.logback" % "logback-classic" % "1.2.3"
+
+lazy val EndToEndTest = config("e2e") extend Runtime
 
 val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpV,
@@ -44,6 +45,13 @@ val testDependencies = Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % Test,
   "ru.yandex.qatools.embed" % "postgresql-embedded" % "2.9" % Test,
   "org.mockito" % "mockito-all" % "1.9.5" % Test
+)
+
+val e2eDependencies = Seq(
+  "com.dimafeng" %% "testcontainers-scala" % "0.18.0" % EndToEndTest,
+  "org.scalatest" %% "scalatest" % scalaTestV % EndToEndTest,
+  "org.testcontainers" % "postgresql" % "1.7.3" % EndToEndTest,
+  "org.scalaj" %% "scalaj-http" % "2.4.0" % EndToEndTest
 )
 
 val loggingDependencies = Seq(
@@ -88,3 +96,37 @@ wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Nothing,
                                                            Wart.ImplicitParameter,
                                                            Wart.PublicInference)
 coverageEnabled in Test := true
+
+
+val e2eSettings =
+  inConfig(EndToEndTest)(Defaults.testSettings) ++
+    Seq(
+      fork in EndToEndTest := false,
+      parallelExecution in EndToEndTest := false,
+      scalaSource in EndToEndTest := baseDirectory.value / "src/e2e/scala",
+      resourceDirectory in EndToEndTest := baseDirectory.value / "src/e2e/resources",
+      libraryDependencies ++= e2eDependencies)
+
+val root = project.in(file("."))
+  .configs(EndToEndTest)
+  .settings(e2eSettings)
+
+// docker build
+enablePlugins(DockerPlugin)
+
+imageNames in docker := Seq(
+  ImageName("io.sportadvisor/sportadvisor-core:latest"),
+  ImageName("io.sportadvisor/sportadvisor-core:it"), // for integration test
+)
+
+dockerfile in docker := {
+  // The assembly task generates a fat JAR file
+  val artifact: File = assembly.value
+  val artifactTargetPath = s"/app/${artifact.name}"
+
+  new Dockerfile {
+    from("java:8-jdk-alpine")
+    add(artifact, artifactTargetPath)
+    entryPoint("java", "-jar", artifactTargetPath)
+  }
+}

@@ -26,10 +26,12 @@ class UserRepositoryTest extends BaseTest {
       "successful update" in new Context {
         val value = awaitForResult(userRepository.save(CreateUser(Random.nextString(5), "test", "test")))
         value.isRight shouldBe true
+        value.right.get.language shouldBe None
         val user: UserData = value.right.get
-        awaitForResult(userRepository.save(user.copy(email = "newEmail"))).isRight shouldBe true
+        awaitForResult(userRepository.save(user.copy(email = "newEmail", language = Option("ru")))).isRight shouldBe true
         val updatedUser = awaitForResult(userRepository.find("newEmail")).get
         updatedUser.id shouldEqual user.id
+        updatedUser.language shouldBe Some("ru")
       }
     }
 

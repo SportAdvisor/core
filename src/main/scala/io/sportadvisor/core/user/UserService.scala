@@ -86,6 +86,15 @@ abstract class UserService(
       }
   }
 
+  def changeAccount(userID: UserID,
+                    name: String,
+                    language: Option[String]): Future[Option[UserData]] = {
+    userRepository
+      .get(userID)
+      .mapT(u => u.copy(name = name, language = language))
+      .flatMapT(u => userRepository.save(u).map(e => e.toOption))
+  }
+
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendRequestOfChangeEmail(user: UserData,
                                        email: String,

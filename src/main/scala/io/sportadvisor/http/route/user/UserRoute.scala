@@ -1,22 +1,23 @@
 package io.sportadvisor.http.route.user
 
-import akka.http.scaladsl.model.{StatusCode, StatusCodes}
-import akka.http.scaladsl.server.Directives.{entity, _}
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.syntax._
-import io.circe.{Encoder, Json}
+import io.circe.Json
 import io.sportadvisor.core.user.{UserID, UserService}
 import io.sportadvisor.exception.{ApiError, DuplicateException}
 import io.sportadvisor.http
-import io.sportadvisor.http.Response.{FormError, Response}
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
+import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteValidators._
 import io.sportadvisor.util.I18nService
 import org.slf4s.Logging
 
 import scala.concurrent.ExecutionContext
+import scala.util.Success
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -48,6 +49,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             put {
               handleChangeEmail(userId)
             }
+          } ~ put {
+            handleChangeAccount(userId)
           }
         } ~ path("email-confirm") {
           post {
@@ -115,6 +118,29 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
+  def handleChangeAccount(id: UserID): Route = {
+    entity(as[AccountSettings]) { req =>
+      authenticate(userService.secret) { userId =>
+        checkAccess(id, userId) {
+          validatorDirective(req, accountSettingsValidator, this) {
+            onComplete(changeAccount(userId, req.name, req.language)) {
+              case Success(o) =>
+                o match {
+                  case Some(u) =>
+                    respondWithHeaders(Location(s"/api/users/$userId")) {
+                      complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
+                    }
+                  case _ => complete(r(Response.failResponse(None)))
+                }
+
+              case _ => complete(r(Response.failResponse(None)))
+            }
+          }
+        }
+      }
+    }
+  }
+
   private def handleApiError(err: ApiError, lang: String): (StatusCode, Json) = {
     err.exception
       .map {
@@ -126,8 +152,5 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
       }
       .fold(r(Response.failResponse(None)))(r => r)
   }
-
-  private def r[A](response: Response[A])(implicit e: Encoder[A]): (StatusCode, Json) =
-    StatusCode.int2StatusCode(response.code) -> response.asJson
 
 }

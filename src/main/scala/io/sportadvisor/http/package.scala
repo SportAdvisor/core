@@ -1,9 +1,10 @@
 package io.sportadvisor
 
-import akka.http.scaladsl.model.{StatusCode, StatusCodes}
-import akka.http.scaladsl.model.headers.Language
+import akka.http.scaladsl.model.{StatusCode, StatusCodes, Uri}
+import akka.http.scaladsl.model.headers.{Language, Location}
 import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
@@ -110,5 +111,8 @@ package object http extends FailFastCirceSupport {
       reject(Forbidden())
     }
   }
+
+  def r[A](response: Response[A])(implicit e: Encoder[A]): (StatusCode, Json) =
+    StatusCode.int2StatusCode(response.code) -> response.asJson
 
 }

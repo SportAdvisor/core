@@ -23,3 +23,6 @@ msgstr "Пароль должен быть не короче 8 символов 
 
 msgid "You must accept the end-user license agreement"
 msgstr "Вы должны согласиться с пользовательским соглашением"
+
+msgid "Selected language not supported"
+msgstr "Выбранный язык не поддерживается"

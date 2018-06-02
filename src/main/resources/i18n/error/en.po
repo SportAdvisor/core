@@ -23,3 +23,6 @@ msgstr "Your password must be at least 8 characters long, and include at least o
 
 msgid "You must accept the end-user license agreement"
 msgstr "You must accept the end-user license agreement"
+
+msgid "Selected language not supported"
+msgstr "Selected language not supported"

@@ -37,9 +37,9 @@ class TokenRepositorySQL(val connector: DatabaseConnector)(
 
   override def removeByDate(dateRemember: LocalDateTime,
                             dateNotRemember: LocalDateTime): Future[Unit] = {
-    val query1 = tokens.filter(t => t.remember === true && t.lastTouch < dateRemember)
-    val query2 = tokens.filter(t => !t.remember && t.lastTouch < dateNotRemember)
-    db.run(query1.delete).flatMap(_ => db.run(query2.delete)).map(_ => { () })
+    val query = tokens.filter(t =>
+      (t.remember === true && t.lastTouch < dateRemember) || (!t.remember && t.lastTouch < dateNotRemember))
+    db.run(query.delete).map(_ => { () })
   }
 
   override def getByUserId(userID: UserID): Future[Seq[RefreshToken]] = {

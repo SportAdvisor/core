@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.exception.{ApiError, DuplicateException, UserNotFound}
+import io.sportadvisor.exception.{ApiError, DuplicateException, UnhandledException, UserNotFound}
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail.{MailMessage, MailRenderService, MailSenderService, MailService}
@@ -140,36 +140,62 @@ class UserServiceTest extends BaseTest {
         awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
 
-      "return 200 if all success" in new Context {
+      "return true if all success" in new Context {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
-        when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", ""))))
+        when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right()))
-        when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", ""))))
+        when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
         when(tokenRepository.removeByUser(any[UserID]())).thenReturn(Future.successful(()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
 
-      "return 200 if remove tokens return error" in new Context {
+      "return true if remove tokens return error" in new Context {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
         when(userRepository.find("test"))
-          .thenReturn(Future.successful(Some(UserData(1L, "test", "", ""))))
+          .thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]()))
           .thenReturn(Future.successful(Right()))
         when(userRepository.save(any[UserData]()))
-          .thenReturn(Future.successful(Right(UserData(1L, "", "", ""))))
+          .thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
         when(tokenRepository.removeByUser(any[UserID]()))
           .thenReturn(Future.failed[Unit](new IllegalStateException()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
+      }
+    }
+
+    "changeAccount" should {
+      "return None if user not found " in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(None))
+
+        awaitForResult(userService.changeAccount(testId, "test", Some("ru"))).isDefined shouldBe false
+      }
+
+      "return Some(new userdata) if all ok" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.save(Matchers.eq[UserData](testUser.copy(name = "newName", language = Some("en")))))
+            .thenReturn(Future.successful(Right(testUser.copy(name = "newName", language = Some("en")))))
+        val userData: Option[UserData] = awaitForResult(userService.changeAccount(testId, "newName", Some("en")))
+        userData.isDefined shouldBe true
+        userData.get.name shouldBe "newName"
+        userData.get.language.get shouldBe "en"
+      }
+
+      "return None if save end with error" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.save(any[UserData]))
+          .thenReturn(Future.successful(Left(UnhandledException(new Exception))))
+
+        awaitForResult(userService.changeAccount(testId, "test", Some("ru"))).isDefined shouldBe false
       }
     }
   }
@@ -200,7 +226,7 @@ class UserServiceTest extends BaseTest {
     val newEmail: String = "valekseev@sportadvisor.io"
     val testPassword: String = Random.nextString(10)
 
-    val testUser = UserData(testId, testEmail, testPassword.sha256.hex, testName)
+    val testUser = UserData(testId, testEmail, testPassword.sha256.hex, testName, None)
 
   }
 

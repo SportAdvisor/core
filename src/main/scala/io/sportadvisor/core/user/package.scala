@@ -23,9 +23,13 @@ package object user {
   }
 
   final case class CreateUser(email: String, password: String, name: String) extends User
-  final case class UserData(id: UserID, email: String, password: String, name: String)
+  final case class UserData(id: UserID,
+                            email: String,
+                            password: String,
+                            name: String,
+                            language: Option[String])
       extends User {
-    def lang: String = "ru"
+    def lang: String = language.fold("ru")(l => l)
   }
 
   final case class AuthTokenContent(userID: UserID)

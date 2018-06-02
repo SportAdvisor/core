@@ -9,17 +9,19 @@ import io.sportadvisor.core.user.UserData
   */
 object UserRouteProtocol {
 
-  final case class UsernamePasswordEmail(name: String, email: String, password: String)
+  final case class RegistrationModel(name: String, email: String, password: String, EULA: Boolean)
   final case class EmailChange(email: String, redirectUrl: String)
   final case class EmailPassword(email: String, password: String, remember: Boolean)
   final case class EmailToken(token: String)
+  final case class AccountSettings(name: String, language: Option[String])
 
   final case class UserView(id: Long, email: String, name: String)
 
-  implicit val userNamePasswordDecoder: Decoder[UsernamePasswordEmail] = deriveDecoder
+  implicit val userNamePasswordDecoder: Decoder[RegistrationModel] = deriveDecoder
   implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
   implicit val emailChangeDecoder: Decoder[EmailChange] = deriveDecoder
   implicit val emailTokenDecoder: Decoder[EmailToken] = deriveDecoder
+  implicit val accountSettingsDecoder: Decoder[AccountSettings] = deriveDecoder
 
   implicit val userViewEncoder: Encoder[UserView] = deriveEncoder
 

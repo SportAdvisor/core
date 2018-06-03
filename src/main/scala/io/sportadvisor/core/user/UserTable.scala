@@ -21,8 +21,10 @@ private[user] trait UserTable {
     def name: Rep[String] = column[String]("name", O.Length(255))
     def email: Rep[String] = column[String]("email", O.Length(255), O.Unique)
     def password: Rep[String] = column[String]("password", O.Length(255))
+    def language: Rep[Option[String]] = column[Option[String]]("language")
 
-    override def * = (id, email, password, name) <> ((UserData.apply _).tupled, UserData.unapply)
+    override def * =
+      (id, email, password, name, language) <> ((UserData.apply _).tupled, UserData.unapply)
   }
   // scalastyle:on
 

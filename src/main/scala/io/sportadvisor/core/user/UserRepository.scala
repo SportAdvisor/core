@@ -40,15 +40,15 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   private val insertQuery = users returning users.map(_.id) into ((user, id) => user.copy(id = id))
 
   override def save(user: User): Future[Either[SAException, UserData]] = user match {
-    case u @ CreateUser(_, _, _)  => createUser(u)
-    case u @ UserData(_, _, _, _) => updateUser(u)
+    case u @ CreateUser(_, _, _) => createUser(u)
+    case u: UserData             => updateUser(u)
   }
 
   override def remove(userID: UserID): Future[Option[UserData]] = ???
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def createUser(u: CreateUser): Future[Either[SAException, UserData]] = {
-    val action = insertQuery += UserData(0, u.email, u.password, u.name)
+    val action = insertQuery += UserData(0, u.email, u.password, u.name, None)
     db.run(action.asTry).map {
       case Success(e) => Right(e)
       case Failure(e: SQLException) =>

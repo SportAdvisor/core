@@ -97,7 +97,6 @@ wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Nothing,
                                                            Wart.PublicInference)
 coverageEnabled in Test := true
 
-
 val e2eSettings =
   inConfig(EndToEndTest)(Defaults.testSettings) ++
     Seq(
@@ -105,9 +104,11 @@ val e2eSettings =
       parallelExecution in EndToEndTest := false,
       scalaSource in EndToEndTest := baseDirectory.value / "src/e2e/scala",
       resourceDirectory in EndToEndTest := baseDirectory.value / "src/e2e/resources",
-      libraryDependencies ++= e2eDependencies)
+      libraryDependencies ++= e2eDependencies
+    )
 
-val root = project.in(file("."))
+val root = project
+  .in(file("."))
   .configs(EndToEndTest)
   .settings(e2eSettings)
 
@@ -116,7 +117,7 @@ enablePlugins(DockerPlugin)
 
 imageNames in docker := Seq(
   ImageName("io.sportadvisor/sportadvisor-core:latest"),
-  ImageName("io.sportadvisor/sportadvisor-core:it"), // for integration test
+  ImageName("io.sportadvisor/sportadvisor-core:it") // for integration test
 )
 
 dockerfile in docker := {

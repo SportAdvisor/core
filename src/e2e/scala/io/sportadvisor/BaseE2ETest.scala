@@ -2,7 +2,8 @@ package io.sportadvisor
 
 import scala.collection.JavaConverters._
 import com.dimafeng.testcontainers._
-import io.circe.{Decoder, HCursor, Json}
+import com.github.dockerjava.api.command.InspectContainerResponse
+import io.circe.{Decoder, HCursor}
 import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
 import org.testcontainers.containers.wait.strategy.Wait
@@ -33,7 +34,7 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
 
   override val container = MultipleContainers(pgContainer, mailContainer, app)
 
-  protected def server: String = s"http://${ip(app)}:$port"
+  protected def server: String = s"http://${ip(app.container.getContainerInfo)}:$port"
 
   protected def to(s: String) = s"$server/$s"
 
@@ -66,11 +67,11 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
   private def dockerJdbcUrl(pgContainer: PostgreSQLContainer): String = {
     import org.testcontainers.containers.{PostgreSQLContainer => OTCPostgreSQLContainer}
 
-    val ip = pgContainer.container.getContainerInfo.getNetworkSettings.getNetworks.asScala.values.head.getIpAddress
+    val ip = ip(pgContainer.container.getContainerInfo)
     s"jdbc:postgresql://$ip:${OTCPostgreSQLContainer.POSTGRESQL_PORT}/test"
   }
 
-  private def ip(c: GenericContainer): String =
-    c.container.getContainerInfo.getNetworkSettings.getNetworks.asScala.values.head.getIpAddress
+  private def ip(c: InspectContainerResponse): String =
+    c.getNetworkSettings.getNetworks.asScala.values.head.getIpAddress
 
 }

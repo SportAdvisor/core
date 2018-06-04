@@ -7,5 +7,7 @@ scala:
 - 2.12.5
 jdk:
 - oraclejdk8
-script: sbt clean scalafmtSbtCheck scalafmtCheck scalastyle coverage test docker e2e:test
+script:
+  - sbt clean scalafmtSbtCheck scalafmtCheck scalastyle coverage test
+  - sbt docker e2e:test
 after_success: sbt coverageReport coveralls

@@ -96,6 +96,7 @@ wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Nothing,
                                                            Wart.ImplicitParameter,
                                                            Wart.PublicInference)
 coverageEnabled in Test := true
+coverageEnabled in EndToEndTest := false
 
 val e2eSettings =
   inConfig(EndToEndTest)(Defaults.testSettings) ++

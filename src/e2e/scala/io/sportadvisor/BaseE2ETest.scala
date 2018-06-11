@@ -19,22 +19,20 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
 
   private val port = 5553
   private val smtp = ""
-  private val smtpPort = 1025
-  private val smtpUser = "no-reply@sportadvisor.io"
-  private val smtpPass = ""
+  protected val smtpPort = 1025
+  protected val smtpUser = "no-reply@sportadvisor.io"
+  protected val smtpPass = ""
 
   lazy val pgContainer = PostgreSQLContainer()
 
-  lazy val mailContainer =
-    GenericContainer("mailhog/mailhog:latest", exposedPorts = List(smtpPort), env = smtpEnv())
   lazy val app = GenericContainer("io.sportadvisor/sportadvisor-core:it",
                                   exposedPorts = List(port),
                                   env = env(),
                                   waitStrategy = Wait.forHttp("/healthcheck"))
 
-  override val container = MultipleContainers(pgContainer, mailContainer, app)
+  override val container = MultipleContainers(appContainers():_*)
 
-  protected def server: String = s"http://${ip(app.container.getContainerInfo)}:$port"
+  protected def server: String = s"http://${getIp(app.container.getContainerInfo)}:$port"
 
   protected def to(s: String) = s"$server/$s"
 
@@ -49,6 +47,8 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
     Http(url).postData(data).header("content-type", "application/json")
   }
 
+  protected def additionalContainer(): Seq[LazyContainer[Container]] = List()
+
   private def env(): Map[String, String] = Map(
     "SECRET_KEY" -> ("IntegrationTest" + Random.nextString(2)),
     "JDBC_URL" -> dockerJdbcUrl(pgContainer),
@@ -60,18 +60,18 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
     "MAIL_PASS" -> smtpPass
   )
 
-  private def smtpEnv(): Map[String, String] = Map(
-    "MH_HOSTNAME" -> "sportadvisor.io"
-  )
-
   private def dockerJdbcUrl(pgContainer: PostgreSQLContainer): String = {
     import org.testcontainers.containers.{PostgreSQLContainer => OTCPostgreSQLContainer}
 
-    val ip = ip(pgContainer.container.getContainerInfo)
+    val ip = getIp(pgContainer.container.getContainerInfo)
     s"jdbc:postgresql://$ip:${OTCPostgreSQLContainer.POSTGRESQL_PORT}/test"
   }
 
-  private def ip(c: InspectContainerResponse): String =
+  private def getIp(c: InspectContainerResponse): String =
     c.getNetworkSettings.getNetworks.asScala.values.head.getIpAddress
+
+  private def containers(): Seq[LazyContainer[Container]] = List(LazyContainer(pgContainer), LazyContainer(app))
+
+  private def appContainers(): Seq[LazyContainer[Container]] = additionalContainer() ++ containers()
 
 }

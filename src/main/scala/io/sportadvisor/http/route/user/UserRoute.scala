@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.sportadvisor.core.user.{UserID, UserService}
-import io.sportadvisor.exception.{ApiError, DuplicateException}
+import io.sportadvisor.exception.{DuplicateException, SAException}
 import io.sportadvisor.http
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
@@ -141,16 +141,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private def handleApiError(err: ApiError, lang: String): (StatusCode, Json) = {
-    err.exception
-      .map {
-        case DuplicateException() =>
-          r(Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication)))))
-        case e @ _ =>
-          e.error.foreach(t => log.warn("API ERROR", t))
-          r(Response.failResponse(None))
-      }
-      .fold(r(Response.failResponse(None)))(r => r)
+  private def handleApiError(err: SAException, lang: String): (StatusCode, Json) = {
+    err match {
+      case DuplicateException() =>
+        r(Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication)))))
+      case exception =>
+        exception.error.fold(log.error(s"Api error: ${exception.msg}")) { e =>
+          log.error(s"Api error: ${exception.msg}", e)
+        }
+        r(Response.failResponse(None))
+    }
   }
 
 }

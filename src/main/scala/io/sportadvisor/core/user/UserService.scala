@@ -38,11 +38,13 @@ abstract class UserService(
 
   def secret: String = secretKey
 
-  def signUp(email: String, password: String, name: String): Future[Either[ApiError, AuthToken]] =
+  def signUp(email: String,
+             password: String,
+             name: String): Future[Either[SAException, AuthToken]] =
     userRepository
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
-        case Left(e)  => Future.successful(Left(ApiError(Option(e))))
+        case Left(e)  => Future.successful(Left(e))
         case Right(u) => createAndSaveToken(u, Boolean.box(true)).map(t => Right(t))
       }
 
@@ -54,15 +56,15 @@ abstract class UserService(
 
   def changeEmail(userID: UserID,
                   email: String,
-                  redirectUrl: String): Future[Either[ApiError, Unit]] = {
+                  redirectUrl: String): Future[Either[SAException, Unit]] = {
     userRepository.find(email).flatMap {
-      case Some(_) => Future.successful(Left(ApiError(Option(new DuplicateException))))
+      case Some(_) => Future.successful(Left(DuplicateException()))
       case None =>
         userRepository
           .get(userID)
           .flatMap {
             case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
-            case None    => Future.successful(Left(ApiError(Option(UserNotFound()))))
+            case None    => Future.successful(Left(UserNotFound()))
           }
     }
   }
@@ -98,7 +100,7 @@ abstract class UserService(
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendRequestOfChangeEmail(user: UserData,
                                        email: String,
-                                       redirectUrl: String): Future[Either[ApiError, Unit]] = {
+                                       redirectUrl: String): Future[Either[SAException, Unit]] = {
     val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
     val token = generateChangeEmailToken(user.email, email, secret, time)
     val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
@@ -109,7 +111,7 @@ abstract class UserService(
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
     mailService.mailSender.send(msg).flatMap {
-      case Left(t)  => Future.successful(Left(ApiError(Option(UnhandledException(t)))))
+      case Left(t)  => Future.successful(Left(UnhandledException(t)))
       case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right())
     }
   }
@@ -146,14 +148,14 @@ abstract class UserService(
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendChangeEmailConfirmation(user: UserData,
-                                          oldEmail: String): Future[Either[ApiError, Unit]] = {
+                                          oldEmail: String): Future[Either[SAException, Unit]] = {
     val args = Map[String, Any]("user" -> user, "oldEmail" -> oldEmail)
     val body =
       mailService.mailRender.renderI18n("mails/mail-change-confirm.ssp", args, mails(user.lang))
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(oldEmail), List(), List(user.email), subject, HtmlContent(body))
     mailService.mailSender.send(msg).map {
-      case Left(t)  => Left(ApiError(Option(UnhandledException(t))))
+      case Left(t)  => Left(UnhandledException(t))
       case Right(_) => Right(())
     }
   }

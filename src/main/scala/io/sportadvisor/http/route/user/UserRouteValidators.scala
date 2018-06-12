@@ -60,7 +60,7 @@ object UserRouteValidators {
   }
 
   private def nameValidator(field: String): (String => Option[ValidationResult]) = name => {
-    if (name.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None
+    if (name.trim.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None
   }
 
 }

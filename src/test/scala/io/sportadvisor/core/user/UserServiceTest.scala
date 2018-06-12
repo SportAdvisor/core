@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.exception.{ApiError, DuplicateException, UnhandledException, UserNotFound}
+import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail.{MailMessage, MailRenderService, MailSenderService, MailService}
@@ -28,7 +28,7 @@ class UserServiceTest extends BaseTest {
             .thenReturn(Future.successful(Right(testUser)))
         when(tokenRepository.save(any[RefreshToken]()))
           .thenReturn(Future.successful(RefreshToken(1L, "", remember = false, LocalDateTime.now())))
-        val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
+        val value: Either[SAException, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
         value.isRight shouldBe true
         Jwt.decodeRaw(value.right.get.token, testSecretKey, Seq(JwtAlgorithm.HS256)).isSuccess shouldBe true
       }
@@ -36,7 +36,7 @@ class UserServiceTest extends BaseTest {
       "return user already registered" in new Context {
         when(userRepository.save(CreateUser(testEmail, testPassword.sha256.hex, testName)))
           .thenReturn(Future.successful(Left(new DuplicateException)))
-        val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
+        val value: Either[SAException, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
         value.isLeft shouldBe true
       }
     }
@@ -67,13 +67,12 @@ class UserServiceTest extends BaseTest {
     "changeMail" should {
       "return dublication error if email already registered" in new Context {
         when(userRepository.find(testEmail)).thenReturn(Future.successful(Some(testUser)))
-        val future: Future[Either[ApiError, Unit]] = userService.changeEmail(2L, testEmail, "https://sportadvisor.io/t")
-        val either: Either[ApiError, Unit] = awaitForResult(future)
+        val future: Future[Either[SAException, Unit]] = userService.changeEmail(2L, testEmail, "https://sportadvisor.io/t")
+        val either: Either[SAException, Unit] = awaitForResult(future)
         either.isLeft shouldBe true
         either match {
           case Left(error) =>
-            error.exception.isDefined shouldBe true
-            error.exception.foreach {
+            error match {
               case DuplicateException() => ()
               case _ => throw new IllegalStateException()
             }
@@ -84,13 +83,12 @@ class UserServiceTest extends BaseTest {
       "return error if user with id not foud" in new Context {
         when(userRepository.find(testEmail)).thenReturn(Future.successful(None))
         when(userRepository.get(2L)).thenReturn(Future.successful(None))
-        val future: Future[Either[ApiError, Unit]] = userService.changeEmail(2L, testEmail, "https://sportadvisor.io/t")
-        val either: Either[ApiError, Unit] = awaitForResult(future)
+        val future: Future[Either[SAException, Unit]] = userService.changeEmail(2L, testEmail, "https://sportadvisor.io/t")
+        val either: Either[SAException, Unit] = awaitForResult(future)
         either.isLeft shouldBe true
         either match {
           case Left(error) =>
-            error.exception.isDefined shouldBe true
-            error.exception.foreach {
+            error match {
               case UserNotFound() => ()
               case _ => throw new IllegalStateException()
             }
@@ -106,7 +104,7 @@ class UserServiceTest extends BaseTest {
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right()))
         when(mailChangesTokenRepository.save(any[ChangeMailToken]))
           .thenReturn(Future.successful(ChangeMailToken("", LocalDateTime.now())))
-        val result: Either[ApiError, Unit] = awaitForResult(userService.changeEmail(testId, newEmail, "https://sportadvisor.io/t"))
+        val result: Either[SAException, Unit] = awaitForResult(userService.changeEmail(testId, newEmail, "https://sportadvisor.io/t"))
         result.isRight shouldBe true
       }
     }

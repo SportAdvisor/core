@@ -28,6 +28,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     with Logging {
 
   private val emailDuplication = "Email address is already registered"
+  private val authError = "Authorization error. Relogin please"
 
   import http._
   import userService._
@@ -154,7 +155,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def apiErrorHandler(lang: String): PartialFunction[ApiError, (StatusCode, Json)] = {
     case UserNotFound(id) =>
       log.warn(s"Api error. User with id $id not found")
-      val msg = errors(lang).t("Authorization error. Relogin please")
+      val msg = errors(lang).t(authError)
       r(Response.failResponse(Some(msg)))
     case exception =>
       exception.error.fold(log.error(s"Api error: ${exception.msg}")) { e =>

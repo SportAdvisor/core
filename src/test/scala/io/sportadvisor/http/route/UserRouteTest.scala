@@ -207,8 +207,10 @@ class UserRouteTest extends BaseTest {
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(UserNotFound(testUserId))))
         Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
-          val resp = r[EmptyResponse]
+          val resp = r[FailResponse]
           resp.code shouldBe 500
+          resp.message.isDefined shouldBe true
+          resp.message.get shouldBe "Authorization error. Relogin please"
         }
       }
     }

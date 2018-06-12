@@ -17,7 +17,6 @@ import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
 import io.sportadvisor.util._
-import io.sportadvisor.core.user._
 
 import scala.util.Success
 
@@ -38,9 +37,7 @@ abstract class UserService(
 
   def secret: String = secretKey
 
-  def signUp(email: String,
-             password: String,
-             name: String): Future[Either[SAException, AuthToken]] =
+  def signUp(email: String, password: String, name: String): Future[Either[ApiError, AuthToken]] =
     userRepository
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
@@ -56,7 +53,7 @@ abstract class UserService(
 
   def changeEmail(userID: UserID,
                   email: String,
-                  redirectUrl: String): Future[Either[SAException, Unit]] = {
+                  redirectUrl: String): Future[Either[ApiError, Unit]] = {
     userRepository.find(email).flatMap {
       case Some(_) => Future.successful(Left(DuplicateException()))
       case None =>
@@ -64,7 +61,7 @@ abstract class UserService(
           .get(userID)
           .flatMap {
             case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
-            case None    => Future.successful(Left(UserNotFound()))
+            case None    => Future.successful(Left(UserNotFound(userID)))
           }
     }
   }
@@ -100,7 +97,7 @@ abstract class UserService(
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendRequestOfChangeEmail(user: UserData,
                                        email: String,
-                                       redirectUrl: String): Future[Either[SAException, Unit]] = {
+                                       redirectUrl: String): Future[Either[ApiError, Unit]] = {
     val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
     val token = generateChangeEmailToken(user.email, email, secret, time)
     val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
@@ -148,7 +145,7 @@ abstract class UserService(
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendChangeEmailConfirmation(user: UserData,
-                                          oldEmail: String): Future[Either[SAException, Unit]] = {
+                                          oldEmail: String): Future[Either[ApiError, Unit]] = {
     val args = Map[String, Any]("user" -> user, "oldEmail" -> oldEmail)
     val body =
       mailService.mailRender.renderI18n("mails/mail-change-confirm.ssp", args, mails(user.lang))

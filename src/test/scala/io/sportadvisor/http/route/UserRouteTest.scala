@@ -205,7 +205,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
-          .thenReturn(Future.successful(Left(UserNotFound())))
+          .thenReturn(Future.successful(Left(UserNotFound(testUserId))))
         Put(s"/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500

@@ -1,5 +1,7 @@
 package io.sportadvisor
 
+import io.sportadvisor.core.user.UserID
+
 import scala.util.control.NoStackTrace
 
 /**
@@ -8,15 +10,14 @@ import scala.util.control.NoStackTrace
 package object exception {
 
   @SuppressWarnings(Array("org.wartremover.warts.Null"))
-  abstract class SAException(val msg: String, val error: Option[Throwable])
+  abstract class ApiError(val msg: String, val error: Option[Throwable])
       extends RuntimeException(msg)
       with NoStackTrace {}
 
-  final case class DuplicateException() extends SAException("Duplication error", None) {}
+  final case class DuplicateException() extends ApiError("Duplication error", None) {}
 
-  final case class UnhandledException(err: Throwable)
-      extends SAException(err.getMessage, Some(err)) {}
+  final case class UnhandledException(err: Throwable) extends ApiError(err.getMessage, Some(err)) {}
 
-  final case class UserNotFound() extends SAException("User not found", None) {}
+  final case class UserNotFound(id: UserID) extends ApiError("User not found", None) {}
 
 }

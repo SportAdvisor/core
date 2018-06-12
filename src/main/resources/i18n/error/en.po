@@ -26,3 +26,6 @@ msgstr "You must accept the end-user license agreement"
 
 msgid "Selected language not supported"
 msgstr "Selected language not supported"
+
+msgid "Authorization error. Relogin please"
+msgstr "Authorization error. Relogin please"

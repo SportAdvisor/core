@@ -5,6 +5,7 @@ import io.circe.HCursor.fromJson
 import io.circe.generic.extras.AutoDerivation
 import io.circe.generic.semiauto.deriveDecoder
 import io.sportadvisor.http.Response._
+import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -74,4 +75,5 @@ object Decoders extends AutoDerivation{
     Right(res)
   }
 
+  implicit val userViewDecoder: Decoder[UserView] = deriveDecoder
 }

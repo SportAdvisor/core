@@ -40,7 +40,7 @@ package object http extends FailFastCirceSupport with Logging {
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case e: Throwable =>
-      log.error("Unhandled exception!", e)
+      log.error("request failed", e)
       complete(StatusCodes.InternalServerError -> Response.failResponse(None))
   }
 

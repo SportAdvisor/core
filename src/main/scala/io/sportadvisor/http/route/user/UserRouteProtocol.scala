@@ -1,7 +1,8 @@
 package io.sportadvisor.http.route.user
 
 import io.circe.generic.semiauto._
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
+import io.sportadvisor.core.user.UserData
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -14,9 +15,16 @@ object UserRouteProtocol {
   final case class EmailToken(token: String)
   final case class AccountSettings(name: String, language: Option[String])
 
+  final case class UserView(id: Long, email: String, name: String, language: Option[String])
+
   implicit val userNamePasswordDecoder: Decoder[RegistrationModel] = deriveDecoder
   implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
   implicit val emailChangeDecoder: Decoder[EmailChange] = deriveDecoder
   implicit val emailTokenDecoder: Decoder[EmailToken] = deriveDecoder
   implicit val accountSettingsDecoder: Decoder[AccountSettings] = deriveDecoder
+
+  implicit val userViewEncoder: Encoder[UserView] = deriveEncoder
+
+  def userView(user: UserData): UserView = UserView(user.id, user.email, user.name, user.language)
+
 }

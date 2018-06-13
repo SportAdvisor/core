@@ -86,6 +86,8 @@ abstract class UserService(
       }
   }
 
+  def getById(id: UserID): Future[Option[UserData]] = userRepository.get(id)
+
   def changeAccount(userID: UserID,
                     name: String,
                     language: Option[String]): Future[Option[UserData]] = {

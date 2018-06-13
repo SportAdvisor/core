@@ -12,6 +12,7 @@ import io.sportadvisor.http
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
 import io.sportadvisor.http.Response._
+import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._
 import io.sportadvisor.util.I18nService
 import org.slf4s.Logging
@@ -31,7 +32,6 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   import http._
   import userService._
-  import UserRouteProtocol._
 
   val route: Route = pathPrefix("users") {
     handleExceptions(exceptionHandler) {
@@ -49,12 +49,18 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             put {
               handleChangeEmail(userId)
             }
+          } ~ get {
+            handleGetUser(userId)
           } ~ put {
             handleChangeAccount(userId)
           }
         } ~ path("email-confirm") {
           post {
             handleConfirmEmail()
+          }
+        } ~ path("me") {
+          get {
+            handleGetMe()
           }
         }
       }
@@ -115,6 +121,25 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))
         }
       )
+    }
+  }
+
+  def handleGetMe(): Route = {
+    authenticate(userService.secret) { userId =>
+      redirect(s"/api/users/$userId", StatusCodes.SeeOther)
+    }
+  }
+
+  def handleGetUser(id: UserID): Route = {
+    authenticate(userService.secret) { userId =>
+      checkAccess(id, userId) {
+        complete(
+          getById(id).map {
+            case Some(u) => r(Response.objectResponse(userView(u), Option(s"/api/users/$userId")))
+            case _       => r(Response.emptyResponse(StatusCodes.NotFound.intValue))
+          }
+        )
+      }
     }
   }
 

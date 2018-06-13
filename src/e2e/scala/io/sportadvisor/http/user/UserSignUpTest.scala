@@ -6,7 +6,7 @@ import io.sportadvisor.http.Response.{ErrorResponse, FormError}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-class UserSignUpTest extends BaseE2ETest with UserMappings with MailContainer {
+class UserSignUpTest extends BaseE2ETest with UserMappings {
 
   "POST /api/users/sign-up with broken email" should "return error" in {
     val resp = post(req("sign-up"), s"""{"email": "testtest.com", "password": "test123Q", "name":"test", "EULA":true}""").asString

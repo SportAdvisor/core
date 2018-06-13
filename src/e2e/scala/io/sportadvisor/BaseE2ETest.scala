@@ -26,7 +26,7 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
   lazy val pgContainer = PostgreSQLContainer()
 
   lazy val app = GenericContainer("io.sportadvisor/sportadvisor-core:it",
-                                  exposedPorts = List(port),
+                                  exposedPorts = Seq(port),
                                   env = env(),
                                   waitStrategy = Wait.forHttp("/healthcheck"))
 
@@ -47,7 +47,7 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
     Http(url).postData(data).header("content-type", "application/json")
   }
 
-  protected def additionalContainer(): Seq[LazyContainer[Container]] = List()
+  protected def additionalContainer(initial: Seq[LazyContainer[Container]]): Seq[LazyContainer[Container]] = initial
 
   private def env(): Map[String, String] = Map(
     "SECRET_KEY" -> ("IntegrationTest" + Random.nextString(2)),
@@ -70,8 +70,8 @@ trait BaseE2ETest extends FlatSpec with Matchers with ForAllTestContainer with D
   private def getIp(c: InspectContainerResponse): String =
     c.getNetworkSettings.getNetworks.asScala.values.head.getIpAddress
 
-  private def containers(): Seq[LazyContainer[Container]] = List(LazyContainer(pgContainer), LazyContainer(app))
+  private def containers(): Seq[LazyContainer[Container]] = Seq(LazyContainer(pgContainer), LazyContainer(app))
 
-  private def appContainers(): Seq[LazyContainer[Container]] = additionalContainer() ++ containers()
+  private def appContainers(): Seq[LazyContainer[Container]] = additionalContainer(containers())
 
 }

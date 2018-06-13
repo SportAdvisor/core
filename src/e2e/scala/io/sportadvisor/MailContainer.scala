@@ -6,10 +6,14 @@ import com.dimafeng.testcontainers._
   */
 trait MailContainer extends BaseE2ETest {
 
-  lazy val mailContainer =
-    GenericContainer("mailhog/mailhog:latest", exposedPorts = List(smtpPort), env = smtpEnv())
+  lazy val mailContainer: Container =
+    GenericContainer("mailhog/mailhog:latest", exposedPorts = Seq(smtpPort), env = smtpEnv())
 
-  override def additionalContainer(): Seq[LazyContainer[Container]] = List(LazyContainer(mailContainer))
+  override def additionalContainer(
+      initial: Seq[LazyContainer[Container]]): Seq[LazyContainer[Container]] = {
+    val seq = Seq(LazyContainer(mailContainer)) ++ initial
+    super.additionalContainer(seq)
+  }
 
   private def smtpEnv(): Map[String, String] = Map(
     "MH_HOSTNAME" -> "sportadvisor.io"

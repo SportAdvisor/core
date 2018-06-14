@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  unit-test:
     docker:
       - image: som3t1me5/circleci-sbt:latest
     working_directory: ~/sport-advisor-api
@@ -10,7 +10,6 @@ jobs:
           keys:
             - sportadvisor-api-{{ checksum "build.sbt" }}
       - run: sbt test
-      - run: sbt assembly
       - save_cache:
           key: sportadvisor-api-{{ checksum "build.sbt" }}
           paths:
@@ -18,36 +17,55 @@ jobs:
             - ~/.ivy2/cache
             - ~/.m2
       - persist_to_workspace:
-          root: /home/node/sport-advisor-api/
+          root: /home/node/
           paths:
-            - target/scala-2.12/sportadvisor-api.jar
-            - Dockerfile
-            - .circleci/deploy.sh
-
-  deploy-docker:
-    machine:
-      image: circleci/classic:201711-01
-      docker_layer_caching: true
+            - sport-advisor-api
+  e2e-test:
+    docker:
+      - image: som3t1me5/circleci-sbt:latest
     working_directory: ~/sport-advisor-api
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - run: cd /tmp/workspace && docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/sportadvisor:latest .
+      - run: cd /tmp/workspace/sport-advisor-api && sbt docker e2e:test
+      - run: docker save -o /home/node/docker-cache/built-image.tar io.sportadvisor/sportadvisor-core:latest
+      - run: mv /tmp/workspace/sport-advisor-api/.circleci/deploy.sh /home/node/docker-cache/
+      - persist_to_workspace:
+          root: /home/node/docker-cache/
+          paths:
+            - built-image.tar
+            - deploy.sh
+  push-and-deploy-docker:
+    machine:
+      image: circleci/classic:201711-01
+      docker_layer_caching: true
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: docker load < docker-cache/built-image.tar
+      - run: docker tag io.sportadvisor/sportadvisor-core:latest ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/sportadvisor:latest
       - run: sh /tmp/workspace/.circleci/deploy.sh
 
 workflows:
    version: 2
    build-and-deploy:
     jobs:
-      - build:
+      - unit-test:
           filters:
             branches:
               only:
                 - master
-      - deploy-docker:
+      - e2e-test:
           filters:
             branches:
               only:
                 - master
           requires:
-            - build
+            - unit-test
+      - push-and-deploy-docker:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - e2e-test

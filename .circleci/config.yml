@@ -22,18 +22,21 @@ jobs:
             - sport-advisor-api
   e2e-test:
     docker:
-      - image: som3t1me5/circleci-sbt:latest
+      - image: som3t1me5/sbt-docker:latest
     working_directory: ~/sport-advisor-api
     steps:
       - attach_workspace:
           at: /tmp/workspace
+      - restore_cache:
+          keys:
+            - sportadvisor-api-{{ checksum "build.sbt" }}
       - run: cd /tmp/workspace/sport-advisor-api && sbt docker e2e:test
-      - run: docker save -o /home/node/docker-cache/built-image.tar io.sportadvisor/sportadvisor-core:latest
-      - run: mv /tmp/workspace/sport-advisor-api/.circleci/deploy.sh /home/node/docker-cache/
+      - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
+      - run: mv /tmp/workspace/sport-advisor-api/.circleci/deploy.sh /home/root/docker-cache/
       - persist_to_workspace:
-          root: /home/node/docker-cache/
+          root: /home/root/docker-cache/
           paths:
-            - built-image.tar
+            - build-image.tar
             - deploy.sh
   push-and-deploy-docker:
     machine:
@@ -42,7 +45,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - run: docker load < docker-cache/built-image.tar
+      - run: docker load < docker-cache/build-image.tar
       - run: docker tag io.sportadvisor/sportadvisor-core:latest ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/sportadvisor:latest
       - run: sh /tmp/workspace/.circleci/deploy.sh
 

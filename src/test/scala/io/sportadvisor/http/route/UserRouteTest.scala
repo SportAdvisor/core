@@ -212,7 +212,7 @@ class UserRouteTest extends BaseTest {
           val resp = r[FailResponse]
           resp.code shouldBe 500
           resp.message.isDefined shouldBe true
-          resp.message.get shouldBe "Authorization error. Relogin please"
+          resp.message.get shouldBe "Authorization error. Re-login please"
         }
       }
     }

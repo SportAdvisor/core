@@ -27,5 +27,5 @@ msgstr "Вы должны согласиться с пользовательск
 msgid "Selected language not supported"
 msgstr "Выбранный язык не поддерживается"
 
-msgid "Authorization error. Relogin please"
+msgid "Authorization error. Re-login please"
 msgstr "Ошибка авторизации. Выполните повторную авторизацию пожалуйста"

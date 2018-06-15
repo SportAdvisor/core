@@ -27,5 +27,5 @@ msgstr ""
 msgid "Selected language not supported"
 msgstr ""
 
-msgid "Authorization error. Relogin please"
+msgid "Authorization error. Re-login please"
 msgstr ""

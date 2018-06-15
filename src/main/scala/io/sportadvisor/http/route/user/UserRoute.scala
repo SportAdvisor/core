@@ -29,7 +29,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     with Logging {
 
   private val emailDuplication = "Email address is already registered"
-  private val authError = "Authorization error. Relogin please"
+  private val authError = "Authorization error. Re-login please"
 
   import http._
   import userService._

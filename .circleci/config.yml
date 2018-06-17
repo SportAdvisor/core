@@ -57,7 +57,7 @@ workflows:
    version: 2
    build-and-deploy:
     jobs:
-      - unit-test:
+      - unit-test
 #          filters:
 #            branches:
 #              only:

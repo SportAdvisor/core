@@ -130,18 +130,17 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleResetPassword(): Route = {
     entity(as[ResetPassword]) { request =>
-      selectLanguage() { lang =>
-        validatorDirective(request, resetPasswordValidator, this) {
-          complete(
-            resetPassword(request.email, request.redirectUrl)
-              .map(
-                res =>
-                  r(
-                    Response.emptyResponse(StatusCodes.OK.intValue)
-                ))
-          )
-        }
+      validatorDirective(request, resetPasswordValidator, this) {
+        complete(
+          resetPassword(request.email, request.redirectUrl)
+            .map(
+              res =>
+                r(
+                  Response.emptyResponse(StatusCodes.OK.intValue)
+              ))
+        )
       }
+
     }
   }
 

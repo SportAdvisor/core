@@ -42,7 +42,8 @@ object Application extends App {
 
     val userRepository = new UserRepositorySQL(databaseConnector)
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
-    val mailTokenRepository = new ResetPasswordTokenRepositorySQL(databaseConnector)
+    val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
+    val resetPasswordTokenRepository = new ResetPasswordTokenRepositorySQL(databaseConnector)
     val usersService = UserService(config, databaseConnector, mailService)
     val httpRoute = new HttpRoute(usersService)
 

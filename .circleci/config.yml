@@ -22,14 +22,15 @@ jobs:
             - sport-advisor-api
   e2e-test:
     docker:
-      - image: som3t1me5/sbt-docker:latest
+      - image: codestar/circleci-scala-sbt-git:scala-2.12.5-sbt-1.1.1
     working_directory: ~/sport-advisor-api
     steps:
       - attach_workspace:
           at: /tmp/workspace
       - restore_cache:
           keys:
-            - sportadvisor-api-{{ checksum "build.sbt" }}
+            - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}
+      - setup_remote_docker
       - run: cd /tmp/workspace/sport-advisor-api && sbt docker e2e:test
       - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
       - run: mv /tmp/workspace/sport-advisor-api/.circleci/deploy.sh /home/root/docker-cache/

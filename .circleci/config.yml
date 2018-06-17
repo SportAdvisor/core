@@ -30,7 +30,9 @@ jobs:
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}-e2e
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: docker ps
       - run: mv /tmp/workspace/sport-advisor-api ~/
       - run: sbt docker e2e:test
       - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest

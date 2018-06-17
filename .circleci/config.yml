@@ -32,6 +32,7 @@ jobs:
             - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}
       - setup_remote_docker
       - run: mv /tmp/workspace/sport-advisor-api ~/sport-advisor-api
+      - run: ls ~/sport-advisor-api
       - run: .circleci/move-cache.sh
       - run: sbt docker e2e:test
       - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
@@ -57,21 +58,21 @@ workflows:
    build-and-deploy:
     jobs:
       - unit-test:
-          filters:
-            branches:
-              only:
-                - master
+#          filters:
+#            branches:
+#              only:
+#                - master
       - e2e-test:
-          filters:
-            branches:
-              only:
-                - master
+#          filters:
+#            branches:
+#              only:
+#                - master
           requires:
             - unit-test
       - push-and-deploy-docker:
-          filters:
-            branches:
-              only:
-                - master
+#          filters:
+#            branches:
+#              only:
+#                - master
           requires:
             - e2e-test

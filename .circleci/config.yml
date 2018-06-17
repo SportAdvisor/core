@@ -31,7 +31,7 @@ jobs:
           keys:
             - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}
       - setup_remote_docker
-      - run: mv /tmp/workspace/sport-advisor-api ~/sport-advisor-api
+      - run: mv /tmp/workspace/sport-advisor-api ~/
       - run: ls ~/sport-advisor-api
       - run: .circleci/move-cache.sh
       - run: sbt docker e2e:test

@@ -30,10 +30,14 @@ jobs:
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}
+      - run: [ -d "/home/node/.sbt" ] && mv /home/node/.sbt /home/root/.sbt && \
+          mv /home/node/.ivy2/cache /home/root/.ivy2/cache && \
+          mv /home/node/.m2 /home/root/.m2
       - setup_remote_docker
-      - run: cd /tmp/workspace/sport-advisor-api && sbt docker e2e:test
+      - run: mv /tmp/workspace/sport-advisor-api ~/sport-advisor-api
+      - run: sbt docker e2e:test
       - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
-      - run: mv /tmp/workspace/sport-advisor-api/.circleci/deploy.sh /home/root/docker-cache/
+      - run: mv .circleci/deploy.sh /home/root/docker-cache/
       - persist_to_workspace:
           root: /home/root/docker-cache/
           paths:

@@ -41,6 +41,7 @@ package object user {
                                 lastTouch: LocalDateTime)
 
   final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
+  final case class ResetPasswordToken(token: String, expireAt: LocalDateTime)
 
   implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
   implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder

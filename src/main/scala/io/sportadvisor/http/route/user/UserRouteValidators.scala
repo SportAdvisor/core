@@ -51,6 +51,11 @@ object UserRouteValidators {
           .map(_ => ValidationResult("language", langNotSupported))
     )
 
+  val resetPasswordValidator: Validator[ResetPassword] =
+    Validator[ResetPassword](
+      u => emailValidator("email")(u.email)
+    )
+
   private def emailValidator(field: String): (String => Option[ValidationResult]) = u => {
     if (!u.matches(".+@.+\\..+")) {
       Some(ValidationResult(field, emailInvalid))

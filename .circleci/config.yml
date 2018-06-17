@@ -30,9 +30,7 @@ jobs:
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}
-      - run: [ -d "/home/node/.sbt" ] && mv /home/node/.sbt /home/root/.sbt && \
-          mv /home/node/.ivy2/cache /home/root/.ivy2/cache && \
-          mv /home/node/.m2 /home/root/.m2
+      - run: [ -d "/home/node/.sbt" ] && mv /home/node/.sbt /home/root/.sbt && mv /home/node/.ivy2/cache /home/root/.ivy2/cache && mv /home/node/.m2 /home/root/.m2
       - setup_remote_docker
       - run: mv /tmp/workspace/sport-advisor-api ~/sport-advisor-api
       - run: sbt docker e2e:test

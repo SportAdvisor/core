@@ -28,17 +28,14 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
+      - run: mv /tmp/workspace/sport-advisor-api ~/
+      - run: ls /home/
       - restore_cache:
           keys:
-            - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}-e2e
-      - run: mv /tmp/workspace/sport-advisor-api ~/
-      - run: sbt version
+            - sportadvisor-api-{{ checksum "build.sbt" }}-e2e
+      - run: sbt version # crutch for downloading sbt
       - run: sbt docker e2e:test
-      - run:
-          command: |
-          mkdir ~/docker-cache
-          ls /home/
-          docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
+      - run: mkdir /home/root/docker-cache && docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
       - run: mv .circleci/deploy.sh /home/root/docker-cache/
       - save_cache:
                 key: sportadvisor-api-{{ checksum "build.sbt" }}-e2e
@@ -58,7 +55,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - run: docker load < docker-cache/build-image.tar
+      - run: docker load < /tmp/workspace/docker-cache/build-image.tar
       - run: docker tag io.sportadvisor/sportadvisor-core:latest ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/sportadvisor:latest
       - run: sh /tmp/workspace/.circleci/deploy.sh
 

@@ -21,27 +21,18 @@ jobs:
           paths:
             - sport-advisor-api
   e2e-test:
-    docker:
-      - image: circleci/classic:201711-01
+    machine:
+          image: circleci/classic:201711-01
+          docker_layer_caching: true
     working_directory: ~/sport-advisor-api
     steps:
-      - run:
-          name: Get sbt binary
-          command: |
-            apt update && apt install -y curl
-            curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb
-            dpkg -i sbt-$SBT_VERSION.deb
-            rm sbt-$SBT_VERSION.deb
-            apt-get update
-            apt-get install -y sbt python-pip git
-            pip install awscli
-            apt-get clean && apt-get autoclean
       - attach_workspace:
           at: /tmp/workspace
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "/tmp/workspace/sport-advisor-api/build.sbt" }}-e2e
       - run: mv /tmp/workspace/sport-advisor-api ~/
+      - run: sbt version
       - run: sbt docker e2e:test
       - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
       - run: mv .circleci/deploy.sh /home/root/docker-cache/

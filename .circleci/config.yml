@@ -21,9 +21,8 @@ jobs:
           paths:
             - sport-advisor-api
   e2e-test:
-    machine:
-          image: circleci/classic:201711-01
-          docker_layer_caching: true
+    docker:
+          -image: circleci/classic:201711-01
     working_directory: ~/sport-advisor-api
     steps:
       - run:

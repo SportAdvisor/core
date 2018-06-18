@@ -42,4 +42,15 @@ object MonadTransformers {
 
   }
 
+  implicit class FutureEitherMonadTransformer[L, R](val t: Future[Either[L, R]]) extends AnyVal {
+
+    def flatMapRight[V](f: R => Future[V])(
+        implicit executionContext: ExecutionContext): Future[Either[L, V]] =
+      t.flatMap {
+        case Left(l)  => Future.successful(Left(l))
+        case Right(r) => f(r).map(Right(_))
+      }
+
+  }
+
 }

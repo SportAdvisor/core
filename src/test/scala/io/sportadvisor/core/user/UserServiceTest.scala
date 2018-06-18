@@ -196,6 +196,41 @@ class UserServiceTest extends BaseTest {
         awaitForResult(userService.changeAccount(testId, "test", Some("ru"))).isDefined shouldBe false
       }
     }
+
+    "changePassword" should {
+      "return user not found" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(None))
+        awaitForResult(userService.changePassword(testId, "123", "123")) match {
+          case Right(_) => throw new IllegalStateException
+          case Left(e) => e match {
+            case UserNotFound(_) =>
+            case _ => throw new IllegalStateException
+          }
+        }
+      }
+
+      "return password mismatch" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        awaitForResult(userService.changePassword(testId, "123", "123")) match {
+          case Right(_) => throw new IllegalStateException
+          case Left(e) => e match {
+            case PasswordMismatch() =>
+            case _ => throw new IllegalStateException
+          }
+        }
+      }
+
+      "return unit if success" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.save(Matchers.eq[UserData](testUser.copy(password = "123".sha256.hex))))
+          .thenReturn(Future.successful(Right(testUser.copy(password = "123".sha256.hex))))
+        when(tokenRepository.removeByUser(testId)).thenReturn(Future.successful(()))
+        awaitForResult(userService.changePassword(testId, testPassword, "123")) match {
+          case Right(_) =>
+          case Left(_) => throw new IllegalStateException
+        }
+      }
+    }
   }
 
   trait Context {

@@ -8,10 +8,10 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - sportadvisor-api-{{ checksum "build.sbt" }}
+            - sportadvisor-api-unit-{{ checksum "build.sbt" }}
       - run: sbt test
       - save_cache:
-          key: sportadvisor-api-{{ checksum "build.sbt" }}
+          key: sportadvisor-api-unit-{{ checksum "build.sbt" }}
           paths:
             - ~/.sbt
             - ~/.ivy2/cache
@@ -21,20 +21,29 @@ jobs:
           paths:
             - sport-advisor-api
   e2e-test:
-    docker:
-      - image: som3t1me5/sbt-docker:latest
+    machine:
+          image: circleci/classic:201711-01
+          docker_layer_caching: true
     working_directory: ~/sport-advisor-api
     steps:
       - attach_workspace:
           at: /tmp/workspace
+      - run: mv /tmp/workspace/sport-advisor-api ~/
       - restore_cache:
           keys:
-            - sportadvisor-api-{{ checksum "build.sbt" }}
-      - run: cd /tmp/workspace/sport-advisor-api && sbt docker e2e:test
-      - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
-      - run: mv /tmp/workspace/sport-advisor-api/.circleci/deploy.sh /home/root/docker-cache/
+            - sportadvisor-api-e2e-{{ checksum "build.sbt" }}
+      - run: sbt version # crutch for downloading sbt
+      - run: sbt docker e2e:test
+      - run: mkdir /home/circleci/docker-cache && docker save -o /home/circleci/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
+      - run: mv .circleci/deploy.sh /home/circleci/docker-cache/
+      - save_cache:
+                key: sportadvisor-api-{{ checksum "build.sbt" }}-e2e
+                paths:
+                  - ~/.sbt
+                  - ~/.ivy2/cache
+                  - ~/.m2
       - persist_to_workspace:
-          root: /home/root/docker-cache/
+          root: /home/circleci/docker-cache/
           paths:
             - build-image.tar
             - deploy.sh
@@ -45,9 +54,9 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - run: docker load < docker-cache/build-image.tar
+      - run: docker load < /tmp/workspace/build-image.tar
       - run: docker tag io.sportadvisor/sportadvisor-core:latest ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/sportadvisor:latest
-      - run: sh /tmp/workspace/.circleci/deploy.sh
+      - run: sh /tmp/workspace/deploy.sh
 
 workflows:
    version: 2

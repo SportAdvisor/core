@@ -22,7 +22,7 @@ jobs:
             - sport-advisor-api
   e2e-test:
     docker:
-          -image: circleci/classic:201711-01
+      - image: circleci/classic:201711-01
     working_directory: ~/sport-advisor-api
     steps:
       - run:

@@ -29,7 +29,7 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run: mv /tmp/workspace/sport-advisor-api ~/
-      - run: ls /home/
+      - run: whoami
       - restore_cache:
           keys:
             - sportadvisor-api-{{ checksum "build.sbt" }}-e2e

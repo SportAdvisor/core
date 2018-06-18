@@ -8,10 +8,10 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - sportadvisor-api-{{ checksum "build.sbt" }}
+            - sportadvisor-api-unit-{{ checksum "build.sbt" }}
       - run: sbt test
       - save_cache:
-          key: sportadvisor-api-{{ checksum "build.sbt" }}
+          key: sportadvisor-api-unit-{{ checksum "build.sbt" }}
           paths:
             - ~/.sbt
             - ~/.ivy2/cache
@@ -31,7 +31,7 @@ jobs:
       - run: mv /tmp/workspace/sport-advisor-api ~/
       - restore_cache:
           keys:
-            - sportadvisor-api-{{ checksum "build.sbt" }}-e2e
+            - sportadvisor-api-e2e-{{ checksum "build.sbt" }}
       - run: sbt version # crutch for downloading sbt
       - run: sbt docker e2e:test
       - run: mkdir /home/circleci/docker-cache && docker save -o /home/circleci/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest

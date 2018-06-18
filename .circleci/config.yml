@@ -54,9 +54,9 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/workspace
-      - run: docker load < /tmp/workspace/docker-cache/build-image.tar
+      - run: docker load < /tmp/workspace/build-image.tar
       - run: docker tag io.sportadvisor/sportadvisor-core:latest ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/sportadvisor:latest
-      - run: sh /tmp/workspace/.circleci/deploy.sh
+      - run: sh /tmp/workspace/deploy.sh
 
 workflows:
    version: 2

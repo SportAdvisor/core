@@ -34,7 +34,11 @@ jobs:
       - run: mv /tmp/workspace/sport-advisor-api ~/
       - run: sbt version
       - run: sbt docker e2e:test
-      - run: docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
+      - run:
+          command: |
+          mkdir ~/docker-cache
+          ls /home/
+          docker save -o /home/root/docker-cache/build-image.tar io.sportadvisor/sportadvisor-core:latest
       - run: mv .circleci/deploy.sh /home/root/docker-cache/
       - save_cache:
                 key: sportadvisor-api-{{ checksum "build.sbt" }}-e2e

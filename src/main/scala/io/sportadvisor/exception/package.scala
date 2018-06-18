@@ -1,26 +1,23 @@
 package io.sportadvisor
 
+import io.sportadvisor.core.user.UserID
+
+import scala.util.control.NoStackTrace
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
 package object exception {
 
-  trait SAException {
-    def error: Option[Throwable]
-  }
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+  abstract class ApiError(val msg: String, val error: Option[Throwable])
+      extends RuntimeException(msg)
+      with NoStackTrace {}
 
-  final case class DuplicateException() extends SAException {
-    override def error: Option[Throwable] = None
-  }
+  final case class DuplicateException() extends ApiError("Duplication error", None) {}
 
-  final case class UnhandledException(err: Throwable) extends SAException {
-    override def error: Option[Throwable] = Option(err)
-  }
+  final case class UnhandledException(err: Throwable) extends ApiError(err.getMessage, Some(err)) {}
 
-  final case class UserNotFound() extends SAException {
-    override def error: Option[Throwable] = None
-  }
-
-  final case class ApiError(exception: Option[SAException])
+  final case class UserNotFound(id: UserID) extends ApiError("User not found", None) {}
 
 }

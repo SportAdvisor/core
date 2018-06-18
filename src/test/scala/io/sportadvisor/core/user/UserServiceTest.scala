@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.exception.{ApiError, DuplicateException, UnhandledException, UserNotFound}
+import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail.{MailMessage, MailRenderService, MailSenderService, MailService}
@@ -72,8 +72,7 @@ class UserServiceTest extends BaseTest {
         either.isLeft shouldBe true
         either match {
           case Left(error) =>
-            error.exception.isDefined shouldBe true
-            error.exception.foreach {
+            error match {
               case DuplicateException() => ()
               case _ => throw new IllegalStateException()
             }
@@ -89,9 +88,8 @@ class UserServiceTest extends BaseTest {
         either.isLeft shouldBe true
         either match {
           case Left(error) =>
-            error.exception.isDefined shouldBe true
-            error.exception.foreach {
-              case UserNotFound() => ()
+            error match {
+              case UserNotFound(_) => ()
               case _ => throw new IllegalStateException()
             }
           case Right(_) => throw new IllegalStateException()

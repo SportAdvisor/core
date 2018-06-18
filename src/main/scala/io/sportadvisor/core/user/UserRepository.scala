@@ -2,7 +2,7 @@ package io.sportadvisor.core.user
 
 import java.sql.SQLException
 
-import io.sportadvisor.exception.{SAException, DuplicateException, UnhandledException}
+import io.sportadvisor.exception.{ApiError, DuplicateException, UnhandledException}
 import io.sportadvisor.util.db.DatabaseConnector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +17,7 @@ trait UserRepository {
 
   def get(userID: UserID): Future[Option[UserData]]
 
-  def save(user: User): Future[Either[SAException, UserData]]
+  def save(user: User): Future[Either[ApiError, UserData]]
 
   def remove(userID: UserID): Future[Option[UserData]]
 
@@ -39,7 +39,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
 
   private val insertQuery = users returning users.map(_.id) into ((user, id) => user.copy(id = id))
 
-  override def save(user: User): Future[Either[SAException, UserData]] = user match {
+  override def save(user: User): Future[Either[ApiError, UserData]] = user match {
     case u @ CreateUser(_, _, _) => createUser(u)
     case u: UserData             => updateUser(u)
   }
@@ -47,7 +47,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   override def remove(userID: UserID): Future[Option[UserData]] = ???
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  private def createUser(u: CreateUser): Future[Either[SAException, UserData]] = {
+  private def createUser(u: CreateUser): Future[Either[ApiError, UserData]] = {
     val action = insertQuery += UserData(0, u.email, u.password, u.name, None)
     db.run(action.asTry).map {
       case Success(e) => Right(e)
@@ -58,7 +58,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  private def updateUser(u: UserData): Future[Either[SAException, UserData]] = {
+  private def updateUser(u: UserData): Future[Either[ApiError, UserData]] = {
     db.run(users.filter(user => user.id === u.id).update(u).asTry).map {
       case Success(e) => Right(u)
       case Failure(e: SQLException) =>

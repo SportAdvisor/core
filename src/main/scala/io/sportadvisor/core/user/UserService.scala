@@ -17,7 +17,6 @@ import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
 import io.sportadvisor.util._
-import io.sportadvisor.core.user._
 
 import scala.util.Success
 
@@ -42,7 +41,7 @@ abstract class UserService(
     userRepository
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
-        case Left(e)  => Future.successful(Left(ApiError(Option(e))))
+        case Left(e)  => Future.successful(Left(e))
         case Right(u) => createAndSaveToken(u, Boolean.box(true)).map(t => Right(t))
       }
 
@@ -56,13 +55,13 @@ abstract class UserService(
                   email: String,
                   redirectUrl: String): Future[Either[ApiError, Unit]] = {
     userRepository.find(email).flatMap {
-      case Some(_) => Future.successful(Left(ApiError(Option(new DuplicateException))))
+      case Some(_) => Future.successful(Left(DuplicateException()))
       case None =>
         userRepository
           .get(userID)
           .flatMap {
             case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
-            case None    => Future.successful(Left(ApiError(Option(UserNotFound()))))
+            case None    => Future.successful(Left(UserNotFound(userID)))
           }
     }
   }
@@ -111,7 +110,7 @@ abstract class UserService(
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
     mailService.mailSender.send(msg).flatMap {
-      case Left(t)  => Future.successful(Left(ApiError(Option(UnhandledException(t)))))
+      case Left(t)  => Future.successful(Left(UnhandledException(t)))
       case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right())
     }
   }
@@ -155,7 +154,7 @@ abstract class UserService(
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(oldEmail), List(), List(user.email), subject, HtmlContent(body))
     mailService.mailSender.send(msg).map {
-      case Left(t)  => Left(ApiError(Option(UnhandledException(t))))
+      case Left(t)  => Left(UnhandledException(t))
       case Right(_) => Right(())
     }
   }

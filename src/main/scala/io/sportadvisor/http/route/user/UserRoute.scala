@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.sportadvisor.core.user.{UserID, UserService}
-import io.sportadvisor.exception.{ApiError, DuplicateException}
+import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.json._
 import io.sportadvisor.http.json.Codecs._
@@ -29,6 +29,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     with Logging {
 
   private val emailDuplication = "Email address is already registered"
+  private val authError = "Authorization error. Re-login please"
+  private val passwordIncorrect = "Incorrect password"
 
   import http._
   import userService._
@@ -53,6 +55,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             handleGetUser(userId)
           } ~ put {
             handleChangeAccount(userId)
+          } ~ path("password") {
+            put {
+              handleChangePassword(userId)
+            }
           }
         } ~ path("email-confirm") {
           post {
@@ -77,7 +83,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         validatorDirective(request, regValidator, this) {
           complete(
             signUp(request.email, request.password, request.name).map {
-              case Left(e)      => handleApiError(e, lang)
+              case Left(e)      => handleEmailDuplicate(e, "email", lang)
               case Right(token) => r(Response.objectResponse(token, None))
             }
           )
@@ -105,7 +111,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             validatorDirective(request, changeMailValidator, this) {
               complete(
                 changeEmail(userId, request.email, request.redirectUrl).map {
-                  case Left(e)  => handleApiError(e, lang)
+                  case Left(e)  => handleEmailDuplicate(e, "email", lang)
                   case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
                 }
               )
@@ -186,16 +192,55 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private def handleApiError(err: ApiError, lang: String): (StatusCode, Json) = {
-    err.exception
-      .map {
-        case DuplicateException() =>
-          r(Response.errorResponse(List(FormError("email", errors(lang).t(emailDuplication)))))
-        case e @ _ =>
-          e.error.foreach(t => log.warn("API ERROR", t))
-          r(Response.failResponse(None))
+  def handleChangePassword(id: UserID): Route = {
+    entity(as[PasswordChange]) { req =>
+      authenticate(userService.secret) { userId =>
+        checkAccess(id, userId) {
+          validatorDirective(req, changePasswordValidator, this) {
+            selectLanguage() { lang =>
+              complete(
+                changePassword(userId, req.password, req.newPassword).map {
+                  case Left(e)  => handlePasswordMismatch(e, "password", lang)
+                  case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+                }
+              )
+            }
+          }
+        }
       }
-      .fold(r(Response.failResponse(None)))(r => r)
+    }
+  }
+
+  private def handleEmailDuplicate(err: ApiError,
+                                   field: String,
+                                   lang: String): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case DuplicateException() =>
+        r(Response.errorResponse(List(FormError(field, errors(lang).t(emailDuplication)))))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
+  }
+
+  private def handlePasswordMismatch(err: ApiError,
+                                     field: String,
+                                     lang: String): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case PasswordMismatch() =>
+        r(Response.errorResponse(List(FormError(field, errors(lang).t(passwordIncorrect)))))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
+  }
+
+  private def apiErrorHandler(lang: String): PartialFunction[ApiError, (StatusCode, Json)] = {
+    case UserNotFound(id) =>
+      log.warn(s"Api error. User with id $id not found")
+      val msg = errors(lang).t(authError)
+      r(Response.failResponse(Some(msg)))
+    case exception =>
+      exception.error.fold(log.error(s"Api error: ${exception.msg}")) { e =>
+        log.error(s"Api error: ${exception.msg}", e)
+      }
+      r(Response.failResponse(None))
   }
 
 }

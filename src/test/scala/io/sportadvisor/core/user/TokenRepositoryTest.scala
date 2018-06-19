@@ -54,6 +54,24 @@ class TokenRepositoryTest extends BaseTest {
         tokens4 shouldBe Vector()
       }
     }
+
+    "removeByUser" should {
+      "not remove by user" in new Context {
+        awaitForResult(tokenRepository.save(RefreshToken(5L, "t123", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(RefreshToken(5L, "t1232", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.removeByUser(100L))
+        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(5L))
+        tokens.size shouldBe 2
+      }
+
+      "remove by user" in new Context {
+        awaitForResult(tokenRepository.save(RefreshToken(6L, "t123", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(RefreshToken(6L, "t1232", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.removeByUser(6L))
+        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(6L))
+        tokens.isEmpty shouldBe true
+      }
+    }
   }
 
   trait Context {

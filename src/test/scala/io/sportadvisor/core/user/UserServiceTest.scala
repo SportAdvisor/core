@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.exception.{ApiError, DuplicateException, UnhandledException, UserNotFound}
+import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail.{MailMessage, MailRenderService, MailSenderService, MailService}
@@ -72,8 +72,7 @@ class UserServiceTest extends BaseTest {
         either.isLeft shouldBe true
         either match {
           case Left(error) =>
-            error.exception.isDefined shouldBe true
-            error.exception.foreach {
+            error match {
               case DuplicateException() => ()
               case _ => throw new IllegalStateException()
             }
@@ -89,9 +88,8 @@ class UserServiceTest extends BaseTest {
         either.isLeft shouldBe true
         either match {
           case Left(error) =>
-            error.exception.isDefined shouldBe true
-            error.exception.foreach {
-              case UserNotFound() => ()
+            error match {
+              case UserNotFound(_) => ()
               case _ => throw new IllegalStateException()
             }
           case Right(_) => throw new IllegalStateException()
@@ -196,6 +194,41 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Left(UnhandledException(new Exception))))
 
         awaitForResult(userService.changeAccount(testId, "test", Some("ru"))).isDefined shouldBe false
+      }
+    }
+
+    "changePassword" should {
+      "return user not found" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(None))
+        awaitForResult(userService.changePassword(testId, "123", "123")) match {
+          case Right(_) => throw new IllegalStateException
+          case Left(e) => e match {
+            case UserNotFound(_) =>
+            case _ => throw new IllegalStateException
+          }
+        }
+      }
+
+      "return password mismatch" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        awaitForResult(userService.changePassword(testId, "123", "123")) match {
+          case Right(_) => throw new IllegalStateException
+          case Left(e) => e match {
+            case PasswordMismatch() =>
+            case _ => throw new IllegalStateException
+          }
+        }
+      }
+
+      "return unit if success" in new Context {
+        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.save(Matchers.eq[UserData](testUser.copy(password = "123".sha256.hex))))
+          .thenReturn(Future.successful(Right(testUser.copy(password = "123".sha256.hex))))
+        when(tokenRepository.removeByUser(testId)).thenReturn(Future.successful(()))
+        awaitForResult(userService.changePassword(testId, testPassword, "123")) match {
+          case Right(_) =>
+          case Left(_) => throw new IllegalStateException
+        }
       }
     }
   }

@@ -21,13 +21,7 @@ object UserRouteValidators {
     Validator[RegistrationModel](
       u => nameValidator("name")(u.name),
       u => emailValidator("email")(u.email),
-      u => {
-        if (!u.password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")) {
-          Some(ValidationResult("password", passwordIsWeak))
-        } else {
-          None
-        }
-      },
+      u => passwordValidator("password")(u.password),
       u =>
         if (!u.EULA) {
           Some(ValidationResult("EULA", EUALIsRequired))
@@ -51,6 +45,9 @@ object UserRouteValidators {
           .map(_ => ValidationResult("language", langNotSupported))
     )
 
+  val changePasswordValidator: Validator[PasswordChange] =
+    Validator[PasswordChange](p => passwordValidator("newPassword")(p.newPassword))
+
   val resetPasswordValidator: Validator[ResetPassword] =
     Validator[ResetPassword](
       u => emailValidator("email")(u.email)
@@ -65,7 +62,15 @@ object UserRouteValidators {
   }
 
   private def nameValidator(field: String): (String => Option[ValidationResult]) = name => {
-    if (name.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None
+    if (name.trim.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None
+  }
+
+  private def passwordValidator(field: String): (String => Option[ValidationResult]) = password => {
+    if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")) {
+      Some(ValidationResult(field, passwordIsWeak))
+    } else {
+      None
+    }
   }
 
 }

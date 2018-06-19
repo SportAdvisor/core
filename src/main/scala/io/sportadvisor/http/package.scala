@@ -1,7 +1,7 @@
 package io.sportadvisor
 
-import akka.http.scaladsl.model.{StatusCode, StatusCodes, Uri}
-import akka.http.scaladsl.model.headers.{Language, Location}
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
+import akka.http.scaladsl.model.headers.Language
 import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}

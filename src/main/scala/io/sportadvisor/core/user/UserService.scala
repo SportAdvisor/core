@@ -96,6 +96,30 @@ abstract class UserService(
       .flatMapT(u => userRepository.save(u).map(e => e.toOption))
   }
 
+  def changePassword(userID: UserID,
+                     oldPass: String,
+                     newPass: String): Future[Either[ApiError, Unit]] = {
+    userRepository
+      .get(userID)
+      .flatMapTOuter(u => updatePass(u, oldPass, newPass)) map {
+      case None    => Left(UserNotFound(userID))
+      case Some(e) => e
+    }
+  }
+
+  private def updatePass(u: UserData,
+                         oldPass: String,
+                         newPass: String): Future[Either[ApiError, Unit]] = {
+    if (u.password == oldPass.sha256.hex) {
+      val updatedUser = u.copy(password = newPass.sha256.hex)
+      userRepository
+        .save(updatedUser)
+        .flatMapRight(user => tokenRepository.removeByUser(user.id))
+    } else {
+      Future.successful(Left(PasswordMismatch()))
+    }
+  }
+
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendRequestOfChangeEmail(user: UserData,
                                        email: String,

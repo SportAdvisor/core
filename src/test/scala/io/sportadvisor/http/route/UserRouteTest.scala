@@ -358,6 +358,43 @@ class UserRouteTest extends BaseTest {
         }
       }
     }
+
+    "PUT /api/users/{id}/password" should {
+      "return 400 if new password invalid" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"password": "asd", "newPassword":"easypass"}""")
+
+        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code shouldBe 400
+          resp.errors should (contain(FormError("newPassword", "Your password must be at least 8 characters long, and " +
+            "include at least one lowercase letter, one uppercase letter, and a number")) and have size 1)
+        }
+      }
+
+      "return 400 if old password mismatch" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"password": "asd", "newPassword":"str0nGpass"}""")
+        when(userService.changePassword(testUserId, "asd", "str0nGpass"))
+          .thenReturn(Future.successful(Left(PasswordMismatch())))
+        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code shouldBe 400
+          resp.errors should (contain(FormError("password", "Incorrect password")) and have size 1)
+        }
+      }
+
+      "return 200 if success" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"password": "asd", "newPassword":"str0nGpass"}""")
+        when(userService.changePassword(testUserId, "asd", "str0nGpass"))
+          .thenReturn(Future.successful(Right(())))
+        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 200
+        }
+      }
+    }
   }
 
   trait Context {

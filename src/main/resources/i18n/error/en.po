@@ -29,3 +29,6 @@ msgstr "Selected language not supported"
 
 msgid "Authorization error. Re-login please"
 msgstr "Authorization error. Re-login please"
+
+msgid "Incorrect password"
+msgstr "Incorrect password"

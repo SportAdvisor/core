@@ -29,3 +29,6 @@ msgstr "Выбранный язык не поддерживается"
 
 msgid "Authorization error. Re-login please"
 msgstr "Ошибка авторизации. Выполните повторную авторизацию пожалуйста"
+
+msgid "Incorrect password"
+msgstr "Неверный пароль"

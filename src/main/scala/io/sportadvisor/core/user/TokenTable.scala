@@ -15,12 +15,6 @@ private[user] trait TokenTable {
   protected val connector: DatabaseConnector
   import connector.profile.api._
 
-  implicit val localDateTime2Date: JdbcType[LocalDateTime] with BaseTypedType[LocalDateTime] =
-    MappedColumnType.base[LocalDateTime, Timestamp](
-      l => Timestamp.valueOf(l),
-      d => d.toLocalDateTime
-    )
-
   // scalastyle:off
   class TokenScheme(tag: Tag) extends Table[RefreshToken](tag, "REFRESH_TOKENS") {
     def userId: Rep[UserID] = column[Long]("user_id")

@@ -89,7 +89,6 @@ scalastyleFailOnWarning := true
 wartremoverErrors in (Compile, compile) ++= Warts.unsafe
 wartremoverErrors in (Compile, compile) ++= Seq(Wart.FinalCaseClass,
                                                 Wart.Enumeration,
-                                                Wart.Equals,
                                                 Wart.LeakingSealed,
                                                 Wart.Recursion)
 wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Nothing,

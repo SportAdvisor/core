@@ -22,4 +22,8 @@ package object exception {
 
   final case class PasswordMismatch() extends ApiError("Password mismatch", None)
 
+  final case class TokenDoesntExist(tokenType: String) extends ApiError(s"$tokenType doesnt exists", None)
+
+  final case class TokenExpired(tokenType: String) extends ApiError(s"$tokenType expired", None)
+
 }

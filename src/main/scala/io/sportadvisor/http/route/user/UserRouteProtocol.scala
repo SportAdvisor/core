@@ -14,6 +14,7 @@ object UserRouteProtocol {
   final case class EmailPassword(email: String, password: String, remember: Boolean)
   final case class EmailToken(token: String)
   final case class ResetPassword(email: String, redirectUrl: String)
+  final case class ConfirmPassword(token: String, password: String)
   final case class AccountSettings(name: String, language: Option[String])
   final case class PasswordChange(password: String, newPassword: String)
 

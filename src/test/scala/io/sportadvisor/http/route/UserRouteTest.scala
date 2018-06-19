@@ -395,6 +395,18 @@ class UserRouteTest extends BaseTest {
         }
       }
     }
+
+    "POST /api/users/reset-password" should {
+      "return 200 anyway" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+
+        Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code should be(200)
+        }
+      }
+    }
   }
 
   trait Context {

@@ -100,7 +100,7 @@ abstract class UserService(userRepository: UserRepository,
         val subject = mails(user.lang).t("Reset password on SportAdvisor")
         val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
         mailService.mailSender.send(msg).flatMap {
-          case Left(t) => Future.successful(Left(ApiError(Option(UnhandledException(t)))))
+          case Left(t) => Future.successful(Left(UnhandledException(t)))
           case Right(_) =>
             resetPasswordTokenRepository
               .save(ResetPasswordToken(token, time))
@@ -108,6 +108,22 @@ abstract class UserService(userRepository: UserRepository,
         }
       }
       .map(_ => Unit)
+  }
+
+  def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
+    resetPasswordTokenRepository
+      .get(token) flatMap {
+      case None => Future.successful(Left(TokenDoesntExist("reset password")))
+      case Some(t) =>
+        decodeResetPasswordToken(t.token, secret) match {
+          case None => Future.successful(Left(TokenExpired("reset password")))
+          case Some(dt) =>
+            userRepository.find(dt.email).flatMap {
+              case None => Future.successful(Left(UserNotFound(-1L)))
+              case Some(u) => updatePassword(u, password)
+            }
+        }
+    }
   }
 
   def getById(id: UserID): Future[Option[UserData]] = userRepository.get(id)
@@ -136,13 +152,17 @@ abstract class UserService(userRepository: UserRepository,
                          oldPass: String,
                          newPass: String): Future[Either[ApiError, Unit]] = {
     if (u.password == oldPass.sha256.hex) {
-      val updatedUser = u.copy(password = newPass.sha256.hex)
-      userRepository
-        .save(updatedUser)
-        .flatMapRight(user => tokenRepository.removeByUser(user.id))
+      updatePassword(u, newPass)
     } else {
       Future.successful(Left(PasswordMismatch()))
     }
+  }
+
+  private def updatePassword(u: UserData, newPass: String): Future[Either[ApiError, Unit]] = {
+    val updatedUser = u.copy(password = newPass.sha256.hex)
+    userRepository
+      .save(updatedUser)
+      .flatMapRight(user => tokenRepository.removeByUser(user.id))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))

@@ -249,9 +249,10 @@ class UserServiceTest extends BaseTest {
     val userRepository: UserRepository = mock[UserRepository]
     val tokenRepository: TokenRepository = mock[TokenRepository]
     val mailChangesTokenRepository: MailChangesTokenRepository = mock[MailChangesTokenRepository]
+    val resetPasswordTokenRepository: ResetPasswordTokenRepository = mock[ResetPasswordTokenRepository]
 
     val userService = new UserService(userRepository, tokenRepository, testSecretKey, mailService,
-      mailChangesTokenRepository) with I18nStub
+      mailChangesTokenRepository, resetPasswordTokenRepository) with I18nStub
 
     val testId: Long = Random.nextLong()
     val testName: String = Random.nextString(10)

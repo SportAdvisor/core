@@ -68,6 +68,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           post {
             handleResetPassword()
           }
+        } ~ path("password-confirm") {
+          post {
+            handleConfirmNewPassword()
+          }
         } ~ path("me") {
           get {
             handleGetMe()
@@ -146,7 +150,19 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               ))
         )
       }
+    }
+  }
 
+  def handleConfirmNewPassword(): Route = {
+    entity(as[ConfirmPassword]) { request =>
+      complete(
+        setNewPassword(request.token, request.password)
+          .map(
+            res =>
+              r(
+                Response.emptyResponse(StatusCodes.OK.intValue)
+            ))
+      )
     }
   }
 

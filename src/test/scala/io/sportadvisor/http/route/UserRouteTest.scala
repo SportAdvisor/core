@@ -1,6 +1,6 @@
 package io.sportadvisor.http.route
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
@@ -30,7 +30,7 @@ class UserRouteTest extends BaseTest {
       "return 200 and token if sign up successful" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         when(userService.signUp("test@test.com", "test123Q", "test"))
-          .thenReturn(Future.successful(Right(AuthToken("", "", LocalDateTime.now()))))
+          .thenReturn(Future.successful(Right(AuthToken("", "", ZonedDateTime.now()))))
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[DataResponse[AuthToken, ObjectData[AuthToken]]]
           resp.code should be(200)
@@ -116,7 +116,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "test@test.com", "password": "test123Q",
              |"remember":true}""".stripMargin)
         when(userService.signIn("test@test.com", "test123Q", remember = true))
-          .thenReturn(Future.successful(Some(AuthToken("t", "t", LocalDateTime.now()))))
+          .thenReturn(Future.successful(Some(AuthToken("t", "t", ZonedDateTime.now()))))
         Post("/api/users/sign-in", requestEntity) ~> userRoute ~> check {
           val resp = r[DataResponse[AuthToken, ObjectData[AuthToken]]]
           resp.code should be(200)

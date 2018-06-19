@@ -1,6 +1,6 @@
 package io.sportadvisor.core
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -18,7 +18,7 @@ package object user {
     def password: String
   }
 
-  final case class AuthToken(token: Token, refreshToken: Token, expireAt: LocalDateTime) {
+  final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime) {
     def updateRefreshToken(r: Token): AuthToken = AuthToken(token, r, expireAt)
   }
 

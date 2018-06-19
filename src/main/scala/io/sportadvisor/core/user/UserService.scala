@@ -1,6 +1,6 @@
 package io.sportadvisor.core.user
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneId}
 import java.util.Date
 
 import com.roundeights.hasher.Implicits._
@@ -135,7 +135,7 @@ abstract class UserService(
     val token = JwtUtil.encode(AuthTokenContent(user.id), secret, Option(expTime))
     val refreshToken =
       JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secret, None)
-    AuthToken(token, refreshToken, expTime)
+    AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
   }
 
   private def saveToken(user: UserData,

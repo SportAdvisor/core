@@ -27,7 +27,8 @@ val dbDependencies = Seq(
   "org.postgresql" % "postgresql" % "42.1.4",
   "org.flywaydb" % "flyway-core" % "4.2.0",
   "com.zaxxer" % "HikariCP" % "2.7.0",
-  "com.typesafe.slick" %% "slick" % slickVersion
+  "com.typesafe.slick" %% "slick" % slickVersion,
+  "com.github.tminglei" %% "slick-pg" % "0.16.2"
 )
 
 val circeDependencies = Seq(

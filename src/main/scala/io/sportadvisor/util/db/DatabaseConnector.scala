@@ -17,9 +17,9 @@ class DatabaseConnector(jdbcUrl: String, dbUser: String, dbPassword: String) {
     new HikariDataSource(hikariConfig)
   }
 
-  val profile = slick.jdbc.PostgresProfile
+  val profile: SAPostgresProfile = SAPostgresProfile
   import profile.api._
 
-  val db = Database.forDataSource(hikariDataSource, None)
+  val db: profile.backend.DatabaseDef = Database.forDataSource(hikariDataSource, None)
   db.createSession()
 }

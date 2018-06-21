@@ -16,12 +16,14 @@ val sttpV = "1.1.5"
 
 lazy val EndToEndTest = config("e2e") extend Runtime
 
+dependencyOverrides += "com.typesafe.akka" %% "akka-http" % akkaHttpV
+
 val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpV exclude ("com.typesafe", "config"),
-  "com.typesafe.akka" %% "akka-stream" % "2.5.12",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.11",
   "ch.megard" %% "akka-http-cors" % "0.3.0",
-  "de.heikoseeberger" %% "akka-http-circe" % "1.19.0" excludeAll (ExclusionRule(
-    organization = "io.circe")) exclude ("com.typesafe", "config")
+  "de.heikoseeberger" %% "akka-http-circe" % "1.19.0" excludeAll ExclusionRule(
+    organization = "io.circe") exclude ("com.typesafe", "config")
 )
 
 val dbDependencies = Seq(
@@ -69,7 +71,7 @@ val mailDependencies = Seq(
 val dependencies = Seq(
   "com.roundeights" %% "hasher" % "1.2.0",
   "com.pauldijou" %% "jwt-core" % "0.14.0",
-  "com.github.pureconfig" %% "pureconfig" % "0.9.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.9.0" exclude ("com.typesafe", "config"),
   "com.wix" %% "accord-core" % "0.7.1",
   "tv.cntt" %% "scaposer" % "1.10"
 )

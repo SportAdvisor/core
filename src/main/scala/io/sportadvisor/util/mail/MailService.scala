@@ -18,8 +18,9 @@ private[mail] class MailServiceImpl(config: MailConfig)(implicit executionContex
     extends MailService[I18n, Throwable, Unit] {
 
   private[this] lazy val sender = CourierMailSenderService(config)
+  private[this] lazy val render = ScalateRenderService()
 
-  override def mailRender: MailRenderService[I18n] = ScalateRenderService()
+  override def mailRender: MailRenderService[I18n] = render
 
   override def mailSender: MailSenderService[Throwable, Unit] = sender
 

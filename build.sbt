@@ -81,6 +81,7 @@ mainClass in assembly := Some("io.sportadvisor.Application")
 test in assembly := {}
 assemblyJarName in assembly := "sportadvisor-api.jar"
 assemblyMergeStrategy in assembly := {
+  case "META-INF/mailcap"            => MergeStrategy.first
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case "reference.conf"              => MergeStrategy.concat
   case x                             => MergeStrategy.first

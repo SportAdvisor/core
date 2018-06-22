@@ -37,21 +37,10 @@
         </encoder>
     </appender>
 
-    <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
-        <facility>SYSLOG</facility>
-        <encoder>
-            <pattern>[%level] >> %c{1}: %m%n</pattern>
-        </encoder>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
-    </appender>
-
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ERRFILE"/>
         <appender-ref ref="LOGFILE"/>
-        <appender-ref ref="SYSLOG"/>
     </root>
 
 </configuration>

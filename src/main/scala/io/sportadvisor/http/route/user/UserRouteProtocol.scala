@@ -25,6 +25,7 @@ object UserRouteProtocol {
   implicit val emailChangeDecoder: Decoder[EmailChange] = deriveDecoder
   implicit val emailTokenDecoder: Decoder[EmailToken] = deriveDecoder
   implicit val resetPasswordDecoder: Decoder[ResetPassword] = deriveDecoder
+  implicit val confirmPasswordDecoder: Decoder[ConfirmPassword] = deriveDecoder
   implicit val accountSettingsDecoder: Decoder[AccountSettings] = deriveDecoder
   implicit val passwordChangeDecoder: Decoder[PasswordChange] = deriveDecoder
 

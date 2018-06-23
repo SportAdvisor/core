@@ -151,12 +151,18 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
             "code": 401
         }
 
++ Response 403 (application/json)
+
+        {
+            "code": 403
+        }
+
 ### Confirm email [POST /api/users/email-confirm]
 
 + Request (application/json)
 
         {
-            "token": "string",
+            "token": "string"
         }
 
 + Response 200 (application/json)

@@ -135,7 +135,7 @@ abstract class UserService(
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
     mailService.mailSender.send(msg).flatMap {
       case Left(t)  => Future.successful(Left(UnhandledException(t)))
-      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right())
+      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right(()))
     }
   }
 

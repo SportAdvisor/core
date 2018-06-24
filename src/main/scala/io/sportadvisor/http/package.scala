@@ -48,12 +48,12 @@ package object http extends FailFastCirceSupport with Logging {
     .newBuilder()
     .handle {
       case ValidationError(errors) =>
-        complete((StatusCodes.BadRequest, Response.errorResponse(errors).asJson))
+        complete((StatusCodes.BadRequest, Response.errorResponse(errors)))
       case AuthorizationFailedRejection =>
         complete(
           (StatusCodes.Unauthorized, Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
       case rejection: SARejection =>
-        complete(rejection.code, Response.emptyResponse(rejection.code.intValue()))
+        complete(rejection.code -> Response.emptyResponse(rejection.code.intValue()))
     }
     .result()
     .withFallback(RejectionHandler.default)

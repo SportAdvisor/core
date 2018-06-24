@@ -1,11 +1,8 @@
 package io.sportadvisor.core.user
 
-import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import io.sportadvisor.util.db.DatabaseConnector
-import slick.ast.BaseTypedType
-import slick.jdbc.JdbcType
 import slick.lifted.{PrimaryKey, ProvenShape}
 
 /**

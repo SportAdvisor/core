@@ -158,7 +158,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               case Success(o) =>
                 o match {
                   case Some(u) =>
-                    respondWithHeaders(Location(s"/api/users/$userId")) {
+                    respondWithHeaders(Location(s"/api/users/${u.id}")) {
                       complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
                     }
                   case _ => complete(r(Response.failResponse(None)))

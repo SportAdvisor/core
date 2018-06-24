@@ -148,12 +148,12 @@ abstract class UserService(
   }
 
   private def createAndSaveToken(user: UserData, remember: Boolean): Future[AuthToken] = {
-    val token = createToken(user, remember)
+    val token = createToken(user)
     saveToken(user, token.refreshToken, remember, LocalDateTime.now())
       .map(_ => token)
   }
 
-  private def createToken(user: UserData, remember: Boolean): AuthToken = {
+  private def createToken(user: UserData): AuthToken = {
     val time = LocalDateTime.now()
     val expTime = time.plusMinutes(expPeriod.toMinutes)
     val token = JwtUtil.encode(AuthTokenContent(user.id), secret, Option(expTime))

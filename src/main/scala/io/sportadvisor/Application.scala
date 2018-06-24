@@ -40,9 +40,7 @@ object Application extends App {
 
     val mailService = MailService(config.mail)
 
-    val userRepository = new UserRepositorySQL(databaseConnector)
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
-    val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
     val usersService = UserService(config, databaseConnector, mailService)
     val httpRoute = new HttpRoute(usersService)
 
@@ -51,7 +49,7 @@ object Application extends App {
       actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
 
     val clientRouteLogged =
-      DebuggingDirectives.logRequestResult("request tracer", Logging.InfoLevel)(httpRoute.route)
+      DebuggingDirectives.logRequestResult("request tracer" -> Logging.InfoLevel)(httpRoute.route)
     val _: Future[_] = Http().bindAndHandle(clientRouteLogged, config.http.host, config.http.port)
     ()
   }

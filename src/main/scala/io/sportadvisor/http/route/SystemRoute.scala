@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Directives._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.sportadvisor.core.system.SystemService
 import io.sportadvisor.http._
-import io.sportadvisor.http.json._
 
 /**
   * @author sss3 (Vladimir Alekseev)

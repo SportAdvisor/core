@@ -60,7 +60,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def updateUser(u: UserData): Future[Either[ApiError, UserData]] = {
     db.run(users.filter(user => user.id === u.id).update(u).asTry).map {
-      case Success(e) => Right(u)
+      case Success(_) => Right(u)
       case Failure(e: SQLException) =>
         if (e.getSQLState == "23505") { Left(new DuplicateException) } else {
           Left(UnhandledException(e))

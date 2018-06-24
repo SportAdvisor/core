@@ -8,6 +8,8 @@ import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.UserRouteValidators
 import io.sportadvisor.{BaseE2ETest, MailContainer}
 
+import scala.concurrent.duration._
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -30,7 +32,7 @@ class UserChangeEmail
     val changeEmailResp =
       put(req(s"${user.id}/email"),
           s"""{"email": "$newMail", "redirectUrl": ""}""",
-          token).asString
+          token).timeout(10 seconds).asString
     changeEmailResp.code shouldBe OK.intValue
     val changeToken = messages()
       .find(m => m.subject == "Change email on SportAdvisor")

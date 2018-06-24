@@ -65,7 +65,7 @@ trait BaseE2ETest
   }
 
   protected final def post(url: String, data: String, token: Option[String] = None): HttpRequest =
-    Http(url).postData(data).defaultHeaders.timeoutConfig
+    Http(url).postData(data).defaultHeaders.defaultTimeout
 
   protected final def put(url: String, data: String, token: String = ""): HttpRequest =
     Http(url)
@@ -73,16 +73,16 @@ trait BaseE2ETest
       .method("PUT")
       .header(authHeader, token)
       .defaultHeaders
-      .timeoutConfig
+      .defaultTimeout
 
   protected final def get(url: String, token: String = ""): HttpRequest =
     Http(url)
       .header(authHeader, token)
       .defaultHeaders
-      .timeoutConfig
+      .defaultTimeout
 
   protected final def delete(url: String, token: String = ""): HttpRequest =
-    Http(url).defaultHeaders.timeoutConfig
+    Http(url).defaultHeaders.defaultTimeout
 
   protected def userId(token: String): Long = {
     val payloadBase64 = token.substring(token.indexOf('.') + 1, token.lastIndexOf('.'))
@@ -133,10 +133,13 @@ trait BaseE2ETest
         .header("content-type", "application/json")
         .header("Accept-Language", "en-US, en;q=0.9")
 
-    def timeoutConfig: HttpRequest = {
-      value.timeout((5 second).toMillis.toInt, (5 second).toMillis.toInt)
-
+    def defaultTimeout: HttpRequest = {
+      val duration = 5.second
+      value.timeout(duration.toMillis.toInt, duration.toMillis.toInt)
     }
+
+    def timeout(timeOut: scala.concurrent.duration.Duration): HttpRequest =
+      value.timeout(timeOut.toMillis.toInt, timeOut.toMillis.toInt)
   }
 
   private def dockerLog(out: OutputFrame): Unit = {

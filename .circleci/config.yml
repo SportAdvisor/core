@@ -62,16 +62,16 @@ workflows:
    version: 2
    build-and-deploy:
     jobs:
-      - unit-test:
-          filters:
-            branches:
-              only:
-                - master
+      - unit-test
+#          filters:
+#            branches:
+#              only:
+#                - master
       - e2e-test:
-          filters:
-            branches:
-              only:
-                - master
+#          filters:
+#            branches:
+#              only:
+#                - master
           requires:
             - unit-test
       - push-and-deploy-docker:

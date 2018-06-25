@@ -105,7 +105,7 @@ object Response extends Logging {
     implicit val failResponseEncoder: Encoder[FailResponse] = deriveEncoder[FailResponse]
 
     implicit final def errorResponseEncoder[E <: Error](
-                                                         implicit encoder: Encoder[E]): Encoder[ErrorResponse[E]] = (a: ErrorResponse[E]) => {
+        implicit encoder: Encoder[E]): Encoder[ErrorResponse[E]] = (a: ErrorResponse[E]) => {
       Json.obj("code" -> Json.fromInt(a.code), "errors" -> Encoder.encodeList[E].apply(a.errors))
     }
 
@@ -118,10 +118,11 @@ object Response extends Logging {
         Json.obj("data" -> e(a.data), "_links" -> Encoder.encodeOption[ObjectLinks].apply(a._links))
       }
 
-    implicit final def encoderCollectionData[A](implicit e: Encoder[A]): Encoder[CollectionData[A]] =
+    implicit final def encoderCollectionData[A](
+        implicit e: Encoder[A]): Encoder[CollectionData[A]] =
       (a: CollectionData[A]) => {
         Json.obj("data" -> Encoder.encodeList[ObjectData[A]].apply(a.data),
-          "_links" -> collectionLinksEncoder(a._links))
+                 "_links" -> collectionLinksEncoder(a._links))
       }
 
     implicit final def dataEncoder[A](implicit e: Encoder[A]): Encoder[Data[A]] = {
@@ -130,16 +131,16 @@ object Response extends Logging {
     }
 
     implicit final def dataResponseEncoder[A](
-                                               implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
+        implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
       (a: DataResponse[A, Data[A]]) => {
         Json.obj("code" -> Json.fromInt(a.code), "data" -> dataEncoder[A].apply(a.data))
       }
 
     implicit final def encoder[A](implicit e: Encoder[A]): Encoder[Response[A]] = {
-      case r: EmptyResponse            => emptyResponseEncoder(r)
-      case r: FailResponse             => failResponseEncoder(r)
-      case r: ErrorResponse[Error]     => errorResponseEncoder(errorEncoder)(r)
-      case r: DataResponse[A, Data[A]] => dataResponseEncoder[A].apply(r)
+      case r: EmptyResponse         => emptyResponseEncoder(r)
+      case r: FailResponse          => failResponseEncoder(r)
+      case ErrorResponse(code, err) => errorResponseEncoder(errorEncoder)(ErrorResponse(code, err))
+      case DataResponse(code, data) => dataResponseEncoder[A].apply(DataResponse(code, data))
     }
 
   }

@@ -1,9 +1,8 @@
 package io.sportadvisor.http.user
 
 import akka.http.scaladsl.model.StatusCodes._
-import io.sportadvisor.core.user.AuthToken
+import io.sportadvisor.core.user.UserModels.AuthToken
 import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FormError, ObjectData}
-import io.sportadvisor.http.json.Codecs._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.UserRouteValidators
 import io.sportadvisor.{BaseE2ETest, MailContainer}
@@ -32,7 +31,7 @@ class UserChangeEmail
     val changeEmailResp =
       put(req(s"${user.id}/email"),
           s"""{"email": "$newMail", "redirectUrl": ""}""",
-          token).timeout(10 seconds).asString
+          token).timeout(10.seconds).asString
     changeEmailResp.code shouldBe OK.intValue
     val changeToken = messages()
       .find(m => m.subject == "Change email on SportAdvisor")

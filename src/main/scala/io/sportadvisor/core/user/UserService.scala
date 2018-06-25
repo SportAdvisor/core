@@ -8,12 +8,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
 import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.core.user.UserService._
-import io.sportadvisor.exception.Exceptions.{
-  DuplicateException,
-  ResourceNotFound,
-  UnhandledException
-}
-
+import io.sportadvisor.exception.Exceptions._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import org.slf4s.Logging
@@ -24,6 +19,8 @@ import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
 import io.sportadvisor.util._
 import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage}
+import cats.instances.string._
+import cats.syntax.eq._
 
 import scala.util.Success
 
@@ -117,7 +114,7 @@ abstract class UserService(
   private def updatePass(u: UserData,
                          oldPass: String,
                          newPass: String): Future[Either[ApiError, Unit]] = {
-    if (u.password == oldPass.sha256.hex) {
+    if (u.password === oldPass.sha256.hex) {
       val updatedUser = u.copy(password = newPass.sha256.hex)
       userRepository
         .save(updatedUser)

@@ -2,6 +2,9 @@ package io.sportadvisor.core.user
 
 import java.time.{LocalDateTime, ZonedDateTime}
 
+import io.circe.{Decoder, Encoder}
+import io.circe.java8.time._
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.sportadvisor.exception.ApiError
 
 /**
@@ -42,4 +45,12 @@ object UserModels {
   final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
 
   final case class PasswordMismatch() extends ApiError("Password mismatch", None)
+
+  implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
+  implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder
+  implicit val refreshTokenDecoder: Decoder[RefreshTokenContent] = deriveDecoder
+  implicit val refreshTokenEncoder: Encoder[RefreshTokenContent] = deriveEncoder
+
+  implicit val authTokenEncoder: Encoder[AuthToken] = deriveEncoder
+  implicit val authTokenDecoder: Decoder[AuthToken] = deriveDecoder
 }

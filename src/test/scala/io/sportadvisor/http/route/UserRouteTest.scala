@@ -12,7 +12,6 @@ import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFoun
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Decoders._
-import io.sportadvisor.http.json.Codecs._
 import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView

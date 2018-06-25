@@ -60,13 +60,5 @@ object json extends AutoDerivation {
     case r: DataResponse[A, Data[A]] => dataResponseEncoder[A].apply(r)
   }
 
-  object Codecs {
-
-    import io.circe.java8.time._
-
-    implicit val authTokenEncoder: Encoder[AuthToken] = deriveEncoder
-    implicit val authTokenDecoder: Decoder[AuthToken] = deriveDecoder
-  }
-
 }
 // scalastyle:on object.name

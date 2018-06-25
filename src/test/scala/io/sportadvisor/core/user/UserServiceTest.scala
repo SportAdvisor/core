@@ -9,7 +9,8 @@ import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFoun
 import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
-import io.sportadvisor.util.mail.{MailMessage, MailRenderService, MailSenderService, MailService}
+import io.sportadvisor.util.mail.MailModel.MailMessage
+import io.sportadvisor.util.mail.{MailRenderService, MailSenderService, MailService}
 import org.mockito.Matchers
 import pdi.jwt.{Jwt, JwtAlgorithm}
 import org.mockito.Mockito._

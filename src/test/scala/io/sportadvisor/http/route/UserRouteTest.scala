@@ -9,7 +9,6 @@ import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.UserModels.{AuthToken, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
-import io.sportadvisor.exception._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Decoders._

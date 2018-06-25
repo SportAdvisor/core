@@ -19,6 +19,7 @@ import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
 import io.sportadvisor.util._
+import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage}
 
 import scala.util.Success
 

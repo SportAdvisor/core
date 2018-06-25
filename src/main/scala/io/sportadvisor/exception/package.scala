@@ -1,7 +1,5 @@
 package io.sportadvisor
 
-import io.sportadvisor.core.user.UserID
-
 import scala.util.control.NoStackTrace
 
 /**
@@ -18,7 +16,7 @@ package object exception {
 
   final case class UnhandledException(err: Throwable) extends ApiError(err.getMessage, Some(err))
 
-  final case class UserNotFound(id: UserID) extends ApiError("User not found", None)
+  final case class ResourceNotFound(id: Long) extends ApiError(s"Resource [id = $id] not found", None)
 
   final case class PasswordMismatch() extends ApiError("Password mismatch", None)
 

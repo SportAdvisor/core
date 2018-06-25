@@ -4,7 +4,7 @@ import io.sportadvisor.http.Response._
 import io.sportadvisor.http.Response.Error
 import io.circe._
 import io.circe.generic.extras.AutoDerivation
-import io.sportadvisor.core.user.AuthToken
+import io.sportadvisor.core.user.UserModels.AuthToken
 
 /**
   * @author sss3 (Vladimir Alekseev)

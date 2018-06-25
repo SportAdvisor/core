@@ -8,7 +8,7 @@ import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
 import io.circe.syntax._
-import io.sportadvisor.core.user.{AuthTokenContent, UserID}
+import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
 import io.sportadvisor.util.{I18nService, JwtUtil}
 import io.sportadvisor.util.i18n.I18n
 import org.slf4s.Logging

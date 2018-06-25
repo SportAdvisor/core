@@ -2,6 +2,7 @@ package io.sportadvisor.core.user
 
 import java.sql.SQLException
 
+import io.sportadvisor.core.user.UserModels.{CreateUser, User, UserData, UserID}
 import io.sportadvisor.exception.{ApiError, DuplicateException, UnhandledException}
 import io.sportadvisor.util.db.DatabaseConnector
 

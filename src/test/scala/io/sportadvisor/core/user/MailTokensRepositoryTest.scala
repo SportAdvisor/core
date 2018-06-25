@@ -2,6 +2,7 @@ package io.sportadvisor.core.user
 
 import java.time.LocalDateTime
 
+import io.sportadvisor.core.user.UserModels.ChangeMailToken
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
 import scala.concurrent.Future

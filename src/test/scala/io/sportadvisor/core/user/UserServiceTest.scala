@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
+import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
@@ -89,7 +90,7 @@ class UserServiceTest extends BaseTest {
         either match {
           case Left(error) =>
             error match {
-              case UserNotFound(_) => ()
+              case ResourceNotFound(_) => ()
               case _ => throw new IllegalStateException()
             }
           case Right(_) => throw new IllegalStateException()
@@ -203,7 +204,7 @@ class UserServiceTest extends BaseTest {
         awaitForResult(userService.changePassword(testId, "123", "123")) match {
           case Right(_) => throw new IllegalStateException
           case Left(e) => e match {
-            case UserNotFound(_) =>
+            case ResourceNotFound(_) =>
             case _ => throw new IllegalStateException
           }
         }

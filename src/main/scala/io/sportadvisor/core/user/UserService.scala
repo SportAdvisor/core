@@ -6,6 +6,7 @@ import java.util.Date
 import com.roundeights.hasher.Implicits._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.core.user.UserService._
 
 import scala.concurrent.duration._
@@ -61,7 +62,7 @@ abstract class UserService(
           .get(userID)
           .flatMap {
             case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
-            case None    => Future.successful(Left(UserNotFound(userID)))
+            case None    => Future.successful(Left(ResourceNotFound(userID)))
           }
     }
   }
@@ -102,7 +103,7 @@ abstract class UserService(
     userRepository
       .get(userID)
       .flatMapTOuter(u => updatePass(u, oldPass, newPass)) map {
-      case None    => Left(UserNotFound(userID))
+      case None    => Left(ResourceNotFound(userID))
       case Some(e) => e
     }
   }

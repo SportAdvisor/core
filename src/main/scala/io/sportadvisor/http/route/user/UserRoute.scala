@@ -6,8 +6,9 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.UserID
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.json._

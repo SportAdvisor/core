@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.UserModels._
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, UnhandledException}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n

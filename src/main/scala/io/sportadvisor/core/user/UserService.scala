@@ -8,6 +8,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
 import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.core.user.UserService._
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, UnhandledException}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

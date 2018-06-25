@@ -2,6 +2,8 @@ package io.sportadvisor.core.user
 
 import java.time.{LocalDateTime, ZonedDateTime}
 
+import io.sportadvisor.exception.ApiError
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -39,4 +41,5 @@ object UserModels {
 
   final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
 
+  final case class PasswordMismatch() extends ApiError("Password mismatch", None)
 }

@@ -6,8 +6,9 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.UserModels.{AuthToken, UserData, UserID}
+import io.sportadvisor.core.user.UserModels.{AuthToken, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.I18nStub

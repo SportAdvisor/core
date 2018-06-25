@@ -9,6 +9,7 @@ object Exceptions {
 
   final case class UnhandledException(err: Throwable) extends ApiError(err.getMessage, Some(err))
 
-  final case class ResourceNotFound(id: Long) extends ApiError(s"Resource [id = $id] not found", None)
+  final case class ResourceNotFound(id: Long)
+      extends ApiError(s"Resource [id = $id] not found", None)
 
 }

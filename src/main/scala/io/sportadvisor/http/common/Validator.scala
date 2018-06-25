@@ -12,7 +12,8 @@ import io.sportadvisor.util.i18n.I18n
   */
 trait Validator[T] extends (T => List[ValidationResult])
 
-private final class DefaultValidator[T](rules: Seq[T => Option[ValidationResult]]) extends Validator[T] {
+private final class DefaultValidator[T](rules: Seq[T => Option[ValidationResult]])
+    extends Validator[T] {
   override def apply(v1: T): List[ValidationResult] = {
     rules.flatMap(rule => rule(v1).toList).toList
   }

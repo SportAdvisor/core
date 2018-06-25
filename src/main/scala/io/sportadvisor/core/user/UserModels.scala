@@ -30,7 +30,7 @@ object UserModels {
                             password: String,
                             name: String,
                             language: Option[String])
-    extends User {
+      extends User {
     def lang: String = language.fold("ru")(l => l)
   }
 

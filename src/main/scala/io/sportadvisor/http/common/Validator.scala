@@ -4,7 +4,6 @@ import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import io.circe.Json
 import io.circe.syntax._
 import io.sportadvisor.http.Response
-import io.sportadvisor.http.json._
 import io.sportadvisor.http.Response.FormError
 import io.sportadvisor.util.i18n.I18n
 

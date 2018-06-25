@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Rejection
 import io.circe.Json
 import io.circe.syntax._
 import io.sportadvisor.http.Response
-import io.sportadvisor.http.json.encoder
 
 /**
   * @author sss3 (Vladimir Alekseev)

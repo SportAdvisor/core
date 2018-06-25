@@ -6,7 +6,6 @@ import akka.http.scaladsl.server._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
-import io.sportadvisor.http.json._
 import io.circe.syntax._
 import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
 import io.sportadvisor.http.common._
@@ -16,7 +15,7 @@ import org.slf4s.Logging
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-package object http extends FailFastCirceSupport with Logging {
+package object http extends FailFastCirceSupport with Logging with Response.Encoders {
 
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._

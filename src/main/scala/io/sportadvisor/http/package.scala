@@ -9,8 +9,8 @@ import io.sportadvisor.http.Response._
 import io.sportadvisor.http.json._
 import io.circe.syntax._
 import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
+import io.sportadvisor.http.common._
 import io.sportadvisor.util.{I18nService, JwtUtil}
-import io.sportadvisor.util.i18n.I18n
 import org.slf4s.Logging
 
 /**
@@ -21,19 +21,6 @@ package object http extends FailFastCirceSupport with Logging {
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._
   import akka.http.scaladsl.server.directives.HeaderDirectives._
-
-  final case class ValidationError(errors: List[FormError]) extends Rejection
-  final case class ValidationResult(field: String, msgId: String) {
-    def toFormError(i18n: I18n): FormError = {
-      FormError(field, i18n.t(msgId))
-    }
-  }
-  trait SARejection extends Rejection {
-    def code: StatusCode
-  }
-  final case class Forbidden() extends SARejection {
-    override def code: StatusCode = StatusCodes.Forbidden
-  }
 
   val authorizationHeader = "Authorization"
 
@@ -46,30 +33,11 @@ package object http extends FailFastCirceSupport with Logging {
   val rejectionHandler: RejectionHandler = RejectionHandler
     .newBuilder()
     .handle {
-      case ValidationError(errors) =>
-        complete((StatusCodes.BadRequest, Response.errorResponse(errors)))
-      case AuthorizationFailedRejection =>
-        complete(
-          (StatusCodes.Unauthorized, Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
       case rejection: SARejection =>
-        complete(rejection.code -> Response.emptyResponse(rejection.code.intValue()))
+        complete(rejection.code -> rejection.response)
     }
     .result()
     .withFallback(RejectionHandler.default)
-
-  trait Validator[T] extends (T => List[ValidationResult])
-
-  @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
-  final class DefaultValidator[T](rules: Seq[T => Option[ValidationResult]]) extends Validator[T] {
-    override def apply(v1: T): List[ValidationResult] = {
-      rules.flatMap(rule => rule(v1)).toList
-    }
-  }
-
-  object Validator {
-    def apply[T](rules: (T => Option[ValidationResult])*): Validator[T] =
-      new DefaultValidator[T](rules)
-  }
 
   def validatorDirective[T](model: T,
                             validator: Validator[T],
@@ -99,9 +67,9 @@ package object http extends FailFastCirceSupport with Logging {
       case Some(token) =>
         JwtUtil.decode[AuthTokenContent](token, secretKey) match {
           case Some(r) => provide(r.userID)
-          case _       => reject(AuthorizationFailedRejection)
+          case _       => reject(Unauthorized())
         }
-      case None => reject(AuthorizationFailedRejection)
+      case None => reject(Unauthorized())
     }
   }
 

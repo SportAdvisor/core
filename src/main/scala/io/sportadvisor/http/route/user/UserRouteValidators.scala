@@ -1,7 +1,7 @@
 package io.sportadvisor.http.route.user
 
 import io.sportadvisor.core.system.SystemService
-import io.sportadvisor.http.{ValidationResult, Validator}
+import io.sportadvisor.http.common.{ValidationResult, Validator}
 
 /**
   * @author sss3 (Vladimir Alekseev)

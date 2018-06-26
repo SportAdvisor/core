@@ -4,10 +4,13 @@ import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
+import io.sportadvisor.core.user.UserModels._
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, UnhandledException}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.util.i18n.I18n
-import io.sportadvisor.util.mail.{MailMessage, MailRenderService, MailSenderService, MailService}
+import io.sportadvisor.util.mail.MailModel.MailMessage
+import io.sportadvisor.util.mail.{MailRenderService, MailSenderService, MailService}
 import org.mockito.Matchers
 import pdi.jwt.{Jwt, JwtAlgorithm}
 import org.mockito.Mockito._
@@ -89,7 +92,7 @@ class UserServiceTest extends BaseTest {
         either match {
           case Left(error) =>
             error match {
-              case UserNotFound(_) => ()
+              case ResourceNotFound(_) => ()
               case _ => throw new IllegalStateException()
             }
           case Right(_) => throw new IllegalStateException()
@@ -101,7 +104,7 @@ class UserServiceTest extends BaseTest {
         when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
         when(render.renderI18n(Matchers.eq("mails/mail-change.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
-        when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right()))
+        when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
         when(mailChangesTokenRepository.save(any[ChangeMailToken]))
           .thenReturn(Future.successful(ChangeMailToken("", LocalDateTime.now())))
         val result: Either[ApiError, Unit] = awaitForResult(userService.changeEmail(testId, newEmail, "https://sportadvisor.io/t"))
@@ -146,7 +149,7 @@ class UserServiceTest extends BaseTest {
         when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
-        when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right()))
+        when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
         when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
         when(tokenRepository.removeByUser(any[UserID]())).thenReturn(Future.successful(()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
@@ -162,7 +165,7 @@ class UserServiceTest extends BaseTest {
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]()))
-          .thenReturn(Future.successful(Right()))
+          .thenReturn(Future.successful(Right(())))
         when(userRepository.save(any[UserData]()))
           .thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
         when(tokenRepository.removeByUser(any[UserID]()))
@@ -203,7 +206,7 @@ class UserServiceTest extends BaseTest {
         awaitForResult(userService.changePassword(testId, "123", "123")) match {
           case Right(_) => throw new IllegalStateException
           case Left(e) => e match {
-            case UserNotFound(_) =>
+            case ResourceNotFound(_) =>
             case _ => throw new IllegalStateException
           }
         }

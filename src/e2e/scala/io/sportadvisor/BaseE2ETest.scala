@@ -32,7 +32,6 @@ trait BaseE2ETest
   private val port = 5553
   protected val smtpUser = "no-reply@sportadvisor.io"
   protected val smtpPass = ""
-  protected val authHeader = "Authorization"
   protected val SMTP_PORT = "smtp-port"
   protected val SMTP_IP = "smtp-ip"
   protected val MAIL_HOG_API_PORT = "mail-hog-api-port"
@@ -47,6 +46,7 @@ trait BaseE2ETest
       waitStrategy = Wait.forHttp("/healthcheck").withStartupTimeout(Duration.ofSeconds(10))
     ).configure(c => {
       c.withLogConsumer(dockerLog)
+      ()
     })
 
   override val container = MultipleContainers(appContainers(): _*)
@@ -64,30 +64,28 @@ trait BaseE2ETest
     }
   }
 
-  protected final def post(url: String, data: String, token: Option[String] = None): HttpRequest =
-    Http(url).postData(data).defaultHeaders.defaultTimeout
+  protected final def post(url: String, data: String, token: String = ""): HttpRequest =
+    Http(url).postData(data).defaultHeaders(token).defaultTimeout
 
   protected final def put(url: String, data: String, token: String = ""): HttpRequest =
     Http(url)
       .postData(data)
       .method("PUT")
-      .header(authHeader, token)
-      .defaultHeaders
+      .defaultHeaders(token)
       .defaultTimeout
 
   protected final def get(url: String, token: String = ""): HttpRequest =
     Http(url)
-      .header(authHeader, token)
-      .defaultHeaders
+      .defaultHeaders(token)
       .defaultTimeout
 
   protected final def delete(url: String, token: String = ""): HttpRequest =
-    Http(url).defaultHeaders.defaultTimeout
+    Http(url).defaultHeaders(token).defaultTimeout
 
   protected def userId(token: String): Long = {
     val payloadBase64 = token.substring(token.indexOf('.') + 1, token.lastIndexOf('.'))
     val payload = new String(Base64.getDecoder.decode(payloadBase64))
-    parse(payload).getOrElse(Json.Null).hcursor.downField("userID").as[Long].toOption get
+    parse(payload).getOrElse(Json.Null).hcursor.downField("userID").as[Long].toOption.get
   }
 
   protected def additionalContainer(
@@ -126,17 +124,16 @@ trait BaseE2ETest
   private def appContainers(): Seq[LazyContainer[Container]] = additionalContainer(containers())
 
   implicit class HttpExtension(value: HttpRequest) {
+    protected val authHeader = "Authorization"
     import scala.concurrent.duration._
 
-    def defaultHeaders: HttpRequest =
+    def defaultHeaders(token: String): HttpRequest =
       value
         .header("content-type", "application/json")
         .header("Accept-Language", "en-US, en;q=0.9")
+        .header(authHeader, token)
 
-    def defaultTimeout: HttpRequest = {
-      val duration = 5.second
-      value.timeout(duration.toMillis.toInt, duration.toMillis.toInt)
-    }
+    def defaultTimeout: HttpRequest = timeout(5.second)
 
     def timeout(timeOut: scala.concurrent.duration.Duration): HttpRequest =
       value.timeout(timeOut.toMillis.toInt, timeOut.toMillis.toInt)
@@ -145,7 +142,7 @@ trait BaseE2ETest
   private def dockerLog(out: OutputFrame): Unit = {
     out.getType match {
       case OutputType.STDERR => log.error(out.getUtf8String)
-      case _                 => log.debug(out.getUtf8String)
+      case _                 => log.info(out.getUtf8String)
     }
   }
 

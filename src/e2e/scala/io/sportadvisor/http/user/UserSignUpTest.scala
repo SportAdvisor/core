@@ -1,6 +1,6 @@
 package io.sportadvisor.http.user
 
-import io.sportadvisor.{BaseE2ETest, MailContainer}
+import io.sportadvisor.BaseE2ETest
 import io.sportadvisor.http.Response.{ErrorResponse, FormError}
 
 /**

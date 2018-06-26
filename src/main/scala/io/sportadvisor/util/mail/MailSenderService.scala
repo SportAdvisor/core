@@ -2,6 +2,7 @@ package io.sportadvisor.util.mail
 
 import courier.{Content, Envelope, Mailer, Multipart, Text}
 import io.sportadvisor.util.Config.MailConfig
+import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage, RawContent}
 import javax.mail.internet.{InternetAddress, MimeBodyPart}
 import org.slf4s.Logging
 

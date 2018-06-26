@@ -6,8 +6,9 @@ import java.util.Date
 import com.roundeights.hasher.Implicits._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.core.user.UserService._
-
+import io.sportadvisor.exception.Exceptions._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import org.slf4s.Logging
@@ -17,6 +18,9 @@ import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
 import io.sportadvisor.util._
+import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage}
+import cats.instances.string._
+import cats.syntax.eq._
 
 import scala.util.Success
 
@@ -61,7 +65,7 @@ abstract class UserService(
           .get(userID)
           .flatMap {
             case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
-            case None    => Future.successful(Left(UserNotFound(userID)))
+            case None    => Future.successful(Left(ResourceNotFound(userID)))
           }
     }
   }
@@ -102,7 +106,7 @@ abstract class UserService(
     userRepository
       .get(userID)
       .flatMapTOuter(u => updatePass(u, oldPass, newPass)) map {
-      case None    => Left(UserNotFound(userID))
+      case None    => Left(ResourceNotFound(userID))
       case Some(e) => e
     }
   }
@@ -110,7 +114,7 @@ abstract class UserService(
   private def updatePass(u: UserData,
                          oldPass: String,
                          newPass: String): Future[Either[ApiError, Unit]] = {
-    if (u.password == oldPass.sha256.hex) {
+    if (u.password === oldPass.sha256.hex) {
       val updatedUser = u.copy(password = newPass.sha256.hex)
       userRepository
         .save(updatedUser)
@@ -135,7 +139,7 @@ abstract class UserService(
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
     mailService.mailSender.send(msg).flatMap {
       case Left(t)  => Future.successful(Left(UnhandledException(t)))
-      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right())
+      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right(()))
     }
   }
 
@@ -148,12 +152,12 @@ abstract class UserService(
   }
 
   private def createAndSaveToken(user: UserData, remember: Boolean): Future[AuthToken] = {
-    val token = createToken(user, remember)
+    val token = createToken(user)
     saveToken(user, token.refreshToken, remember, LocalDateTime.now())
       .map(_ => token)
   }
 
-  private def createToken(user: UserData, remember: Boolean): AuthToken = {
+  private def createToken(user: UserData): AuthToken = {
     val time = LocalDateTime.now()
     val expTime = time.plusMinutes(expPeriod.toMinutes)
     val token = JwtUtil.encode(AuthTokenContent(user.id), secret, Option(expTime))

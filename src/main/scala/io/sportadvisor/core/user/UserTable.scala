@@ -1,5 +1,6 @@
 package io.sportadvisor.core.user
 
+import io.sportadvisor.core.user.UserModels.{UserData, UserID}
 import io.sportadvisor.util.db.DatabaseConnector
 
 /**

@@ -5,6 +5,8 @@ import java.time.LocalDateTime
 import scala.concurrent.duration._
 import java.time.Duration
 
+import io.sportadvisor.core.user.UserModels.RefreshToken
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */

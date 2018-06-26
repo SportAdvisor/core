@@ -406,6 +406,16 @@ class UserRouteTest extends BaseTest {
           resp.code should be(200)
         }
       }
+
+      "return 500 if save failed" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.failed[Unit](new RuntimeException))
+        Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 500
+        }
+      }
     }
 
     "POST /api/users/password-confirm" should {

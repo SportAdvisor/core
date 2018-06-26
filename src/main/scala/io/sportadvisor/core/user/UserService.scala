@@ -119,7 +119,7 @@ abstract class UserService(userRepository: UserRepository,
           case None => Future.successful(Left(TokenExpired("reset password")))
           case Some(dt) =>
             userRepository.find(dt.email).flatMap {
-              case None => Future.successful(Left(UserNotFound(-1L)))
+              case None    => Future.successful(Left(UserNotFound(-1L)))
               case Some(u) => updatePassword(u, password)
             }
         }

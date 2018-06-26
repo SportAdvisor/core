@@ -171,6 +171,35 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
             "code":  400
         }
 
+### Reset email [POST /api/users/reset-password]
+
++ Body
+    {
+        "email": "string",
+        "redirectUrl": "string"
+    }
+
++ Response 200 (application/json)
+
+        {
+            "code":  200
+        }
+
+### Confirm new password [POST /api/users/password-confirm]
+
++ Body
+    {
+       "token": "string",
+       "password": "string"
+    }
+
++ Response 200 (application/json)
+
+        {
+            "code":  200
+        }
+
+
 ### Get information about the authorized user [GET /api/users/me]
 
 + Request

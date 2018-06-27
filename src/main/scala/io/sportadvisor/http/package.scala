@@ -11,6 +11,8 @@ import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
 import io.sportadvisor.http.common._
 import io.sportadvisor.util.{I18nService, JwtUtil}
 import org.slf4s.Logging
+import cats.syntax.eq._
+import cats.instances.long._
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -72,9 +74,8 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     }
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def checkAccess(pathId: UserID, fromToken: UserID): Directive0 = {
-    if (pathId == fromToken) {
+    if (pathId === fromToken) {
       pass
     } else {
       reject(Forbidden())

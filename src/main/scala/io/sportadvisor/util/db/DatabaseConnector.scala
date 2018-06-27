@@ -5,7 +5,6 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class DatabaseConnector(jdbcUrl: String, dbUser: String, dbPassword: String) {
 
   private val hikariDataSource = {
@@ -21,5 +20,5 @@ class DatabaseConnector(jdbcUrl: String, dbUser: String, dbPassword: String) {
   import profile.api._
 
   val db: profile.backend.DatabaseDef = Database.forDataSource(hikariDataSource, None)
-  db.createSession()
+  val session: profile.backend.SessionDef = db.createSession()
 }

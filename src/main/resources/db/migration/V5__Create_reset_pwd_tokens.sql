@@ -1,5 +1,5 @@
 CREATE TABLE "RESET_PWD_TOKENS" (
   "token" VARCHAR(255) NOT NULL,
-  "expire_at" TIMESTAMP WITH TIME ZONE,
+  "expire_at" TIMESTAMP,
   PRIMARY KEY ("token")
 );

@@ -241,20 +241,20 @@ class UserServiceTest extends BaseTest {
         when(userRepository.find(testEmail))
           .thenReturn(Future.successful(Some(testUser)))
         when(sender.send(any[MailMessage]))
-          .thenReturn(Future.successful(Right()))
+          .thenReturn(Future.successful(Right(())))
         when(resetPasswordTokenRepository.save(ResetPasswordToken("test", any[LocalDateTime])))
           .thenReturn(Future.successful(ResetPasswordToken("test", LocalDateTime.now())))
-        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe ()
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
       }
 
       "return unit if user wasn't found" in new Context {
         when(userRepository.find(testEmail))
           .thenReturn(Future.successful(None))
         when(sender.send(any[MailMessage]))
-          .thenReturn(Future.successful(Right()))
+          .thenReturn(Future.successful(Right(())))
         when(resetPasswordTokenRepository.save(ResetPasswordToken("test", any[LocalDateTime])))
           .thenReturn(Future.successful(ResetPasswordToken("test", LocalDateTime.now())))
-        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe ()
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
       }
 
       "return unit if msg wasn't sent" in new Context {
@@ -264,7 +264,7 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Left(new Exception)))
         when(resetPasswordTokenRepository.save(ResetPasswordToken("test", any[LocalDateTime])))
           .thenReturn(Future.successful(ResetPasswordToken("test", LocalDateTime.now())))
-        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe ()
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
       }
     }
 

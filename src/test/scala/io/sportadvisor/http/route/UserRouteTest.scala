@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.UserModels.{AuthToken, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
-import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, TokenDoesntExist, TokenExpired}
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Decoders._
@@ -455,7 +455,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"token": "token", "password":"test"}""")
         when(userService.setNewPassword("token", "test"))
-          .thenReturn(Future.successful(Left(UserNotFound(-1L))))
+          .thenReturn(Future.successful(Left(ResourceNotFound(-1L))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code should be(200)

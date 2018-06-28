@@ -90,6 +90,7 @@ abstract class UserService(userRepository: UserRepository,
       }
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def resetPassword(email: String, redirectUrl: String): Future[Unit] = {
     userRepository
       .find(email)
@@ -108,10 +109,10 @@ abstract class UserService(userRepository: UserRepository,
           case Right(_) =>
             resetPasswordTokenRepository
               .save(ResetPasswordToken(token, time))
-              .map(_ => Right())
+              .map(_ => Right(()))
         }
       }
-      .map(_ => Unit)
+      .map(_ => ())
   }
 
   def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
@@ -123,7 +124,7 @@ abstract class UserService(userRepository: UserRepository,
           case None => Future.successful(Left(TokenExpired("reset password")))
           case Some(dt) =>
             userRepository.find(dt.email).flatMap {
-              case None    => Future.successful(Left(UserNotFound(-1L)))
+              case None    => Future.successful(Left(ResourceNotFound(-1L)))
               case Some(u) => updatePassword(u, password)
             }
         }

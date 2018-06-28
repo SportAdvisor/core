@@ -1,7 +1,7 @@
 package io.sportadvisor.http.route.user
 
 import io.sportadvisor.core.system.SystemService
-import io.sportadvisor.http.{ValidationResult, Validator}
+import io.sportadvisor.http.common.{ValidationResult, Validator}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -62,7 +62,7 @@ object UserRouteValidators {
   }
 
   private def nameValidator(field: String): (String => Option[ValidationResult]) = name => {
-    if (name.trim.isEmpty) { Some(ValidationResult("name", nameIsEmpty)) } else None
+    if (name.trim.isEmpty) { Some(ValidationResult(field, nameIsEmpty)) } else None
   }
 
   private def passwordValidator(field: String): (String => Option[ValidationResult]) = password => {

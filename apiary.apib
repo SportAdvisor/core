@@ -24,7 +24,7 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
                 "data": {
                     "token": "string",
                     "refreshToken": "string",
-                    "expireAt": "datetime"
+                    "expireAt": "2018-06-19T07:12:45.972+03:00[Europe/Moscow]"
                 },
                 "_links": null
             }
@@ -60,7 +60,7 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
                 "data": {
                     "token": "string",
                     "refreshToken": "string",
-                    "expireAt": "datetime"
+                    "expireAt": "2018-06-19T07:12:45.972+03:00[Europe/Moscow]"
                 },
                 "_links": null
             }
@@ -151,12 +151,18 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
             "code": 401
         }
 
++ Response 403 (application/json)
+
+        {
+            "code": 403
+        }
+
 ### Confirm email [POST /api/users/email-confirm]
 
 + Request (application/json)
 
         {
-            "token": "string",
+            "token": "string"
         }
 
 + Response 200 (application/json)
@@ -236,7 +242,7 @@ HOST: http://sportadvisor-lb-81878895.us-east-1.elb.amazonaws.com
             "data": {
                 "id": 1,
                 "email": "email@email.emal",
-                "name":" "name",
+                "name": "name",
                 "language": "ru"
             },
             "_links": {

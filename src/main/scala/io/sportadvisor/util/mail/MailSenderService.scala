@@ -2,6 +2,7 @@ package io.sportadvisor.util.mail
 
 import courier.{Content, Envelope, Mailer, Multipart, Text}
 import io.sportadvisor.util.Config.MailConfig
+import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage, RawContent}
 import javax.mail.internet.{InternetAddress, MimeBodyPart}
 import org.slf4s.Logging
 
@@ -42,7 +43,10 @@ class CourierMailSenderService(val smtp: String,
       .bcc(mapAddresses(mail.bcc): _*)
       .subject(mail.subject)
       .content(content)
-    mailer(envelope).transform(expand())
+    sender match {
+      case Success(s) => s(envelope).transform(expand())
+      case Failure(e) => Future.successful(Left(e))
+    }
   }
 
   private def mapAddresses(addresses: Seq[String]): Seq[InternetAddress] = {
@@ -61,6 +65,12 @@ class CourierMailSenderService(val smtp: String,
       setContent(str, "text/html; charset=utf-8")
     }
     Multipart().add(part)
+  }
+
+  private def sender: Try[Mailer] = {
+    Try {
+      mailer
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 package io.sportadvisor.core.user
 
+import io.sportadvisor.core.user.UserModels.{CreateUser, UserData, UserID}
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
 import scala.util.Random

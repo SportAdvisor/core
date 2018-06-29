@@ -8,12 +8,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
-import io.sportadvisor.exception.Exceptions.{
-  DuplicateException,
-  ResourceNotFound,
-  TokenDoesntExist,
-  TokenExpired
-}
+import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.Response._
@@ -37,7 +32,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private val authError = "Authorization error. Re-login please"
   private val passwordIncorrect = "Incorrect password"
   private val resetPwdExpired =
-    "Your password reset link has expired. Please initiate a new password reset."
+    "Your password reset link has expired. Please initiate a new password reset"
 
   import http._
   import userService._

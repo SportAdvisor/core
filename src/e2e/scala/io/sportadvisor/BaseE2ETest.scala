@@ -117,6 +117,8 @@ trait BaseE2ETest
   protected def getIp(c: InspectContainerResponse): String =
     c.getNetworkSettings.getNetworks.asScala.values.head.getIpAddress
 
+  protected def sleep(timeOut: scala.concurrent.duration.Duration): Unit = Thread.sleep(timeOut.toMillis)
+
   private def containers(): Seq[LazyContainer[Container]] = {
     Seq(LazyContainer(pgContainer), LazyContainer(app))
   }

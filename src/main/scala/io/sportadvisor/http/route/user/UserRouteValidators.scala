@@ -53,6 +53,11 @@ object UserRouteValidators {
       u => emailValidator("email")(u.email)
     )
 
+  val confirmPasswordValidator: Validator[ConfirmPassword] =
+    Validator[ConfirmPassword](
+      u => passwordValidator("password")(u.password)
+    )
+
   private def emailValidator(field: String): (String => Option[ValidationResult]) = u => {
     if (!u.matches(".+@.+\\..+")) {
       Some(ValidationResult(field, emailInvalid))

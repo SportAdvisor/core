@@ -32,3 +32,6 @@ msgstr ""
 
 msgid "Incorrect password"
 msgstr ""
+
+msgid "Your password reset link has expired. Please initiate a new password reset."
+msgstr ""

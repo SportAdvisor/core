@@ -39,6 +39,7 @@ abstract class UserService(userRepository: UserRepository,
 
   private[this] val expPeriod = 2.hour
   private[this] val mailChangeExpPeriod = 1.day
+  private[this] val passwordRessetExpPerion = 1.day
 
   def secret: String = secretKey
 
@@ -90,45 +91,46 @@ abstract class UserService(userRepository: UserRepository,
       }
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any"))
   def resetPassword(email: String, redirectUrl: String): Future[Unit] = {
     userRepository
       .find(email)
-      .flatMapTOuter { user =>
-        val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
-        val token = generateResetPasswordToken(email, secret, time)
-        val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
-                                    "user" -> user,
-                                    "expAt" -> dateToString(time))
-        val body =
-          mailService.mailRender.renderI18n("mails/reset-password.ssp", args, mails(user.lang))
-        val subject = mails(user.lang).t("Reset password on SportAdvisor")
-        val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
-        mailService.mailSender.send(msg).flatMap {
-          case Left(t) => Future.successful(Left(UnhandledException(t)))
-          case Right(_) =>
-            resetPasswordTokenRepository
-              .save(ResetPasswordToken(token, time))
-              .map(_ => Right(()))
-        }
-      }
+      .flatMapTOuter(user => sendResetPasswordToken(user, redirectUrl))
       .map(_ => ())
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  def sendResetPasswordToken(user: UserData,
+                             redirectUrl: String): Future[Either[ApiError, Unit]] = {
+    val time = LocalDateTime.now().plusMinutes(passwordRessetExpPerion.toMinutes)
+    val token = generateResetPasswordToken(user.email, secret, time)
+    val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
+                                "user" -> user,
+                                "expAt" -> dateToString(time))
+    val body =
+      mailService.mailRender.renderI18n("mails/reset-password.ssp", args, mails(user.lang))
+    val subject = mails(user.lang).t("Reset password on SportAdvisor")
+    val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
+    sendMessage(msg,
+                resetPasswordTokenRepository
+                  .save(ResetPasswordToken(token, time))
+                  .map(_ => Right(())))
   }
 
   def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
     resetPasswordTokenRepository
-      .get(token) flatMap {
-      case None => Future.successful(Left(TokenDoesntExist("reset password")))
-      case Some(t) =>
-        decodeResetPasswordToken(t.token, secret) match {
-          case None => Future.successful(Left(TokenExpired("reset password")))
-          case Some(dt) =>
-            userRepository.find(dt.email).flatMap {
-              case None    => Future.successful(Left(ResourceNotFound(-1L)))
-              case Some(u) => updatePassword(u, password)
-            }
-        }
-    }
+      .get(token)
+      .flatMap {
+        case None => Future.successful(Left(TokenDoesntExist("reset password")))
+        case Some(t) =>
+          decodeResetPasswordToken(t.token, secret) match {
+            case None => Future.successful(Left(TokenExpired("reset password")))
+            case Some(dt) =>
+              userRepository.find(dt.email).flatMap {
+                case None    => Future.successful(Left(ResourceNotFound(-1L)))
+                case Some(u) => updatePassword(u, password)
+              }
+          }
+      }
   }
 
   def getById(id: UserID): Future[Option[UserData]] = userRepository.get(id)
@@ -183,10 +185,7 @@ abstract class UserService(userRepository: UserRepository,
     val body = mailService.mailRender.renderI18n("mails/mail-change.ssp", args, mails(user.lang))
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
-    mailService.mailSender.send(msg).flatMap {
-      case Left(t)  => Future.successful(Left(UnhandledException(t)))
-      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right(()))
-    }
+    sendMessage(msg, mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right(())))
   }
 
   private def buildUrl(redirectUrl: String, token: String): String = {
@@ -230,6 +229,15 @@ abstract class UserService(userRepository: UserRepository,
     mailService.mailSender.send(msg).map {
       case Left(t)  => Left(UnhandledException(t))
       case Right(_) => Right(())
+    }
+  }
+
+  private def sendMessage[T](
+      msg: MailMessage,
+      successHandle: => Future[Either[ApiError, T]]): Future[Either[ApiError, T]] = {
+    mailService.mailSender.send(msg).flatMap {
+      case Left(t)  => Future.successful(Left(UnhandledException(t)))
+      case Right(_) => successHandle
     }
   }
 

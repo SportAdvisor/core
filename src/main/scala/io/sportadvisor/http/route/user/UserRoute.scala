@@ -8,7 +8,12 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
-import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
+import io.sportadvisor.exception.Exceptions.{
+  DuplicateException,
+  ResourceNotFound,
+  TokenDoesntExist,
+  TokenExpired
+}
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.Response._
@@ -31,6 +36,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private val emailDuplication = "Email address is already registered"
   private val authError = "Authorization error. Re-login please"
   private val passwordIncorrect = "Incorrect password"
+  private val resetPwdExpired =
+    "Your password reset link has expired. Please initiate a new password reset."
 
   import http._
   import userService._
@@ -155,14 +162,17 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleConfirmNewPassword(): Route = {
     entity(as[ConfirmPassword]) { request =>
-      complete(
-        setNewPassword(request.token, request.password)
-          .map(
-            res =>
-              r(
-                Response.emptyResponse(StatusCodes.OK.intValue)
-            ))
-      )
+      validatorDirective(request, confirmPasswordValidator, this) {
+        selectLanguage() { language =>
+          complete(
+            setNewPassword(request.token, request.password)
+              .map {
+                case Left(e)  => handleResetPasswordErrors(e, "token", language)
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+          )
+        }
+      }
     }
   }
 
@@ -233,6 +243,18 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case DuplicateException() =>
         r(Response.errorResponse(List(FormError(field, errors(lang).t(emailDuplication)))))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
+  }
+
+  private def handleResetPasswordErrors(err: ApiError,
+                                        field: String,
+                                        lang: String): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case TokenDoesntExist(_) =>
+        r(Response.errorResponse(List(FormError(field, errors(lang).t(resetPwdExpired)))))
+      case TokenExpired(_) =>
+        r(Response.errorResponse(List(FormError(field, errors(lang).t(resetPwdExpired)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }

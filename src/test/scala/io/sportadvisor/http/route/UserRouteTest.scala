@@ -425,11 +425,12 @@ class UserRouteTest extends BaseTest {
     "POST /api/users/password-confirm" should {
       "return 200 if confirmation succeed" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"token": "token", "password":"test"}""")
-        when(userService.setNewPassword("token", "test"))
+          s"""{"token": "token", "password":"P1sswwqard"}""")
+        when(userService.setNewPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Right(())))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
+          println(resp)
           resp.code should be(200)
         }
       }

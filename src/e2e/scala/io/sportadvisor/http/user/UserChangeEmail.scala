@@ -2,7 +2,7 @@ package io.sportadvisor.http.user
 
 import akka.http.scaladsl.model.StatusCodes._
 import io.sportadvisor.core.user.UserModels.AuthToken
-import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FormError, ObjectData}
+import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.UserRouteValidators
 import io.sportadvisor.{BaseE2ETest, MailContainer}

@@ -29,7 +29,8 @@ class ResetPasswordTest
   "correct data" should "return ok" in {
     val password = "Passw0rd"
     val resp =
-      post(req("reset-password"), s"""{"email": "${user.email}", "redirectUrl": ""}""").asString
+      post(req("reset-password"), s"""{"email": "${user.email}", "redirectUrl": ""}""")
+        .timeout(10.seconds).asString
     resp.code shouldBe OK.intValue
 
     val body = r[EmptyResponse](resp.body)

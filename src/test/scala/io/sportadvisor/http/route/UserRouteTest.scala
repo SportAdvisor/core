@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.{AuthToken, UserData, UserID, UserService}
+import io.sportadvisor.core.user.{AuthToken, AuthTokenContent, UserData, UserID, UserService}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.I18nStub
@@ -16,6 +16,7 @@ import io.sportadvisor.http.json.Codecs._
 import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
+import io.sportadvisor.util.JwtUtil
 import org.mockito.Mockito._
 
 import scala.concurrent.Future
@@ -395,11 +396,49 @@ class UserRouteTest extends BaseTest {
         }
       }
     }
+
+    "POST /api/users/logout" should {
+       "return 200 success" in new Context {
+         val token = JwtUtil.encode(AuthTokenContent(testId, testUserId), testSecret, Option(LocalDateTime.now().plusHours(1)))
+         when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
+         Post(s"/api/users/logout", token).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
+           val resp = r[EmptyResponse]
+           resp.code shouldBe 200
+         }
+       }
+
+      "return 401 if token wasnt transferred to post" in new Context {
+        when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
+        Post(s"/api/users/logout") ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 401
+        }
+      }
+
+      "return 401 if token was defected" in new Context {
+        when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
+        Post(s"/api/users/logout").withHeaders(authHeader(testId, testUserId, "yolo")) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 401
+        }
+      }
+
+      "return 401 if token was expired" in new Context {
+        val token = JwtUtil.encode(AuthTokenContent(testId, testUserId), testSecret, Option(LocalDateTime.now().minusHours(1)))
+        when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
+        Post(s"/api/users/logout", token)
+          .withHeaders(authHeader(testId, testUserId, LocalDateTime.now().minusHours(1), testSecret)) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 401
+        }
+      }
+    }
   }
 
   trait Context {
     val testSecret: String = "secret"
     val testUserId: UserID = 1L
+    val testId: Long = 1L
     val userService: UserService = mock[UserService]
     when(userService.secret).thenReturn(testSecret)
 

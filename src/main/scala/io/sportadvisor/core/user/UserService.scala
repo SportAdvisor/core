@@ -120,6 +120,10 @@ abstract class UserService(
     }
   }
 
+  def deleteTokenById(id: Long): Future[Unit] = {
+    tokenRepository.removeById(id)
+  }
+
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
   private def sendRequestOfChangeEmail(user: UserData,
                                        email: String,

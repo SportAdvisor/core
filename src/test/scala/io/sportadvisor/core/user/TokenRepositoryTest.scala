@@ -72,6 +72,15 @@ class TokenRepositoryTest extends BaseTest {
         tokens.isEmpty shouldBe true
       }
     }
+
+    "removeById" should {
+      "remove by id" in new Context {
+        awaitForResult(tokenRepository.save(CreateRefreshToken(7L, "t123", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.removeById(10L))
+        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(7L))
+        tokens.isEmpty shouldBe true
+      }
+    }
   }
 
   trait Context {

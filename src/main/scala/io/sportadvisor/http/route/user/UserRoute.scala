@@ -3,10 +3,12 @@ package io.sportadvisor.http.route.user
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.directives.BasicDirectives.provide
+import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
+import akka.http.scaladsl.server.{AuthorizationFailedRejection, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.{UserID, UserService}
+import io.sportadvisor.core.user.{AuthTokenContent, TokenRepository, UserID, UserService}
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.json._
@@ -14,7 +16,7 @@ import io.sportadvisor.http.json.Codecs._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._
-import io.sportadvisor.util.I18nService
+import io.sportadvisor.util.{I18nService, JwtUtil}
 import org.slf4s.Logging
 
 import scala.concurrent.ExecutionContext
@@ -115,6 +117,19 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           }
         }
       }
+    }
+  }
+
+  def handleLogOut(): Route = {
+    optionalHeaderValueByName(authorizationHeader) {
+      case Some(value) => {
+        JwtUtil.decode[AuthTokenContent](value, userService.secret) match {
+          case Some(token) => complete(userService.deleteTokenById(token.refreshTokenId)
+            .map(_ =>  r(Response.emptyResponse(StatusCodes.OK.intValue))))
+          case _ => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
+        }
+      }
+      case None => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
     }
   }
 

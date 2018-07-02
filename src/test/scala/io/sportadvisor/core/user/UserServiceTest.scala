@@ -242,8 +242,8 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Some(testUser)))
         when(sender.send(any[MailMessage]))
           .thenReturn(Future.successful(Right(())))
-        when(resetPasswordTokenRepository.save(ResetPasswordToken("test", any[LocalDateTime])))
-          .thenReturn(Future.successful(ResetPasswordToken("test", LocalDateTime.now())))
+        when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
+          .thenReturn(Future.successful(ResetPasswordToken(1L, "test", LocalDateTime.now())))
         awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
       }
 
@@ -252,8 +252,8 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(None))
         when(sender.send(any[MailMessage]))
           .thenReturn(Future.successful(Right(())))
-        when(resetPasswordTokenRepository.save(ResetPasswordToken("test", any[LocalDateTime])))
-          .thenReturn(Future.successful(ResetPasswordToken("test", LocalDateTime.now())))
+        when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
+          .thenReturn(Future.successful(ResetPasswordToken(1L, "test", LocalDateTime.now())))
         awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
       }
 
@@ -262,8 +262,8 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Some(testUser)))
         when(sender.send(any[MailMessage]))
           .thenReturn(Future.successful(Left(new Exception)))
-        when(resetPasswordTokenRepository.save(ResetPasswordToken("test", any[LocalDateTime])))
-          .thenReturn(Future.successful(ResetPasswordToken("test", LocalDateTime.now())))
+        when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
+          .thenReturn(Future.successful(ResetPasswordToken(1L, "test", LocalDateTime.now())))
         awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
       }
     }

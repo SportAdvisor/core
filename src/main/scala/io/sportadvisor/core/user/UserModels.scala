@@ -43,7 +43,7 @@ object UserModels {
                                 lastTouch: LocalDateTime)
 
   final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
-  final case class ResetPasswordToken(token: String, expireAt: LocalDateTime)
+  final case class ResetPasswordToken(userId: UserID, token: String, expireAt: LocalDateTime)
 
   final case class PasswordMismatch() extends ApiError("Password mismatch", None)
 

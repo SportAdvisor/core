@@ -112,7 +112,7 @@ abstract class UserService(userRepository: UserRepository,
     val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
     sendMessage(msg,
                 resetPasswordTokenRepository
-                  .save(ResetPasswordToken(token, time))
+                  .save(ResetPasswordToken(user.id, token, time))
                   .map(_ => Right(())))
   }
 
@@ -126,8 +126,11 @@ abstract class UserService(userRepository: UserRepository,
             case None => Future.successful(Left(TokenExpired("reset password")))
             case Some(dt) =>
               userRepository.find(dt.email).flatMap {
-                case None    => Future.successful(Left(ResourceNotFound(-1L)))
-                case Some(u) => updatePassword(u, password)
+                case None => Future.successful(Left(ResourceNotFound(-1L)))
+                case Some(u) =>
+                  updatePassword(u, password)
+                    .map(_ => resetPasswordTokenRepository.removeByUser(u.id))
+                    .map(_ => Right(()))
               }
           }
       }

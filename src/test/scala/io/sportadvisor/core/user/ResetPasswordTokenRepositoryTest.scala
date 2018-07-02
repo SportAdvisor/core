@@ -3,6 +3,7 @@ package io.sportadvisor.core.user
 import java.time.LocalDateTime
 
 import io.sportadvisor.core.user.UserModels.ResetPasswordToken
+import io.sportadvisor.exception.ApiError
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
 import scala.concurrent.Future
@@ -13,7 +14,7 @@ class ResetPasswordTokenRepositoryTest extends BaseTest {
 
     "save and get" should {
       "successful save" in new Context {
-        val f: Future[ResetPasswordToken] =
+        val f: Future[Either[ApiError, ResetPasswordToken]] =
           resetTokenRepository.save(
             ResetPasswordToken(1L, testToken1, LocalDateTime.now().plusDays(1)))
         awaitForResult(f)
@@ -25,10 +26,10 @@ class ResetPasswordTokenRepositoryTest extends BaseTest {
     "save and removeAll" should {
       "remove all token by user id" should {
         "return 2" in new Context {
-          val f1: Future[ResetPasswordToken] =
+          val f1: Future[Either[ApiError, ResetPasswordToken]] =
             resetTokenRepository.save(
               ResetPasswordToken(2L, testToken2, LocalDateTime.now().plusDays(1)))
-          val f2: Future[ResetPasswordToken] =
+          val f2: Future[Either[ApiError, ResetPasswordToken]] =
             resetTokenRepository.save(
               ResetPasswordToken(2L, testToken3, LocalDateTime.now().plusDays(1)))
           awaitForResult(f1)

@@ -8,12 +8,8 @@ import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.UserModels.{AuthToken, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
-import io.sportadvisor.exception.Exceptions.{
-  DuplicateException,
-  ResourceNotFound,
-  TokenDoesntExist,
-  TokenExpired
-}
+import io.sportadvisor.exception.ApiError
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, TokenDoesntExist, TokenExpired}
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Decoders._
@@ -404,7 +400,7 @@ class UserRouteTest extends BaseTest {
       "return 200 anyway" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
                                        s"""{"email": "test@test.com", "redirectUrl":"test"}""")
-        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.unit)
+        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.successful(Right(())))
         Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code should be(200)
@@ -414,7 +410,8 @@ class UserRouteTest extends BaseTest {
       "return 500 if save failed" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
-        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.failed[Unit](new RuntimeException))
+        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.failed[Either[ApiError, Unit]]
+          (new RuntimeException))
         Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500

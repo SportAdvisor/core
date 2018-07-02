@@ -143,14 +143,15 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   def handleResetPassword(): Route = {
     entity(as[ResetPassword]) { request =>
       validatorDirective(request, resetPasswordValidator, this) {
-        complete(
-          resetPassword(request.email, request.redirectUrl)
-            .map(
-              res =>
-                r(
-                  Response.emptyResponse(StatusCodes.OK.intValue)
-              ))
-        )
+        selectLanguage() { lang =>
+          complete(
+            resetPassword(request.email, request.redirectUrl)
+              .map {
+                case Left(e)  => handleTokenDuplicate(e, lang)
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+          )
+        }
       }
     }
   }
@@ -250,6 +251,14 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         r(Response.errorResponse(List(FormError(field, errors(lang).t(resetPwdExpired)))))
       case TokenExpired(_) =>
         r(Response.errorResponse(List(FormError(field, errors(lang).t(resetPwdExpired)))))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
+  }
+
+  private def handleTokenDuplicate(err: ApiError, lang: String): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case DuplicateException() =>
+        r(Response.emptyResponse(StatusCodes.OK.intValue))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }

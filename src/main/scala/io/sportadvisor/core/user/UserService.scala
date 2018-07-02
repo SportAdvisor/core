@@ -91,11 +91,14 @@ abstract class UserService(userRepository: UserRepository,
       }
   }
 
-  def resetPassword(email: String, redirectUrl: String): Future[Unit] = {
+  def resetPassword(email: String, redirectUrl: String): Future[Either[ApiError, Unit]] = {
     userRepository
       .find(email)
       .flatMapTOuter(user => sendResetPasswordToken(user, redirectUrl))
-      .map(_ => ())
+      .map {
+        case None    => Right(())
+        case Some(e) => e
+      }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -112,8 +115,8 @@ abstract class UserService(userRepository: UserRepository,
     val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
     sendMessage(msg,
                 resetPasswordTokenRepository
-                  .save(ResetPasswordToken(user.id, token, time))
-                  .map(_ => Right(())))
+                  .save(ResetPasswordToken(user.id, token, time)))
+      .map(_.map(_ => ()))
   }
 
   def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {

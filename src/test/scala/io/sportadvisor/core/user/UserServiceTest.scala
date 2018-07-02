@@ -243,8 +243,8 @@ class UserServiceTest extends BaseTest {
         when(sender.send(any[MailMessage]))
           .thenReturn(Future.successful(Right(())))
         when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
-          .thenReturn(Future.successful(ResetPasswordToken(1L, "test", LocalDateTime.now())))
-        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
+          .thenReturn(Future.successful(Right(ResetPasswordToken(1L, "test", LocalDateTime.now()))))
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe Right(())
       }
 
       "return unit if user wasn't found" in new Context {
@@ -253,18 +253,20 @@ class UserServiceTest extends BaseTest {
         when(sender.send(any[MailMessage]))
           .thenReturn(Future.successful(Right(())))
         when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
-          .thenReturn(Future.successful(ResetPasswordToken(1L, "test", LocalDateTime.now())))
-        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
+          .thenReturn(Future.successful(Right(ResetPasswordToken(1L, "test", LocalDateTime.now()))))
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe Right(())
       }
 
       "return unit if msg wasn't sent" in new Context {
         when(userRepository.find(testEmail))
           .thenReturn(Future.successful(Some(testUser)))
+        private val exception = new Exception
         when(sender.send(any[MailMessage]))
-          .thenReturn(Future.successful(Left(new Exception)))
+          .thenReturn(Future.successful(Left(exception)))
         when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
-          .thenReturn(Future.successful(ResetPasswordToken(1L, "test", LocalDateTime.now())))
-        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe unitVal
+          .thenReturn(Future.successful(Right(ResetPasswordToken(1L, "test", LocalDateTime.now()))))
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe Left(
+          UnhandledException(exception))
       }
     }
 

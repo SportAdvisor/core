@@ -28,15 +28,32 @@ trait MailContainer extends BaseE2ETest {
     super.additionalContainer(seq)
   }
 
+  override protected def mailEnv: Map[String, String] = env
+
+  protected def messages(): Seq[Message] = {
+    mhMessages map (Message(_))
+  }
+
+  protected def getTokenFromMail(m: Message): Option[String] = {
+    val prefix = "?token="
+    val tokenStartPosition = m.body.indexOf(prefix)
+    if (tokenStartPosition > 0) {
+      val token = m.body.substring(tokenStartPosition + prefix.length)
+      val firstEmpty = token.indexOf(' ')
+      val firstBr = token.indexOf("<br/>")
+      if (firstBr > 0 || firstEmpty > 0) {
+        Some(token.substring(0, math.min(firstBr, firstEmpty)).stripLineEnd)
+      } else {
+        Some(token.stripLineEnd)
+      }
+    } else {
+      None
+    }
+  }
+
   private def smtpEnv(): Map[String, String] = Map(
     "MH_HOSTNAME" -> "sportadvisor.io"
   )
-
-  override protected def mailEnv: Map[String, String] = env
-
-  def messages(): Seq[Message] = {
-    mhMessages map (Message(_))
-  }
 
   private def mhMessages(): Seq[MailhogMessage] = {
     val resp = Http(s"http://${mailEnv(SMTP_IP)}:${mailEnv(MAIL_HOG_API_PORT)}/api/v2/messages").asString

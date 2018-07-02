@@ -13,13 +13,13 @@ private[user] trait ResetPasswordTokenTable {
   // scalastyle:off
   class ResetPwdTokenScheme(tag: Tag) extends Table[ResetPasswordToken](tag, "RESET_PWD_TOKENS") {
     def userId: Rep[UserID] = column[Long]("user_id")
-    def token: Rep[String] = column[String]("token", O.PrimaryKey)
+    def token: Rep[String] = column[String]("token")
     def expireAt: Rep[LocalDateTime] = column[LocalDateTime]("expire_at")
 
     override def * : ProvenShape[ResetPasswordToken] =
       (userId, token, expireAt) <> (ResetPasswordToken.tupled, ResetPasswordToken.unapply)
 
-    def pk: PrimaryKey = primaryKey("pk_reset_pwd_tokens", (userId, token))
+    def pk: PrimaryKey = primaryKey("pk_reset_pwd_tokens", token)
 
   }
   // scalastyle:on

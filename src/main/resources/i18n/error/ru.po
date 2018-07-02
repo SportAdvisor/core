@@ -33,5 +33,5 @@ msgstr "Ошибка авторизации. Выполните повторну
 msgid "Incorrect password"
 msgstr "Неверный пароль"
 
-msgid "Your password reset link has expired. Please initiate a new password reset."
+msgid "Your password reset link has expired. Please initiate a new password reset"
 msgstr "Ссылка для сброса пароля не действительна. Пожалуйста, повторите попытку сброса"

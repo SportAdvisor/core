@@ -33,5 +33,5 @@ msgstr "Authorization error. Re-login please"
 msgid "Incorrect password"
 msgstr "Incorrect password"
 
-msgid "Your password reset link has expired. Please initiate a new password reset."
-msgstr "Your password reset link has expired. Please initiate a new password reset."
+msgid "Your password reset link has expired. Please initiate a new password reset"
+msgstr "Your password reset link has expired. Please initiate a new password reset"

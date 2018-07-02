@@ -203,7 +203,8 @@ class ResetPasswordTest
 
     val confirmBody2 = r[ErrorResponse[FormError]](confirmResp2.body)
     confirmBody2.code shouldBe BadRequest.intValue
-    confirmBody2.errors should (contain(FormError("token", "???")) and have size 1)
+    confirmBody2.errors should (contain(FormError("token", "Your password reset link has expired. Please initiate a " +
+      "new password reset")) and have size 1)
   }
 
   "concurrent reset" should "return error" in {
@@ -213,10 +214,6 @@ class ResetPasswordTest
     val resp2 =
       post(req("reset-password"), s"""{"email": "${user.email}", "redirectUrl": ""}""").asString
     resp1.code shouldBe OK.intValue
-    resp2.code shouldBe BadRequest.intValue
-
-    val body = r[ErrorResponse[FormError]](resp2.body)
-    body.code shouldBe BadRequest.intValue
-    body.errors should (contain(FormError("email", "???")) and have size 1)
+    resp2.code shouldBe OK.intValue
   }
 }

@@ -27,7 +27,7 @@ class UserServiceTest extends BaseTest {
         when(userRepository.save(CreateUser(testEmail, testPassword.sha256.hex, testName)))
             .thenReturn(Future.successful(Right(testUser)))
         when(tokenRepository.save(any[RefreshToken]()))
-          .thenReturn(Future.successful(RefreshToken(1L, "", remember = false, LocalDateTime.now())))
+          .thenReturn(Future.successful(RefreshTokenData(1L, 1L, "", remember = false, LocalDateTime.now())))
         val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
         value.isRight shouldBe true
         Jwt.decodeRaw(value.right.get.token, testSecretKey, Seq(JwtAlgorithm.HS256)).isSuccess shouldBe true
@@ -45,7 +45,7 @@ class UserServiceTest extends BaseTest {
       "return valid auth token" in new Context {
         when(userRepository.find(testEmail)).thenReturn(Future.successful(Some(testUser)))
         when(tokenRepository.save(any[RefreshToken]()))
-          .thenReturn(Future.successful(RefreshToken(1L, "", remember = false, LocalDateTime.now())))
+          .thenReturn(Future.successful(RefreshTokenData(1L, 1L, "", remember = false, LocalDateTime.now())))
         val token: Option[AuthToken] = awaitForResult(userService.signIn(testEmail, testPassword, remember = false))
         token.isDefined shouldBe true
         Jwt.decodeRaw(token.get.token, testSecretKey, Seq(JwtAlgorithm.HS256)).isSuccess shouldBe true

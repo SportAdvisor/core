@@ -152,25 +152,21 @@ abstract class UserService(
   }
 
   private def createAndSaveToken(user: UserData, remember: Boolean): Future[AuthToken] = {
-    val token = createToken(user, remember)
-    saveToken(user, token.refreshToken, remember, LocalDateTime.now())
-      .map(_ => token)
-  }
-
-  private def createToken(user: UserData, remember: Boolean): AuthToken = {
-    val time = LocalDateTime.now()
-    val expTime = time.plusMinutes(expPeriod.toMinutes)
-    val token = JwtUtil.encode(AuthTokenContent(user.id), secret, Option(expTime))
     val refreshToken =
       JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secret, None)
-    AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
+    val time = LocalDateTime.now()
+    saveRefreshToken(user, refreshToken, remember, time).map(_.id) map { refreshTokenId =>
+      val expTime = time.plusMinutes(expPeriod.toMinutes)
+      val token = JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secret, Option(expTime))
+      AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
+    }
   }
 
-  private def saveToken(user: UserData,
-                        refreshToken: Token,
-                        remember: Boolean,
-                        creation: LocalDateTime): Future[RefreshToken] = {
-    tokenRepository.save(RefreshToken(user.id, refreshToken, remember, creation))
+  private def saveRefreshToken(user: UserData,
+                               refreshToken: Token,
+                               remember: Boolean,
+                               creation: LocalDateTime): Future[RefreshTokenData] = {
+    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, creation))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))

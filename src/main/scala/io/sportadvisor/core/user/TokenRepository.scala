@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 trait TokenRepository {
 
-  def save(token: RefreshToken): Future[RefreshToken]
+  def save(token: RefreshToken): Future[RefreshTokenData]
 
   def removeByUser(id: UserID): Future[Unit]
 
@@ -28,8 +28,16 @@ class TokenRepositorySQL(val connector: DatabaseConnector)(
   import connector._
   import connector.profile.api._
 
-  override def save(token: RefreshToken): Future[RefreshToken] = {
-    db.run(tokens += token).map(_ => token)
+  private val insertQuery = tokens returning tokens.map(_.id) into ((token,
+                                                                     id) => token.copy(id = id))
+
+  override def save(token: RefreshToken): Future[RefreshTokenData] = {
+    val action = insertQuery += RefreshTokenData(0,
+                                                 token.userId,
+                                                 token.token,
+                                                 token.remember,
+                                                 token.lastTouch)
+    db.run(action)
   }
 
   override def removeByUser(id: UserID): Future[Unit] = {

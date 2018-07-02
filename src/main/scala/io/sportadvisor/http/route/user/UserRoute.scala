@@ -70,6 +70,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           get {
             handleGetMe()
           }
+        } ~ path("logout") {
+          post {
+            handleLogOut()
+          }
         }
       }
     }
@@ -124,8 +128,11 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     optionalHeaderValueByName(authorizationHeader) {
       case Some(value) => {
         JwtUtil.decode[AuthTokenContent](value, userService.secret) match {
-          case Some(token) => complete(userService.deleteTokenById(token.refreshTokenId)
-            .map(_ =>  r(Response.emptyResponse(StatusCodes.OK.intValue))))
+          case Some(token) =>
+            complete(
+              userService
+                .deleteTokenById(token.refreshTokenId)
+                .map(_ => r(Response.emptyResponse(StatusCodes.OK.intValue))))
           case _ => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
         }
       }

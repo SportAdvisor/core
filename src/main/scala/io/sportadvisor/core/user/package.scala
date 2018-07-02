@@ -18,10 +18,6 @@ package object user {
     def password: String
   }
 
-  final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime) {
-    def updateRefreshToken(r: Token): AuthToken = AuthToken(token, r, expireAt)
-  }
-
   final case class CreateUser(email: String, password: String, name: String) extends User
   final case class UserData(id: UserID,
                             email: String,
@@ -32,13 +28,32 @@ package object user {
     def lang: String = language.fold("ru")(l => l)
   }
 
-  final case class AuthTokenContent(userID: UserID)
+  sealed trait RefreshToken {
+    def userId: Long
+    def token: Token
+    def remember: Boolean
+    def lastTouch: LocalDateTime
+  }
+
+  final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime) {
+    def updateRefreshToken(r: Token): AuthToken = AuthToken(token, r, expireAt)
+  }
+
+  final case class AuthTokenContent(refreshTokenId: Long, userID: UserID)
   final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
 
-  final case class RefreshToken(userId: UserID,
-                                token: Token,
-                                remember: Boolean,
-                                lastTouch: LocalDateTime)
+  final case class RefreshTokenData(id: Long,
+                                    userId: UserID,
+                                    token: Token,
+                                    remember: Boolean,
+                                    lastTouch: LocalDateTime)
+      extends RefreshToken
+
+  final case class CreateRefreshToken(userId: UserID,
+                                      token: Token,
+                                      remember: Boolean,
+                                      lastTouch: LocalDateTime)
+      extends RefreshToken
 
   final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
 

@@ -155,7 +155,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("email", "Email address is already registered")) and have size 1)
@@ -167,7 +167,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "testtest.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("email", "Email is invalid")) and have size 1)
@@ -187,7 +187,7 @@ class UserRouteTest extends BaseTest {
       "return 403" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
-        Put(s"/api/users/1$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/1$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -198,7 +198,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Right()))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -209,7 +209,7 @@ class UserRouteTest extends BaseTest {
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(UserNotFound(testUserId))))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code shouldBe 500
           resp.message.isDefined shouldBe true
@@ -247,7 +247,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return redirect" in new Context {
-        Get("/api/users/me").withHeaders(authHeader(1, testSecret)) ~> userRoute ~> check {
+        Get("/api/users/me").withHeaders(authHeader(testId, 1, testSecret)) ~> userRoute ~> check {
           response.status.intValue shouldBe 303
           val header = response.getHeader("Location")
           header.isPresent shouldBe true
@@ -265,7 +265,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 403 if user hasnt access" in new Context {
-        Get(s"/api/users/2$testUserId").withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Get(s"/api/users/2$testUserId").withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp  = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -274,7 +274,7 @@ class UserRouteTest extends BaseTest {
       "return 404 if user not found" in new Context {
         when(userService.getById(testUserId))
           .thenReturn(Future.successful(None))
-        Get(s"/api/users/$testUserId").withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Get(s"/api/users/$testUserId").withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 404
         }
@@ -283,7 +283,7 @@ class UserRouteTest extends BaseTest {
       "return 200 and user data" in new Context {
         when(userService.getById(testUserId))
           .thenReturn(Future.successful(Option(UserData(testUserId, "testemail", "testpassword", "testname", Some("ru")))))
-        Get(s"/api/users/$testUserId").withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Get(s"/api/users/$testUserId").withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[DataResponse[UserView, ObjectData[UserView]]]
           resp.code shouldBe 200
           val data = resp.data
@@ -305,7 +305,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"name": "", "language":"ru"}""")
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("name", "Name is required")) and have size 1)
@@ -316,7 +316,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"name": "test", "language":"ch"}""")
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("language", "Selected language not supported")) and have size 1)
@@ -327,7 +327,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"name": "", "language":"ch"}""")
 
-        Put(s"/api/users/2$testUserId", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/2$testUserId", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -339,7 +339,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changeAccount(testUserId, "test", None))
             .thenReturn(Future.successful(Some(UserData(testUserId, "t@t.t", "t", "test", None))))
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
           val location = header("Location")
@@ -353,7 +353,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changeAccount(testUserId, "test", None))
           .thenReturn(Future.successful(None))
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500
         }
@@ -365,7 +365,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"password": "asd", "newPassword":"easypass"}""")
 
-        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("newPassword", "Your password must be at least 8 characters long, and " +
@@ -378,7 +378,7 @@ class UserRouteTest extends BaseTest {
           s"""{"password": "asd", "newPassword":"str0nGpass"}""")
         when(userService.changePassword(testUserId, "asd", "str0nGpass"))
           .thenReturn(Future.successful(Left(PasswordMismatch())))
-        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("password", "Incorrect password")) and have size 1)
@@ -390,7 +390,7 @@ class UserRouteTest extends BaseTest {
           s"""{"password": "asd", "newPassword":"str0nGpass"}""")
         when(userService.changePassword(testUserId, "asd", "str0nGpass"))
           .thenReturn(Future.successful(Right(())))
-        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }

@@ -20,35 +20,35 @@ class TokenRepositoryTest extends BaseTest {
 
     "save" should {
       "return token " in new Context {
-        val token: RefreshToken = awaitForResult(tokenRepository.save(RefreshToken(0L, "token", remember = true, LocalDateTime.now())))
+        val token: RefreshTokenData = awaitForResult(tokenRepository.save(CreateRefreshToken(0L, "token", remember = true, LocalDateTime.now())))
         token should not be null
       }
     }
 
     "removeByDate" should {
       "not remove valid long-live refresh token" in new Context {
-        awaitForResult(tokenRepository.save(RefreshToken(1L, "token", remember = true, currentTime)))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(1L, "token", remember = true, currentTime)))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
         val tokens1: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(1L))
-        tokens1 shouldBe Vector(RefreshToken(1L, "token", remember = true, currentTime))
+        tokens1 shouldBe Vector(RefreshTokenData(2L, 1L, "token", remember = true, currentTime))
       }
 
       "remove expired long-live refresh token" in new Context {
-        awaitForResult(tokenRepository.save(RefreshToken(2L, "token", remember = true, currentTime.minusDays(15L))))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(2L, "token", remember = true, currentTime.minusDays(15L))))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
         val tokens2: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(2L))
         tokens2 shouldBe Vector()
       }
 
       "not remove valid refresh token" in new Context {
-        awaitForResult(tokenRepository.save(RefreshToken(3L, "token", remember = false, currentTime)))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(3L, "token", remember = false, currentTime)))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
         val tokens3: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(3L))
-        tokens3 shouldBe Vector(RefreshToken(3L, "token", remember = false, currentTime))
+        tokens3 shouldBe Vector(RefreshTokenData(4L, 3L, "token", remember = false, currentTime))
       }
 
       "remove expired refresh token" in new Context {
-        awaitForResult(tokenRepository.save(RefreshToken(4L, "token", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(4L, "token", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
         val tokens4: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(4L))
         tokens4 shouldBe Vector()
@@ -57,16 +57,16 @@ class TokenRepositoryTest extends BaseTest {
 
     "removeByUser" should {
       "not remove by user" in new Context {
-        awaitForResult(tokenRepository.save(RefreshToken(5L, "t123", remember = false, currentTime.minusHours(14L))))
-        awaitForResult(tokenRepository.save(RefreshToken(5L, "t1232", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(5L, "t123", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(5L, "t1232", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeByUser(100L))
         val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(5L))
         tokens.size shouldBe 2
       }
 
       "remove by user" in new Context {
-        awaitForResult(tokenRepository.save(RefreshToken(6L, "t123", remember = false, currentTime.minusHours(14L))))
-        awaitForResult(tokenRepository.save(RefreshToken(6L, "t1232", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(6L, "t123", remember = false, currentTime.minusHours(14L))))
+        awaitForResult(tokenRepository.save(CreateRefreshToken(6L, "t1232", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeByUser(6L))
         val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(6L))
         tokens.isEmpty shouldBe true

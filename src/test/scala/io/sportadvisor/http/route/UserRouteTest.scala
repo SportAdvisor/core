@@ -462,7 +462,7 @@ class UserRouteTest extends BaseTest {
           println(response)
           resp.errors should (contain(FormError(
             "token",
-            "Your password reset link has expired. Please initiate a new password reset.")) and have size 1)
+            "Your password reset link has expired. Please initiate a new password reset")) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -477,7 +477,7 @@ class UserRouteTest extends BaseTest {
           val resp = r[ErrorResponse[FormError]] // Your password reset link has expired. Please initiate a new password reset
           resp.errors should (contain(FormError(
             "token",
-            "Your password reset link has expired. Please initiate a new password reset.")) and have size 1)
+            "Your password reset link has expired. Please initiate a new password reset")) and have size 1)
           resp.code shouldBe 400
         }
       }

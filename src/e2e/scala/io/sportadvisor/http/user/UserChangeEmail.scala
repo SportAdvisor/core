@@ -2,7 +2,7 @@ package io.sportadvisor.http.user
 
 import akka.http.scaladsl.model.StatusCodes._
 import io.sportadvisor.core.user.UserModels.AuthToken
-import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FormError, ObjectData}
+import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.UserRouteValidators
 import io.sportadvisor.{BaseE2ETest, MailContainer}
@@ -35,15 +35,12 @@ class UserChangeEmail
     changeEmailResp.code shouldBe OK.intValue
     val changeToken = messages()
       .find(m => m.subject == "Change email on SportAdvisor")
-      .map(_.body)
-      .map(body => body.substring(body.indexOf("?token=") + 7))
-      .map(body => body.substring(0, body.indexOf("<br/>")))
-      .map(_.stripLineEnd) getOrElse ""
+      .flatMap(getTokenFromMail) getOrElse ""
     val confirmMailResp = post(req("email-confirm"), s"""{"token": "$changeToken"}""").asString
     confirmMailResp.code shouldBe OK.intValue
     r[EmptyResponse](confirmMailResp.body).code shouldBe OK.intValue
     val confirmMail = messages().find(m =>
-      m.to.contains("vladimir@sportadvisor.io") && m.subject == "Change email on SportAdvisor")
+      m.to.contains(user.email) && m.subject == "Change email on SportAdvisor")
     confirmMail.isDefined shouldBe true
     val meInfo = get(req(user.id.toString), token).asString
     meInfo.code shouldBe OK.intValue

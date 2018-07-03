@@ -1,11 +1,13 @@
 package io.sportadvisor.util.i18n
 
+import java.nio.charset.Charset
+
 import org.slf4s.Logging
 
 import scala.collection.mutable.{ArrayBuffer, Map => MMap}
 import scaposer.{Parser, I18n => scaI18n}
 
-import scala.io.Source
+import scala.io.{Codec, Source}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -30,6 +32,7 @@ private[i18n] object PoLoader extends Logging {
         while (urlEnum.hasMoreElements) {
           val url = urlEnum.nextElement()
           val is = url.openStream()
+          implicit val codec: Codec = new Codec(Charset.forName("UTF-8"))
           val string = Source.fromInputStream(is).mkString
           Parser.parse(string) match {
             case Left(parseFailure) =>

@@ -14,7 +14,7 @@ private[user] trait MailTokenTable {
 
   // scalastyle:off
   class MailTokenScheme(tag: Tag) extends Table[ChangeMailToken](tag, "MAIL_TOKENS") {
-    def token: Rep[String] = column[String]("mailTokens_token_pkey", O.PrimaryKey)
+    def token: Rep[String] = column[String]("token", O.PrimaryKey)
     def expireAt: Rep[LocalDateTime] = column[LocalDateTime]("expire_at")
 
     override def * : ProvenShape[ChangeMailToken] =

@@ -17,7 +17,7 @@ private[user] trait TokenTable {
 
   // scalastyle:off
   class TokenScheme(tag: Tag) extends Table[RefreshTokenData](tag, "REFRESH_TOKENS") {
-    def id: Rep[Long] = column[Long]("refreshTokens_id_pkey", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def userId: Rep[UserID] = column[Long]("user_id")
     def token: Rep[String] = column[String]("token", O.Length(255))
     def remember: Rep[Boolean] = column[Boolean]("remember")

@@ -1,6 +1,7 @@
 CREATE TABLE "ACCOUNTS" (
-  "accounts_id_pkey" serial PRIMARY KEY,
+  "id" serial,
   "name" VARCHAR(255),
   "email" VARCHAR(255) UNIQUE,
-  "password" VARCHAR(255)
+  "password" VARCHAR(255),
+  CONSTRAINT  accounts_id_pkey PRIMARY KEY ("id")
 );

@@ -2,10 +2,11 @@ package io.sportadvisor.core.user
 
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 import java.time.LocalDateTime
+
 import scala.concurrent.duration._
 import java.time.Duration
 
-import io.sportadvisor.core.user.UserModels.RefreshToken
+import io.sportadvisor.core.user.UserModels.{CreateRefreshToken, RefreshToken, RefreshTokenData}
 
 /**
   * @author sss3 (Vladimir Alekseev)

@@ -1,21 +1,17 @@
 package io.sportadvisor.http.route.user
 
-import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.BasicDirectives.provide
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
-import akka.http.scaladsl.server.{AuthorizationFailedRejection, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserModels.{AuthTokenContent, PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
-import io.sportadvisor.core.user.{AuthTokenContent, TokenRepository, UserID, UserService}
 import io.sportadvisor.exception._
 import io.sportadvisor.http
-import io.sportadvisor.http.json._
-import io.sportadvisor.http.json.Codecs._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._

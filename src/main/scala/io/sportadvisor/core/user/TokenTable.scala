@@ -2,9 +2,9 @@ package io.sportadvisor.core.user
 
 import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.{RefreshToken, UserID}
+import io.sportadvisor.core.user.UserModels.{RefreshTokenData, UserID}
 import io.sportadvisor.util.db.DatabaseConnector
-import slick.lifted.{PrimaryKey, ProvenShape}
+import slick.lifted.ProvenShape
 
 /**
   * @author sss3 (Vladimir Alekseev)

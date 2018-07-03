@@ -2,7 +2,7 @@ package io.sportadvisor.core.user
 
 import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.{RefreshToken, UserID}
+import io.sportadvisor.core.user.UserModels.{RefreshToken, RefreshTokenData, UserID}
 import io.sportadvisor.util.db.DatabaseConnector
 
 import scala.concurrent.{ExecutionContext, Future}

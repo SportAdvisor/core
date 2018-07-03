@@ -6,18 +6,14 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.UserModels.{AuthToken, PasswordMismatch, UserData, UserID}
+import io.sportadvisor.core.user.UserModels.{AuthToken, AuthTokenContent, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
-import io.sportadvisor.core.user.{AuthToken, AuthTokenContent, UserData, UserID, UserService}
-import io.sportadvisor.exception._
-import io.sportadvisor.http.Response._
-import io.sportadvisor.http.I18nStub
-import io.sportadvisor.http.json._
 import io.sportadvisor.http.Decoders._
-import io.sportadvisor.http.json.Codecs._
-import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.HttpTestUtils._
+import io.sportadvisor.http.I18nStub
+import io.sportadvisor.http.Response._
+import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.util.JwtUtil
 import org.mockito.Mockito._
@@ -200,7 +196,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
-          .thenReturn(Future.successful(Right()))
+          .thenReturn(Future.successful(Right(())))
         Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
@@ -211,7 +207,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
-          .thenReturn(Future.successful(Left(UserNotFound(testUserId))))
+          .thenReturn(Future.successful(Left(ResourceNotFound(testUserId))))
         Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code shouldBe 500

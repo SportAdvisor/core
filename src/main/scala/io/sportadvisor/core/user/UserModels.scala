@@ -58,6 +58,7 @@ object UserModels {
       extends RefreshToken
 
   final case class ChangeMailToken(token: String, expireAt: LocalDateTime)
+  final case class ResetPasswordToken(userId: UserID, token: String, expireAt: LocalDateTime)
 
   final case class PasswordMismatch() extends ApiError("Password mismatch", None)
 

@@ -12,7 +12,7 @@ import scala.concurrent.Future
   */
 class MailTokensRepositoryTest extends BaseTest {
 
-  "MailChangesTokenRepositorySQL" when {
+  "MailTokenRepositorySQL" when {
     "save and get" should {
       "successful save" in new Context {
         val f: Future[ChangeMailToken] =

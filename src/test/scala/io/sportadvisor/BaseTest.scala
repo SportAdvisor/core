@@ -24,4 +24,6 @@ trait BaseTest extends WordSpec with Matchers with ScalatestRouteTest with Mocki
       .getOrElse(null.asInstanceOf[T])
   }
 
+  val unitVal: Unit = ()
+
 }

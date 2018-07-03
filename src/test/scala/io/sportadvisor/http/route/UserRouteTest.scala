@@ -8,8 +8,13 @@ import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.UserModels.{AuthToken, AuthTokenContent, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
+import io.sportadvisor.exception.ApiError
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, TokenDoesntExist, TokenExpired}
+import io.sportadvisor.http.Response._
+import io.sportadvisor.http.I18nStub
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.http.Decoders._
+import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Response._
@@ -240,7 +245,7 @@ class UserRouteTest extends BaseTest {
     "GET /api/users/me" should {
       "return 400 if have not token" in new Context {
         Get("/api/users/me") ~> userRoute ~> check {
-          val resp  = r[EmptyResponse]
+          val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }
       }
@@ -258,7 +263,7 @@ class UserRouteTest extends BaseTest {
     "GET /api/users/{id}" should {
       "return 400 if have not token" in new Context {
         Get(s"/api/users/$testUserId") ~> userRoute ~> check {
-          val resp  = r[EmptyResponse]
+          val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }
       }
@@ -336,7 +341,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
           s"""{"name": "test", "language": null}""")
         when(userService.changeAccount(testUserId, "test", None))
-            .thenReturn(Future.successful(Some(UserData(testUserId, "t@t.t", "t", "test", None))))
+          .thenReturn(Future.successful(Some(UserData(testUserId, "t@t.t", "t", "test", None))))
 
         Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
@@ -414,12 +419,108 @@ class UserRouteTest extends BaseTest {
         }
       }
     }
+
+    "POST /api/users/reset-password" should {
+      "return 200 anyway" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+                                       s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.successful(Right(())))
+        Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code should be(200)
+        }
+      }
+
+      "return 500 if save failed" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.failed[Either[ApiError, Unit]]
+          (new RuntimeException))
+        Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 500
+        }
+      }
+    }
+
+    "POST /api/users/password-confirm" should {
+      "return 200 if confirmation succeed" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+          s"""{"token": "token", "password":"P1sswwqard"}""")
+        when(userService.setNewPassword("token", "P1sswwqard"))
+          .thenReturn(Future.successful(Right(())))
+        Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          println(resp)
+          resp.code should be(200)
+        }
+      }
+
+      "return 400 if password is too weak" in new Context {
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"test"}""")
+        when(userService.setNewPassword("token", "test"))
+          .thenReturn(Future.successful(Right(())))
+        Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
+          println(response)
+          val resp = r[ErrorResponse[FormError]]
+          resp.errors should (contain(
+            FormError(
+              "password",
+              "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
+                "one uppercase letter, and a number")) and have size 1)
+          resp.code shouldBe 400
+        }
+      }
+
+      "return 200 if confirmation failed (token doesn't exist)" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+                                       s"""{"token": "token", "password":"P1sswwqard"}""")
+        when(userService.setNewPassword("token", "P1sswwqard"))
+          .thenReturn(Future.successful(Left(TokenDoesntExist("reset password"))))
+        Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          println(response)
+          resp.errors should (contain(FormError(
+            "token",
+            "Your password reset link has expired. Please initiate a new password reset")) and have size 1)
+          resp.code shouldBe 400
+        }
+      }
+
+      "return 200 if confirmation failed (token expired)" in new Context {
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`,
+                     s"""{"token": "token", "password":"P1sswwqard"}""")
+        when(userService.setNewPassword("token", "P1sswwqard"))
+          .thenReturn(Future.successful(Left(TokenExpired("reset password"))))
+        Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]] // Your password reset link has expired. Please initiate a new password reset
+          resp.errors should (contain(FormError(
+            "token",
+            "Your password reset link has expired. Please initiate a new password reset")) and have size 1)
+          resp.code shouldBe 400
+        }
+      }
+
+      "return 200 if confirmation failed (User Not Found)" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`,
+                                       s"""{"token": "token", "password":"P1sswwqard"}""")
+        when(userService.setNewPassword("token", "P1sswwqard"))
+          .thenReturn(Future.successful(Left(ResourceNotFound(-1L))))
+        Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code shouldBe 500
+        }
+      }
+    }
   }
 
   trait Context {
     val testSecret: String = "secret"
     val testUserId: UserID = 1L
     val testId: Long = 1L
+    val testEmail: String = "test@test.com"
     val userService: UserService = mock[UserService]
     when(userService.secret).thenReturn(testSecret)
 

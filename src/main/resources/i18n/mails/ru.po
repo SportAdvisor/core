@@ -26,3 +26,12 @@ msgstr "ссылка активна до %s."
 
 msgid "If you did not authorize the change of email address, please contact support"
 msgstr "Если вы не меняли электронную почту, обратитесь в службу поддержки"
+
+msgid "You reset your password"
+msgstr "Вы сбросили пароль"
+
+msgid "If you did not authorize the reset of password, please contact support"
+msgstr "Если вы не сбрасывали пароль, обратитесь в службу поддержки"
+
+msgid "Reset password on SportAdvisor"
+msgstr "Сброс пароля на сайте SportAdvisor"

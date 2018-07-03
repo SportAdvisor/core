@@ -28,7 +28,7 @@ class UserServiceTest extends BaseTest {
     "signUp" should {
       "return valid auth token" in new Context {
         when(userRepository.save(CreateUser(testEmail, testPassword.sha256.hex, testName)))
-            .thenReturn(Future.successful(Right(testUser)))
+          .thenReturn(Future.successful(Right(testUser)))
         when(tokenRepository.save(any[RefreshToken]()))
           .thenReturn(Future.successful(RefreshToken(1L, "", remember = false, LocalDateTime.now())))
         val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
@@ -93,7 +93,7 @@ class UserServiceTest extends BaseTest {
           case Left(error) =>
             error match {
               case ResourceNotFound(_) => ()
-              case _ => throw new IllegalStateException()
+              case _               => throw new IllegalStateException()
             }
           case Right(_) => throw new IllegalStateException()
         }
@@ -234,6 +234,42 @@ class UserServiceTest extends BaseTest {
         }
       }
     }
+
+    "resetPassword" should {
+
+      "return unit if succeed" in new Context {
+        when(userRepository.find(testEmail))
+          .thenReturn(Future.successful(Some(testUser)))
+        when(sender.send(any[MailMessage]))
+          .thenReturn(Future.successful(Right(())))
+        when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
+          .thenReturn(Future.successful(Right(ResetPasswordToken(1L, "test", LocalDateTime.now()))))
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe Right(())
+      }
+
+      "return unit if user wasn't found" in new Context {
+        when(userRepository.find(testEmail))
+          .thenReturn(Future.successful(None))
+        when(sender.send(any[MailMessage]))
+          .thenReturn(Future.successful(Right(())))
+        when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
+          .thenReturn(Future.successful(Right(ResetPasswordToken(1L, "test", LocalDateTime.now()))))
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe Right(())
+      }
+
+      "return unit if msg wasn't sent" in new Context {
+        when(userRepository.find(testEmail))
+          .thenReturn(Future.successful(Some(testUser)))
+        private val exception = new Exception
+        when(sender.send(any[MailMessage]))
+          .thenReturn(Future.successful(Left(exception)))
+        when(resetPasswordTokenRepository.save(ResetPasswordToken(1L, "test", any[LocalDateTime])))
+          .thenReturn(Future.successful(Right(ResetPasswordToken(1L, "test", LocalDateTime.now()))))
+        awaitForResult(userService.resetPassword(testEmail, redirectUrl = "test")) shouldBe Left(
+          UnhandledException(exception))
+      }
+    }
+
   }
 
   trait Context {
@@ -252,9 +288,15 @@ class UserServiceTest extends BaseTest {
     val userRepository: UserRepository = mock[UserRepository]
     val tokenRepository: TokenRepository = mock[TokenRepository]
     val mailChangesTokenRepository: MailChangesTokenRepository = mock[MailChangesTokenRepository]
+    val resetPasswordTokenRepository: ResetPasswordTokenRepository =
+      mock[ResetPasswordTokenRepository]
 
-    val userService = new UserService(userRepository, tokenRepository, testSecretKey, mailService,
-      mailChangesTokenRepository) with I18nStub
+    val userService = new UserService(userRepository,
+                                      tokenRepository,
+                                      testSecretKey,
+                                      mailService,
+                                      mailChangesTokenRepository,
+                                      resetPasswordTokenRepository) with I18nStub
 
     val testId: Long = Random.nextLong()
     val testName: String = Random.nextString(10)

@@ -27,17 +27,19 @@ import scala.util.Success
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-abstract class UserService(
-    userRepository: UserRepository,
-    tokenRepository: TokenRepository,
-    secretKey: String,
-    mailService: MailService[I18n, Throwable, _],
-    mailTokenRepository: MailChangesTokenRepository)(implicit executionContext: ExecutionContext)
+abstract class UserService(userRepository: UserRepository,
+                           tokenRepository: TokenRepository,
+                           secretKey: String,
+                           mailService: MailService[I18n, Throwable, _],
+                           mailTokenRepository: MailChangesTokenRepository,
+                           resetPasswordTokenRepository: ResetPasswordTokenRepository)(
+    implicit executionContext: ExecutionContext)
     extends Logging
     with I18nService {
 
   private[this] val expPeriod = 2.hour
   private[this] val mailChangeExpPeriod = 1.day
+  private[this] val passwordRessetExpPerion = 1.day
 
   def secret: String = secretKey
 
@@ -73,7 +75,7 @@ abstract class UserService(
   def confirmEmail(token: String): Future[Boolean] = {
     mailTokenRepository
       .get(token)
-      .flatMapTInner(t => encodeChangeEmailToken(t.token, secret))
+      .flatMapTInner(t => decodeChangeEmailToken(t.token, secret))
       .flatMapT { t =>
         userRepository
           .find(t.from)
@@ -86,6 +88,54 @@ abstract class UserService(
       .map {
         case Some(_) => true
         case None    => false
+      }
+  }
+
+  def resetPassword(email: String, redirectUrl: String): Future[Either[ApiError, Unit]] = {
+    userRepository
+      .find(email)
+      .flatMapTOuter(user => sendResetPasswordToken(user, redirectUrl))
+      .map {
+        case None    => Right(())
+        case Some(e) => e
+      }
+  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Any"))
+  def sendResetPasswordToken(user: UserData,
+                             redirectUrl: String): Future[Either[ApiError, Unit]] = {
+    val time = LocalDateTime.now().plusMinutes(passwordRessetExpPerion.toMinutes)
+    val token = generateResetPasswordToken(user.email, secret, time)
+    val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
+                                "user" -> user,
+                                "expAt" -> dateToString(time))
+    val body =
+      mailService.mailRender.renderI18n("mails/reset-password.ssp", args, mails(user.lang))
+    val subject = mails(user.lang).t("Reset password on SportAdvisor")
+    val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
+    sendMessage(msg,
+                resetPasswordTokenRepository
+                  .save(ResetPasswordToken(user.id, token, time)))
+      .map(_.map(_ => ()))
+  }
+
+  def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
+    resetPasswordTokenRepository
+      .get(token)
+      .flatMap {
+        case None => Future.successful(Left(TokenDoesntExist("reset password")))
+        case Some(t) =>
+          decodeResetPasswordToken(t.token, secret) match {
+            case None => Future.successful(Left(TokenExpired("reset password")))
+            case Some(dt) =>
+              userRepository.find(dt.email).flatMap {
+                case None => Future.successful(Left(ResourceNotFound(-1L)))
+                case Some(u) =>
+                  updatePassword(u, password)
+                    .map(_ => resetPasswordTokenRepository.removeByUser(u.id))
+                    .map(_ => Right(()))
+              }
+          }
       }
   }
 
@@ -115,13 +165,17 @@ abstract class UserService(
                          oldPass: String,
                          newPass: String): Future[Either[ApiError, Unit]] = {
     if (u.password === oldPass.sha256.hex) {
-      val updatedUser = u.copy(password = newPass.sha256.hex)
-      userRepository
-        .save(updatedUser)
-        .flatMapRight(user => tokenRepository.removeByUser(user.id))
+      updatePassword(u, newPass)
     } else {
       Future.successful(Left(PasswordMismatch()))
     }
+  }
+
+  private def updatePassword(u: UserData, newPass: String): Future[Either[ApiError, Unit]] = {
+    val updatedUser = u.copy(password = newPass.sha256.hex)
+    userRepository
+      .save(updatedUser)
+      .flatMapRight(user => tokenRepository.removeByUser(user.id))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -137,10 +191,7 @@ abstract class UserService(
     val body = mailService.mailRender.renderI18n("mails/mail-change.ssp", args, mails(user.lang))
     val subject = mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
-    mailService.mailSender.send(msg).flatMap {
-      case Left(t)  => Future.successful(Left(UnhandledException(t)))
-      case Right(_) => mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right(()))
-    }
+    sendMessage(msg, mailTokenRepository.save(ChangeMailToken(token, time)).map(_ => Right(())))
   }
 
   private def buildUrl(redirectUrl: String, token: String): String = {
@@ -187,14 +238,28 @@ abstract class UserService(
     }
   }
 
+  private def sendMessage[T](
+      msg: MailMessage,
+      successHandle: => Future[Either[ApiError, T]]): Future[Either[ApiError, T]] = {
+    mailService.mailSender.send(msg).flatMap {
+      case Left(t)  => Future.successful(Left(UnhandledException(t)))
+      case Right(_) => successHandle
+    }
+  }
+
 }
 
 object UserService {
 
   private[user] final case class ChangeMailTokenContent(from: String, to: String)
+  private[user] final case class ResetPasswordTokenContent(email: String)
   private implicit val changeMailTokenContentEncoder: Encoder[ChangeMailTokenContent] =
     deriveEncoder
   private implicit val changeMailTokenContentDecoder: Decoder[ChangeMailTokenContent] =
+    deriveDecoder
+  private implicit val resetPasswordTokenContentEncoder: Encoder[ResetPasswordTokenContent] =
+    deriveEncoder
+  private implicit val resetPasswordTokenContentDencoder: Decoder[ResetPasswordTokenContent] =
     deriveDecoder
 
   def apply(config: Config,
@@ -204,11 +269,13 @@ object UserService {
     val userRepository = new UserRepositorySQL(databaseConnector)
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
     val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
+    val ressetPasswordTokenRepository = new ResetPasswordTokenRepositorySQL(databaseConnector)
     new UserService(userRepository,
                     tokenRepository,
                     config.secretKey,
                     mailService,
-                    mailTokenRepository) with I18nServiceImpl
+                    mailTokenRepository,
+                    ressetPasswordTokenRepository) with I18nServiceImpl
   }
 
   private[user] def generateChangeEmailToken(from: String,
@@ -217,7 +284,16 @@ object UserService {
                                              exp: LocalDateTime): String =
     JwtUtil.encode(ChangeMailTokenContent(from, to), secret, Option(exp))
 
-  private[user] def encodeChangeEmailToken(token: String,
+  private[user] def decodeChangeEmailToken(token: String,
                                            secret: String): Option[ChangeMailTokenContent] =
     JwtUtil.decode[ChangeMailTokenContent](token, secret)
+
+  private[user] def generateResetPasswordToken(email: String,
+                                               secret: String,
+                                               exp: LocalDateTime): String =
+    JwtUtil.encode(ResetPasswordTokenContent(email), secret, Option(exp))
+
+  private[user] def decodeResetPasswordToken(token: String,
+                                             secret: String): Option[ResetPasswordTokenContent] =
+    JwtUtil.decode[ResetPasswordTokenContent](token, secret)
 }

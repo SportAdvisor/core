@@ -8,6 +8,9 @@ import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValue
 import akka.http.scaladsl.server.{AuthorizationFailedRejection, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserService
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.core.user.{AuthTokenContent, TokenRepository, UserID, UserService}
 import io.sportadvisor.exception._
 import io.sportadvisor.http
@@ -180,7 +183,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               case Success(o) =>
                 o match {
                   case Some(u) =>
-                    respondWithHeaders(Location(s"/api/users/$userId")) {
+                    respondWithHeaders(Location(s"/api/users/${u.id}")) {
                       complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
                     }
                   case _ => complete(r(Response.failResponse(None)))
@@ -234,7 +237,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   private def apiErrorHandler(lang: String): PartialFunction[ApiError, (StatusCode, Json)] = {
-    case UserNotFound(id) =>
+    case ResourceNotFound(id) =>
       log.warn(s"Api error. User with id $id not found")
       val msg = errors(lang).t(authError)
       r(Response.failResponse(Some(msg)))

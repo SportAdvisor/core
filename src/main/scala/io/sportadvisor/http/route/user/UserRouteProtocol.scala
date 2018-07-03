@@ -2,7 +2,7 @@ package io.sportadvisor.http.route.user
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import io.sportadvisor.core.user.UserData
+import io.sportadvisor.core.user.UserModels.UserData
 
 /**
   * @author sss3 (Vladimir Alekseev)

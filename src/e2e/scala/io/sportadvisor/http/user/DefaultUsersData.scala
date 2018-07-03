@@ -3,7 +3,7 @@ package io.sportadvisor.http.user
 import java.sql.DriverManager
 
 import com.roundeights.hasher.Implicits._
-import io.sportadvisor.core.user.UserData
+import io.sportadvisor.core.user.UserModels.UserData
 import io.sportadvisor.{BaseE2ETest, Preconditions}
 
 /**

@@ -1,5 +1,5 @@
 <%@ val i18n:io.sportadvisor.util.i18n.I18n%>
-<%@ val user:io.sportadvisor.core.user.UserData %>
+<%@ val user:io.sportadvisor.core.user.UserModels.UserData %>
 <%@ val oldEmail: String %>
 
 <!doctype html>

@@ -6,6 +6,9 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
+import io.sportadvisor.core.user.UserModels.{AuthToken, PasswordMismatch, UserData, UserID}
+import io.sportadvisor.core.user.UserService
+import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.core.user.{AuthToken, AuthTokenContent, UserData, UserID, UserService}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.Response._
@@ -410,24 +413,6 @@ class UserRouteTest extends BaseTest {
       "return 401 if token wasnt transferred to post" in new Context {
         when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
         Post(s"/api/users/logout") ~> userRoute ~> check {
-          val resp = r[EmptyResponse]
-          resp.code shouldBe 401
-        }
-      }
-
-      "return 401 if token was defected" in new Context {
-        when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
-        Post(s"/api/users/logout").withHeaders(authHeader(testId, testUserId, "yolo")) ~> userRoute ~> check {
-          val resp = r[EmptyResponse]
-          resp.code shouldBe 401
-        }
-      }
-
-      "return 401 if token was expired" in new Context {
-        val token = JwtUtil.encode(AuthTokenContent(testId, testUserId), testSecret, Option(LocalDateTime.now().minusHours(1)))
-        when(userService.deleteTokenById(testId)).thenReturn(Future.successful(()))
-        Post(s"/api/users/logout", token)
-          .withHeaders(authHeader(testId, testUserId, LocalDateTime.now().minusHours(1), testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }

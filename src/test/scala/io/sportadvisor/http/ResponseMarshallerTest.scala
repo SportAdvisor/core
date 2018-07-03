@@ -3,8 +3,7 @@ package io.sportadvisor.http
 import io.circe._
 import io.circe.generic.semiauto._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.http.Response.{CollectionData, EmptyResponse, ErrorResponse, FailResponse, FormError, ObjectData}
-import io.sportadvisor.http.json._
+import io.sportadvisor.http.Response._
 import io.sportadvisor.http.Decoders._
 /**
   * @author sss3 (Vladimir Alekseev)

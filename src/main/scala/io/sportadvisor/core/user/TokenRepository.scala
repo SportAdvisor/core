@@ -40,8 +40,8 @@ class TokenRepositorySQL(val connector: DatabaseConnector)(
                                                                      id) => token.copy(id = id))
 
   override def save(token: RefreshToken): Future[RefreshTokenData] = token match {
-    case t @ CreateRefreshToken(_, _, _, _) => createToken(t)
-    case t: RefreshTokenData                => updateToken(t)
+    case t: CreateRefreshToken => createToken(t)
+    case t: RefreshTokenData   => updateToken(t)
   }
 
   private def createToken(token: CreateRefreshToken): Future[RefreshTokenData] = {

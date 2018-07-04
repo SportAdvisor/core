@@ -140,7 +140,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           case Some(token) =>
             complete(
               userService
-                .deleteTokenById(token.refreshTokenId)
+                .logout(token)
                 .map(_ => r(Response.emptyResponse(StatusCodes.OK.intValue))))
           case _ => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
         }

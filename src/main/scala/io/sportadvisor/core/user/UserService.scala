@@ -178,8 +178,8 @@ abstract class UserService(userRepository: UserRepository,
       .flatMapRight(user => tokenRepository.removeByUser(user.id))
   }
 
-  def deleteTokenById(id: Long): Future[Unit] = {
-    tokenRepository.removeById(id)
+  def logout(authData: AuthTokenContent): Future[Unit] = {
+    tokenRepository.removeById(authData.refreshTokenId)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))

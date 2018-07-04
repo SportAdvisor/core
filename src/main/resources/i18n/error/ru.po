@@ -18,8 +18,8 @@ msgstr "Указан неверный адрес электронной почт
 msgid "Name is required"
 msgstr "Имя должно быть заполнено"
 
-msgid "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
-msgstr "Пароль должен быть не короче 8 символов и содержать только латинские символы, маленькую букву, большу букву, цифру"
+msgid "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number. Your password can't contain spaces"
+msgstr "Пароль должен быть не короче 8 символов и содержать только латинские символы, маленькую букву, большу букву, цифру. Пароль не должен содержать символ пробела"
 
 msgid "You must accept the end-user license agreement"
 msgstr "Вы должны согласиться с пользовательским соглашением"

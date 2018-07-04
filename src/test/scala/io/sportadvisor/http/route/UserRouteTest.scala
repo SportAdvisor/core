@@ -67,7 +67,33 @@ class UserRouteTest extends BaseTest {
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("password", "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number")) and have size 1)
+          resp.errors should (contain(FormError("password", passwordIsWeakMsg)) and have size 1)
+        }
+      }
+
+      "return 400 if password contains space symbol" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "Pass w0rd", "name":"test", "EULA":true}""")
+        Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code should be(400)
+          resp.errors should (contain(FormError("password", passwordIsWeakMsg)) and have size 1)
+        }
+      }
+
+      "return 200 and token if sign up successful and password contains special characters" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test!@123Q", "name":"test", "EULA":true}""")
+        when(userService.signUp("test@test.com", "test!@123Q", "test"))
+          .thenReturn(Future.successful(Right(AuthToken("", "", ZonedDateTime.now()))))
+        Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[DataResponse[AuthToken, ObjectData[AuthToken]]]
+          resp.code should be(200)
+          val data = resp.data.data
+          data.token should not be null
+          data.refreshToken should not be null
+          data.expireAt should not be null
+
+          resp.data._links should be(None)
+          status.isSuccess should be(true)
         }
       }
 
@@ -87,7 +113,8 @@ class UserRouteTest extends BaseTest {
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "Email is invalid")) and contain(FormError("password", "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number")) and have size 2)
+          resp.errors should (contain(FormError("email", "Email is invalid")) and contain(FormError("password",
+            passwordIsWeakMsg)) and have size 2)
         }
       }
 
@@ -367,8 +394,7 @@ class UserRouteTest extends BaseTest {
         Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("newPassword", "Your password must be at least 8 characters long, and " +
-            "include at least one lowercase letter, one uppercase letter, and a number")) and have size 1)
+          resp.errors should (contain(FormError("newPassword", passwordIsWeakMsg)) and have size 1)
         }
       }
 
@@ -440,11 +466,7 @@ class UserRouteTest extends BaseTest {
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           println(response)
           val resp = r[ErrorResponse[FormError]]
-          resp.errors should (contain(
-            FormError(
-              "password",
-              "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
-                "one uppercase letter, and a number")) and have size 1)
+          resp.errors should (contain(FormError("password", passwordIsWeakMsg)) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -496,6 +518,8 @@ class UserRouteTest extends BaseTest {
     val testSecret: String = "secret"
     val testUserId: UserID = 1L
     val testEmail: String = "test@test.com"
+    val passwordIsWeakMsg: String = "Your password must be at least 8 characters long, and include at least one " +
+      "lowercase letter, one uppercase letter, and a number. Your password can't contain spaces"
     val userService: UserService = mock[UserService]
     when(userService.secret).thenReturn(testSecret)
 

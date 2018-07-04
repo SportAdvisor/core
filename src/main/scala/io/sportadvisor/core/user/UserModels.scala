@@ -37,9 +37,7 @@ object UserModels {
     def lastTouch: LocalDateTime
   }
 
-  final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime) {
-    def updateRefreshToken(r: Token): AuthToken = AuthToken(token, r, expireAt)
-  }
+  final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime)
 
   final case class AuthTokenContent(refreshTokenId: Long, userID: UserID)
   final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)

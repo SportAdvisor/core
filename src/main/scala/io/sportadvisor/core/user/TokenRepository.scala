@@ -2,7 +2,7 @@ package io.sportadvisor.core.user
 
 import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.{RefreshToken, RefreshTokenData, UserID}
+import io.sportadvisor.core.user.UserModels.{CreateRefreshToken, RefreshToken, RefreshTokenData, UserID}
 import io.sportadvisor.util.db.DatabaseConnector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,13 +34,22 @@ class TokenRepositorySQL(val connector: DatabaseConnector)(
   private val insertQuery = tokens returning tokens.map(_.id) into ((token,
                                                                      id) => token.copy(id = id))
 
-  override def save(token: RefreshToken): Future[RefreshTokenData] = {
+  override def save(token: RefreshToken): Future[RefreshTokenData] = token match {
+    case t @ CreateRefreshToken(_,_,_,_) => createToken(t)
+    case t: RefreshTokenData => updateToken(t)
+  }
+
+  private def createToken(token: CreateRefreshToken): Future[RefreshTokenData] = {
     val action = insertQuery += RefreshTokenData(0,
-                                                 token.userId,
-                                                 token.token,
-                                                 token.remember,
-                                                 token.lastTouch)
+      token.userId,
+      token.token,
+      token.remember,
+      token.lastTouch)
     db.run(action)
+  }
+
+  private def updateToken(t: RefreshTokenData): Future[RefreshTokenData] = {
+   db.run(tokens.filter(token => token.id === t.id).update(t)).map(_ => t)
   }
 
   override def removeByUser(id: UserID): Future[Unit] = {

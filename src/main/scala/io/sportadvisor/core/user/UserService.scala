@@ -85,6 +85,7 @@ abstract class UserService(userRepository: UserRepository,
           .flatMapTOuter(u => userRepository.save(u))
           .flatMapTInner(e => e.toOption)
           .flatMapTOuter(u => sendChangeEmailConfirmation(u, t.from).map(_ => u))
+          .flatMapTOuter(u => mailTokenRepository.removeByUser(u.id).map(_ => u))
           .flatMapTOuter(u => tokenRepository.removeByUser(u.id).transform(_ => Success(u)))
       }
       .map {

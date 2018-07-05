@@ -13,6 +13,7 @@ import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.Response._
+import io.sportadvisor.http.route.user.UserRoute._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._
 import io.sportadvisor.util.{I18nService, JwtUtil}
@@ -28,12 +29,6 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     extends FailFastCirceSupport
     with I18nService
     with Logging {
-
-  private val emailDuplication = "Email address is already registered"
-  private val authError = "Authorization error. Re-login please"
-  private val passwordIncorrect = "Incorrect password"
-  private val resetPwdExpired =
-    "Your password reset link has expired. Please initiate a new password reset"
 
   import http._
   import userService._
@@ -306,4 +301,11 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
       r(Response.failResponse(None))
   }
 
+}
+
+object UserRoute {
+  val emailDuplication = "Email address is already registered"
+  val authError = "Authorization error. Re-login please"
+  val passwordIncorrect = "Incorrect password"
+  val resetPwdExpired = "Your password reset link has expired. Please initiate a new password reset"
 }

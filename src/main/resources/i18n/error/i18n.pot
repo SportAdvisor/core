@@ -18,7 +18,7 @@ msgstr ""
 msgid "Name is required"
 msgstr ""
 
-msgid "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
+msgid "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number. Your password can't contain spaces"
 msgstr ""
 
 msgid "You must accept the end-user license agreement"

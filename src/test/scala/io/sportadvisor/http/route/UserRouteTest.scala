@@ -9,17 +9,14 @@ import io.sportadvisor.BaseTest
 import io.sportadvisor.core.user.UserModels.{AuthToken, AuthTokenContent, PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.ApiError
-import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, TokenDoesntExist, TokenExpired}
-import io.sportadvisor.http.Response._
-import io.sportadvisor.http.I18nStub
+import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.http.Decoders._
-import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Response._
-import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
+import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
 import io.sportadvisor.util.JwtUtil
 import org.mockito.Mockito._
 
@@ -33,7 +30,9 @@ class UserRouteTest extends BaseTest {
   "UserRoute" when {
     "POST /api/users/sign-up" should {
       "return 200 and token if sign up successful" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         when(userService.signUp("test@test.com", "test123Q", "test"))
           .thenReturn(Future.successful(Right(AuthToken("", "", ZonedDateTime.now()))))
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
@@ -50,55 +49,99 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 400 if name invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"", "EULA":true}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q", "name":"", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("name", "Name is required")) and have size 1)
+          resp.errors should (contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 1)
         }
       }
 
       "return 400 if email invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "testtest.com", "password": "test123Q", "name":"test", "EULA":true}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "testtest.com", "password": "test123Q", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "Email is invalid")) and have size 1)
+          resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
         }
       }
 
       "return 400 if password invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123", "name":"test", "EULA":true}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("password", "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number")) and have size 1)
+          resp.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
+        }
+      }
+
+      "return 400 if password contains space symbol" in new Context {
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "Pass w0rd", "name":"test", "EULA":true}""")
+        Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[ErrorResponse[FormError]]
+          resp.code should be(400)
+          resp.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
+        }
+      }
+
+      "return 200 and token if sign up successful and password contains special characters" in new Context {
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test!@123Q", "name":"test", "EULA":true}""")
+        when(userService.signUp("test@test.com", "test!@123Q", "test"))
+          .thenReturn(Future.successful(Right(AuthToken("", "", ZonedDateTime.now()))))
+        Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
+          val resp = r[DataResponse[AuthToken, ObjectData[AuthToken]]]
+          resp.code should be(200)
+          val data = resp.data.data
+          data.token should not be null
+          data.refreshToken should not be null
+          data.expireAt should not be null
+
+          resp.data._links should be(None)
+          status.isSuccess should be(true)
         }
       }
 
       "return 400 if email is exists" in new Context {
         when(userService.signUp("test@test.com", "test123Q", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "Email address is already registered")) and have size 1)
+          resp.errors should (contain(FormError("email", UserRoute.emailDuplication)) and have size 1)
         }
       }
 
       "return 400 if email and password invalid" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "testtest.com", "password": "test123", "name":"test", "EULA":true}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "testtest.com", "password": "test123", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", "Email is invalid")) and contain(FormError("password", "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number")) and have size 2)
+          resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and contain(
+            FormError("password", UserRouteValidators.passwordIsWeak)) and have size 2)
         }
       }
 
       "return 500 if was internal error" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
-        when(userService.signUp("test@test.com", "test123Q", "test")).thenThrow(new RuntimeException)
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
+        when(userService.signUp("test@test.com", "test123Q", "test"))
+          .thenThrow(new RuntimeException)
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code should be(500)
@@ -106,11 +149,13 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 400 if user not agree EULA" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":false}""")
+        val requestEntity = HttpEntity(
+          MediaTypes.`application/json`,
+          s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":false}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("EULA", "You must accept the end-user license agreement")) and have size 1)
+          resp.errors should (contain(FormError("EULA", UserRouteValidators.EUALIsRequired)) and have size 1)
         }
       }
     }
@@ -118,7 +163,7 @@ class UserRouteTest extends BaseTest {
     "POST /api/users/sign-in" should {
       "return 200 and token if auth successful" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "password": "test123Q",
+                                       s"""{"email": "test@test.com", "password": "test123Q",
              |"remember":true}""".stripMargin)
         when(userService.signIn("test@test.com", "test123Q", remember = true))
           .thenReturn(Future.successful(Some(AuthToken("t", "t", ZonedDateTime.now()))))
@@ -131,7 +176,7 @@ class UserRouteTest extends BaseTest {
 
       "return 400 and empty response if auth invalid" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "password": "test123Q",
+                                       s"""{"email": "test@test.com", "password": "test123Q",
              |"remember":true}""".stripMargin)
         when(userService.signIn("test@test.com", "test123Q", remember = true))
           .thenReturn(Future.successful(None))
@@ -142,10 +187,12 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 500 if was internal error" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "password": "test123Q", "name":"test",
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`,
+                     s"""{"email": "test@test.com", "password": "test123Q", "name":"test",
              |"remember":true}""".stripMargin)
-        when(userService.signIn("test@test.com", "test123Q", remember = true)).thenThrow(new RuntimeException)
+        when(userService.signIn("test@test.com", "test123Q", remember = true))
+          .thenThrow(new RuntimeException)
         Post("/api/users/sign-in", requestEntity) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code should be(500)
@@ -156,31 +203,33 @@ class UserRouteTest extends BaseTest {
     "PUT /api/users/{id}/email" should {
       "return 400 if email is exists" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+                                       s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("email", "Email address is already registered")) and have size 1)
+          resp.errors should (contain(FormError("email", UserRoute.emailDuplication)) and have size 1)
         }
       }
 
       "return 400 if email is invalid" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "testtest.com", "redirectUrl":"test"}""")
+                                       s"""{"email": "testtest.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("email", "Email is invalid")) and have size 1)
+          resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
         }
       }
 
       "return 401 if user unauthorized" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "testtest.com", "redirectUrl":"test"}""")
+                                       s"""{"email": "testtest.com", "redirectUrl":"test"}""")
         Put(s"/api/users/$testUserId/email", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
@@ -190,8 +239,9 @@ class UserRouteTest extends BaseTest {
 
       "return 403" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
-        Put(s"/api/users/1$testUserId/email", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+                                       s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        Put(s"/api/users/1$testUserId/email", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -199,10 +249,11 @@ class UserRouteTest extends BaseTest {
 
       "return 200 if all success" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+                                       s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Right(())))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -210,14 +261,15 @@ class UserRouteTest extends BaseTest {
 
       "return 500 if user not found" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+                                       s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(ResourceNotFound(testUserId))))
-        Put(s"/api/users/$testUserId/email", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/email", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code shouldBe 500
           resp.message.isDefined shouldBe true
-          resp.message.get shouldBe "Authorization error. Re-login please"
+          resp.message.get shouldBe UserRoute.authError
         }
       }
     }
@@ -269,7 +321,8 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 403 if user hasnt access" in new Context {
-        Get(s"/api/users/2$testUserId").withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Get(s"/api/users/2$testUserId")
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp  = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -278,7 +331,8 @@ class UserRouteTest extends BaseTest {
       "return 404 if user not found" in new Context {
         when(userService.getById(testUserId))
           .thenReturn(Future.successful(None))
-        Get(s"/api/users/$testUserId").withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Get(s"/api/users/$testUserId")
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 404
         }
@@ -286,8 +340,10 @@ class UserRouteTest extends BaseTest {
 
       "return 200 and user data" in new Context {
         when(userService.getById(testUserId))
-          .thenReturn(Future.successful(Option(UserData(testUserId, "testemail", "testpassword", "testname", Some("ru")))))
-        Get(s"/api/users/$testUserId").withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .thenReturn(Future.successful(
+            Option(UserData(testUserId, "testemail", "testpassword", "testname", Some("ru")))))
+        Get(s"/api/users/$testUserId")
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[DataResponse[UserView, ObjectData[UserView]]]
           resp.code shouldBe 200
           val data = resp.data
@@ -306,44 +362,48 @@ class UserRouteTest extends BaseTest {
 
     "PUT /api/users/{id}" should {
       "return 400 if name is empty" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"name": "", "language":"ru"}""")
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`, s"""{"name": "", "language":"ru"}""")
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("name", "Name is required")) and have size 1)
+          resp.errors should (contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 1)
         }
       }
 
       "return 400 if language not supported" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"name": "test", "language":"ch"}""")
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`, s"""{"name": "test", "language":"ch"}""")
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("language", "Selected language not supported")) and have size 1)
+          resp.errors should (contain(FormError("language", UserRouteValidators.langNotSupported)) and have size 1)
         }
       }
 
       "return 403 if initiate change another user" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"name": "", "language":"ch"}""")
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`, s"""{"name": "", "language":"ch"}""")
 
-        Put(s"/api/users/2$testUserId", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/2$testUserId", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 403
         }
       }
 
       "return 200 if language is empty" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"name": "test", "language": null}""")
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`, s"""{"name": "test", "language": null}""")
         when(userService.changeAccount(testUserId, "test", None))
           .thenReturn(Future.successful(Some(UserData(testUserId, "t@t.t", "t", "test", None))))
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
           val location = header("Location")
@@ -352,12 +412,13 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 500 if return None" in new Context {
-        val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"name": "test", "language": null}""")
+        val requestEntity =
+          HttpEntity(MediaTypes.`application/json`, s"""{"name": "test", "language": null}""")
         when(userService.changeAccount(testUserId, "test", None))
           .thenReturn(Future.successful(None))
 
-        Put(s"/api/users/$testUserId", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500
         }
@@ -367,34 +428,36 @@ class UserRouteTest extends BaseTest {
     "PUT /api/users/{id}/password" should {
       "return 400 if new password invalid" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"password": "asd", "newPassword":"easypass"}""")
+                                       s"""{"password": "asd", "newPassword":"easypass"}""")
 
-        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/password", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("newPassword", "Your password must be at least 8 characters long, and " +
-            "include at least one lowercase letter, one uppercase letter, and a number")) and have size 1)
+          resp.errors should (contain(FormError("newPassword", UserRouteValidators.passwordIsWeak)) and have size 1)
         }
       }
 
       "return 400 if old password mismatch" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"password": "asd", "newPassword":"str0nGpass"}""")
+                                       s"""{"password": "asd", "newPassword":"str0nGpass"}""")
         when(userService.changePassword(testUserId, "asd", "str0nGpass"))
           .thenReturn(Future.successful(Left(PasswordMismatch())))
-        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/password", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("password", "Incorrect password")) and have size 1)
+          resp.errors should (contain(FormError("password", UserRoute.passwordIncorrect)) and have size 1)
         }
       }
 
       "return 200 if success" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"password": "asd", "newPassword":"str0nGpass"}""")
+                                       s"""{"password": "asd", "newPassword":"str0nGpass"}""")
         when(userService.changePassword(testUserId, "asd", "str0nGpass"))
           .thenReturn(Future.successful(Right(())))
-        Put(s"/api/users/$testUserId/password", requestEntity).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+        Put(s"/api/users/$testUserId/password", requestEntity)
+          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -444,9 +507,9 @@ class UserRouteTest extends BaseTest {
 
       "return 500 if save failed" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"email": "test@test.com", "redirectUrl":"test"}""")
-        when(userService.resetPassword(testEmail, "test")).thenReturn(Future.failed[Either[ApiError, Unit]]
-          (new RuntimeException))
+                                       s"""{"email": "test@test.com", "redirectUrl":"test"}""")
+        when(userService.resetPassword(testEmail, "test"))
+          .thenReturn(Future.failed[Either[ApiError, Unit]](new RuntimeException))
         Post("/api/users/reset-password", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500
@@ -457,7 +520,7 @@ class UserRouteTest extends BaseTest {
     "POST /api/users/password-confirm" should {
       "return 200 if confirmation succeed" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
-          s"""{"token": "token", "password":"P1sswwqard"}""")
+                                       s"""{"token": "token", "password":"P1sswwqard"}""")
         when(userService.setNewPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Right(())))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
@@ -475,11 +538,7 @@ class UserRouteTest extends BaseTest {
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           println(response)
           val resp = r[ErrorResponse[FormError]]
-          resp.errors should (contain(
-            FormError(
-              "password",
-              "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
-                "one uppercase letter, and a number")) and have size 1)
+          resp.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -492,9 +551,7 @@ class UserRouteTest extends BaseTest {
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           println(response)
-          resp.errors should (contain(FormError(
-            "token",
-            "Your password reset link has expired. Please initiate a new password reset")) and have size 1)
+          resp.errors should (contain(FormError("token", UserRoute.resetPwdExpired)) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -507,9 +564,7 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(Left(TokenExpired("reset password"))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]] // Your password reset link has expired. Please initiate a new password reset
-          resp.errors should (contain(FormError(
-            "token",
-            "Your password reset link has expired. Please initiate a new password reset")) and have size 1)
+          resp.errors should (contain(FormError("token", UserRoute.resetPwdExpired)) and have size 1)
           resp.code shouldBe 400
         }
       }

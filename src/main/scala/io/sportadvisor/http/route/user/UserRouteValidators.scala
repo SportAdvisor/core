@@ -12,8 +12,9 @@ object UserRouteValidators {
 
   val emailInvalid = "Email is invalid"
   val nameIsEmpty = "Name is required"
-  val passwordIsWeak =
-    "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number"
+  val passwordIsWeak: String =
+    "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
+      "one uppercase letter, and a number. Your password can't contain spaces"
   val EUALIsRequired = "You must accept the end-user license agreement"
   val langNotSupported = "Selected language not supported"
 
@@ -71,7 +72,7 @@ object UserRouteValidators {
   }
 
   private def passwordValidator(field: String): (String => Option[ValidationResult]) = password => {
-    if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$")) {
+    if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[\\S]{8,}$")) {
       Some(ValidationResult(field, passwordIsWeak))
     } else {
       None

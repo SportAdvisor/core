@@ -1,12 +1,13 @@
 package io.sportadvisor.http.route.user
 
-import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserModels.{AuthTokenContent, PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
@@ -14,7 +15,7 @@ import io.sportadvisor.http
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._
-import io.sportadvisor.util.I18nService
+import io.sportadvisor.util.{I18nService, JwtUtil}
 import org.slf4s.Logging
 
 import scala.concurrent.ExecutionContext
@@ -78,6 +79,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           get {
             handleGetMe()
           }
+        } ~ path("logout") {
+          post {
+            handleLogOut()
+          }
         }
       }
     }
@@ -125,6 +130,22 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           }
         }
       }
+    }
+  }
+
+  def handleLogOut(): Route = {
+    optionalHeaderValueByName(authorizationHeader) {
+      case Some(value) => {
+        JwtUtil.decode[AuthTokenContent](value, userService.secret) match {
+          case Some(token) =>
+            complete(
+              userService
+                .logout(token)
+                .map(_ => r(Response.emptyResponse(StatusCodes.OK.intValue))))
+          case _ => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
+        }
+      }
+      case None => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
     }
   }
 

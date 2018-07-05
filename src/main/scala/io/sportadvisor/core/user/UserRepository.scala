@@ -7,6 +7,9 @@ import io.sportadvisor.exception.ApiError
 import io.sportadvisor.exception.Exceptions.{DuplicateException, UnhandledException}
 import io.sportadvisor.util.db.DatabaseConnector
 
+import cats.instances.string._
+import cats.syntax.eq._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -48,23 +51,23 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
 
   override def remove(userID: UserID): Future[Option[UserData]] = ???
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def createUser(u: CreateUser): Future[Either[ApiError, UserData]] = {
     val action = insertQuery += UserData(0, u.email, u.password, u.name, None)
     db.run(action.asTry).map {
       case Success(e) => Right(e)
       case Failure(e: SQLException) =>
-        if (e.getSQLState == "23505") Left(new DuplicateException) else Left(UnhandledException(e));
+        if (e.getSQLState === "23505") { Left(new DuplicateException) } else {
+          Left(UnhandledException(e))
+        }
       case Failure(e) => Left(UnhandledException(e))
     }
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def updateUser(u: UserData): Future[Either[ApiError, UserData]] = {
     db.run(users.filter(user => user.id === u.id).update(u).asTry).map {
       case Success(_) => Right(u)
       case Failure(e: SQLException) =>
-        if (e.getSQLState == "23505") { Left(new DuplicateException) } else {
+        if (e.getSQLState === "23505") { Left(new DuplicateException) } else {
           Left(UnhandledException(e))
         }
       case Failure(e) => Left(UnhandledException(e))

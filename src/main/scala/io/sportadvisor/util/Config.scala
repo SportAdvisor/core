@@ -1,6 +1,7 @@
 package io.sportadvisor.util
 
 import io.sportadvisor.util.Config.{DatabaseConfig, HttpConfig, MailConfig}
+import pureconfig.error.ConfigReaderFailures
 import pureconfig.loadConfig
 
 /**
@@ -11,16 +12,18 @@ final case class Config(secretKey: String,
                         database: DatabaseConfig,
                         mail: MailConfig)
 
-@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 object Config {
 
   private[util] final case class HttpConfig(host: String, port: Int)
   private[util] final case class DatabaseConfig(jdbcUrl: String, username: String, password: String)
   private[util] final case class MailConfig(smtp: String, smtpPort: Int, user: String, pass: String)
 
-  def load(): Config = loadConfig[Config] match {
-    case Right(c) => c
-    case Left(e) =>
-      throw new RuntimeException("Cannot read config file, errors:\n" + e.toList.mkString("\n"))
+  def load(): Either[ConfigReaderFailures, Config] = loadConfig[Config]
+
+  implicit class ConfigReaderFailuresExt(val value: ConfigReaderFailures) extends AnyVal {
+    def printError(): String = value.toList.foldLeft("")((acc, e) => acc + e.description + "\n")
   }
+
+  def empty(): Config =
+    new Config("", HttpConfig("", 0), DatabaseConfig("", "", ""), MailConfig("", 0, "", ""))
 }

@@ -15,8 +15,9 @@ import io.sportadvisor.http.Decoders._
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Response._
-import io.sportadvisor.http.route.user.UserRoute
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
+import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
+import io.sportadvisor.util.JwtUtil
 import org.mockito.Mockito._
 
 import scala.concurrent.Future

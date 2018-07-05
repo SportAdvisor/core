@@ -18,7 +18,7 @@ class MailTokensRepositoryTest extends BaseTest {
     "save and get" should {
       "successful save" in new Context {
         val f: Future[Either[ApiError, ChangeMailToken]] =
-          mailTokenRepository.save(ChangeMailToken(testToken, LocalDateTime.now().plusDays(1), testUserId))
+          mailTokenRepository.save(ChangeMailToken(testUserId, testToken, LocalDateTime.now().plusDays(1)))
         awaitForResult(f)
         val token: Option[ChangeMailToken] = awaitForResult(mailTokenRepository.get(testToken))
         token.isDefined shouldBe true

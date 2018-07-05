@@ -107,7 +107,7 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
         when(mailChangesTokenRepository.save(any[ChangeMailToken]))
-          .thenReturn(Future.successful(Right(ChangeMailToken("", LocalDateTime.now(), testUserId))))
+          .thenReturn(Future.successful(Right(ChangeMailToken(testUserId, "", LocalDateTime.now()))))
         val result: Either[ApiError, Unit] = awaitForResult(userService.changeEmail(testUserId, newEmail, "https://sportadvisor.io/t"))
         result.isRight shouldBe true
       }
@@ -121,7 +121,7 @@ class UserServiceTest extends BaseTest {
 
       "return false if token is invalid" in new Context {
         when(mailChangesTokenRepository.get("test"))
-          .thenReturn(Future.successful(Some(ChangeMailToken("test", LocalDateTime.now(), testUserId))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, "test", LocalDateTime.now()))))
         awaitForResult(userService.confirmEmail("test")) shouldBe false
       }
 
@@ -129,7 +129,7 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().minusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time, testUserId))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
         awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
 
@@ -137,7 +137,7 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time, testUserId))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
         when(userRepository.find("test")).thenReturn(Future.successful(None))
         awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
@@ -146,7 +146,7 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time, testUserId))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
         when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
@@ -160,7 +160,7 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time, testUserId))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
         when(userRepository.find("test"))
           .thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))

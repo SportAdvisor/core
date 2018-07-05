@@ -194,7 +194,7 @@ abstract class UserService(userRepository: UserRepository,
     val time = LocalDateTime.now().plusMinutes(mailChangeExpPeriod.toMinutes)
     val token = generateChangeEmailToken(user.email, email, secret, time)
 
-    mailTokenRepository.save(ChangeMailToken(token, time, user.id)).flatMap {
+    mailTokenRepository.save(ChangeMailToken(user.id, token, time)).flatMap {
       case Left(e) => Future.successful(Left(e))
       case Right(_) =>
         val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),

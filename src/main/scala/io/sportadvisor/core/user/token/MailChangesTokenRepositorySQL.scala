@@ -1,8 +1,9 @@
-package io.sportadvisor.core.user
+package io.sportadvisor.core.user.token
 
 import java.sql.SQLException
+import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.{ResetPasswordToken, UserID}
+import io.sportadvisor.core.user.UserModels.{ChangeMailToken, UserID}
 import io.sportadvisor.exception.ApiError
 import io.sportadvisor.exception.Exceptions.{DuplicateException, UnhandledException}
 import io.sportadvisor.util.db.DatabaseConnector
@@ -12,25 +13,18 @@ import cats.syntax.eq._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-trait ResetPasswordTokenRepository {
-
-  def save(token: ResetPasswordToken): Future[Either[ApiError, ResetPasswordToken]]
-
-  def get(token: String): Future[Option[ResetPasswordToken]]
-
-  def removeByUser(userID: UserID): Future[Int]
-
-}
-
-class ResetPasswordTokenRepositorySQL(val connector: DatabaseConnector)(
+/**
+  * @author sss3 (Vladimir Alekseev)
+  */
+class MailChangesTokenRepositorySQL(val connector: DatabaseConnector)(
     implicit executionContext: ExecutionContext)
-    extends ResetPasswordTokenTable
-    with ResetPasswordTokenRepository {
+    extends MailTokenTable
+    with TokenRepository[ChangeMailToken] {
 
   import connector._
   import connector.profile.api._
 
-  override def save(token: ResetPasswordToken): Future[Either[ApiError, ResetPasswordToken]] = {
+  override def save(token: ChangeMailToken): Future[Either[ApiError, ChangeMailToken]] = {
     db.run((tokens += token).asTry)
       .map {
         case Success(_) => Right(token)
@@ -42,10 +36,14 @@ class ResetPasswordTokenRepositorySQL(val connector: DatabaseConnector)(
       }
   }
 
-  override def get(token: String): Future[Option[ResetPasswordToken]] =
+  override def get(token: String): Future[Option[ChangeMailToken]] =
     db.run(tokens.filter(t => t.token === token).take(1).result.headOption)
 
   override def removeByUser(userID: UserID): Future[Int] =
     db.run(tokens.filter(t => t.userId === userID).delete)
 
+  override def removeExpiredTokens(): Future[Int] = {
+    val now = LocalDateTime.now()
+    db.run(tokens.filter(t => t.expireAt <= now).delete)
+  }
 }

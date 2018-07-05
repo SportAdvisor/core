@@ -49,7 +49,7 @@ object Application extends Logging {
 
     val mailService = MailService(config.mail)
 
-    val tokenRepository = new TokenRepositorySQL(databaseConnector)
+    val tokenRepository = new AuthTokenRepositorySQL(databaseConnector)
     val usersService = UserService(config, databaseConnector, mailService)
     val httpRoute = new HttpRoute(usersService)
 

@@ -1,4 +1,4 @@
-package io.sportadvisor.core.user
+package io.sportadvisor.core.user.token
 
 import java.time.LocalDateTime
 
@@ -6,7 +6,7 @@ import io.sportadvisor.core.user.UserModels.{ResetPasswordToken, UserID}
 import io.sportadvisor.util.db.DatabaseConnector
 import slick.lifted.ProvenShape
 
-private[user] trait ResetPasswordTokenTable {
+private[token] trait ResetPasswordTokenTable {
   protected val connector: DatabaseConnector
   import connector.profile.api._
 

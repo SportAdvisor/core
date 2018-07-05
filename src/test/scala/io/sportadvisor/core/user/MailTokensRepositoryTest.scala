@@ -3,6 +3,8 @@ package io.sportadvisor.core.user
 import java.time.LocalDateTime
 
 import io.sportadvisor.core.user.UserModels.ChangeMailToken
+import io.sportadvisor.core.user.token.{MailChangesTokenRepositorySQL, TokenRepository}
+import io.sportadvisor.exception.ApiError
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
 import scala.concurrent.Future
@@ -15,8 +17,8 @@ class MailTokensRepositoryTest extends BaseTest {
   "MailTokenRepositorySQL" when {
     "save and get" should {
       "successful save" in new Context {
-        val f: Future[ChangeMailToken] =
-          mailTokenRepository.save(ChangeMailToken(testToken, LocalDateTime.now().plusDays(1)))
+        val f: Future[Either[ApiError, ChangeMailToken]] =
+          mailTokenRepository.save(ChangeMailToken(testToken, LocalDateTime.now().plusDays(1), testUserId))
         awaitForResult(f)
         val token: Option[ChangeMailToken] = awaitForResult(mailTokenRepository.get(testToken))
         token.isDefined shouldBe true
@@ -26,8 +28,9 @@ class MailTokensRepositoryTest extends BaseTest {
 
   trait Context {
     val testToken = "token"
+    val testUserId = 1L
 
-    val mailTokenRepository: MailChangesTokenRepository = new MailChangesTokenRepositorySQL(
+    val mailTokenRepository: TokenRepository[ChangeMailToken] = new MailChangesTokenRepositorySQL(
       InMemoryPostgresStorage.databaseConnector)
   }
 }

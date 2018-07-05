@@ -87,7 +87,7 @@ class TokenRepositoryTest extends BaseTest {
   }
 
   trait Context {
-    val tokenRepository: TokenRepository = new TokenRepositorySQL(InMemoryPostgresStorage.databaseConnector)
+    val tokenRepository: AuthTokenRepository = new AuthTokenRepositorySQL(InMemoryPostgresStorage.databaseConnector)
   }
 
 }

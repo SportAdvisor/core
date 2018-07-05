@@ -8,7 +8,7 @@ import java.time.Duration
 import scala.concurrent.Future
 
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-class TokenCleaner(repository: TokenRepository,
+class TokenCleaner(repository: AuthTokenRepository,
                    val rememberTime: FiniteDuration = 14.days,
                    val notRememberTime: FiniteDuration = 12.hour) {
 

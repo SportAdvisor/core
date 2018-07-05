@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-trait TokenRepository {
+trait AuthTokenRepository {
 
   def save(token: RefreshToken): Future[RefreshTokenData]
 
@@ -28,10 +28,10 @@ trait TokenRepository {
   def removeById(refreshTokenId: Long): Future[Unit]
 }
 
-class TokenRepositorySQL(val connector: DatabaseConnector)(
+class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
     implicit executionContext: ExecutionContext)
     extends TokenTable
-    with TokenRepository {
+    with AuthTokenRepository {
 
   import connector._
   import connector.profile.api._

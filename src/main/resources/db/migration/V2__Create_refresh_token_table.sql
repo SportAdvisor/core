@@ -1,7 +1,8 @@
 CREATE TABLE "REFRESH_TOKENS" (
+  "id" serial,
   "user_id" BIGINT NOT NULL,
   "token" VARCHAR(255) NOT NULL,
   "remember" BOOLEAN,
   "last_touch" TIMESTAMP,
-  PRIMARY KEY ("user_id", "token")
+  CONSTRAINT  refresh_tokens_id_pkey PRIMARY KEY ("id")
 );

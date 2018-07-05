@@ -64,13 +64,13 @@ class DirectivesTest extends BaseTest {
     }
 
     "reject if token is expired" in new Context {
-      Get("/authorize").withHeaders(authHeader(1L, LocalDateTime.now().minusHours(1), secretKey)) ~> authorizeRoute ~> check {
+      Get("/authorize").withHeaders(authHeader(1L, 1L, LocalDateTime.now().minusHours(1), secretKey)) ~> authorizeRoute ~> check {
         r[EmptyResponse].code shouldBe 401
       }
     }
 
     "return user id if all success" in new Context {
-      Get("/authorize").withHeaders(authHeader(1L, LocalDateTime.now().plusHours(1), secretKey)) ~> authorizeRoute ~> check {
+      Get("/authorize").withHeaders(authHeader(1L, 1L, LocalDateTime.now().plusHours(1), secretKey)) ~> authorizeRoute ~> check {
         r[Long] shouldBe 1L
       }
     }
@@ -78,13 +78,13 @@ class DirectivesTest extends BaseTest {
 
   "check access" should {
     "reject 403" in new Context {
-      Get("/access/2").withHeaders(authHeader(1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
+      Get("/access/2").withHeaders(authHeader(1L,1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
         r[EmptyResponse].code shouldBe 403
       }
     }
 
     "return true" in new Context {
-      Get("/access/1").withHeaders(authHeader(1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
+      Get("/access/1").withHeaders(authHeader(1L, 1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
         r[Boolean] shouldBe true
       }
     }

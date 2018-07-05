@@ -1,5 +1,5 @@
 CREATE TABLE "MAIL_TOKENS" (
-  "token" VARCHAR(255) NOT NULL,
+  "token" VARCHAR(255) NOT NULL ,
   "expire_at" TIMESTAMP,
-  PRIMARY KEY ("token")
+  CONSTRAINT  mail_tokens_token_pkey PRIMARY KEY ("token")
 );

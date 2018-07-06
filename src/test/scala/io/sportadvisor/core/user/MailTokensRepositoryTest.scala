@@ -3,7 +3,8 @@ package io.sportadvisor.core.user
 import java.time.LocalDateTime
 
 import io.sportadvisor.core.user.UserModels.{ChangeMailToken, UserID}
-import io.sportadvisor.core.user.token.{MailChangesTokenRepositorySQL, TokenRepository}
+import io.sportadvisor.core.user.token.{TokenRepository, TokenType}
+import io.sportadvisor.core.user.token.TokenRepository._
 import io.sportadvisor.exception.ApiError
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
@@ -19,7 +20,8 @@ class MailTokensRepositoryTest extends BaseTest {
     "save and get" should {
       "successful save" in new Context {
         val f: Future[Either[ApiError, ChangeMailToken]] =
-          mailTokenRepository.save(ChangeMailToken(testUserId, testToken, LocalDateTime.now().plusDays(1)))
+          mailTokenRepository.save(
+            ChangeMailToken(testUserId, testToken, LocalDateTime.now().plusDays(1)))
         awaitForResult(f)
         val token: Option[ChangeMailToken] = awaitForResult(mailTokenRepository.get(testToken))
         token.isDefined shouldBe true
@@ -59,8 +61,12 @@ class MailTokensRepositoryTest extends BaseTest {
     "remove expired tokens" should {
       "remove only expired tokens" in new Context {
         mailTokenRepository.removeByUser(testUserId)
-        awaitForResult(mailTokenRepository.save(ChangeMailToken(testUserId, "q11", LocalDateTime.now().plusDays(1))))
-        awaitForResult(mailTokenRepository.save(ChangeMailToken(testUserId, "q22", LocalDateTime.now().minusDays(1))))
+        awaitForResult(
+          mailTokenRepository.save(
+            ChangeMailToken(testUserId, "q11", LocalDateTime.now().plusDays(1))))
+        awaitForResult(
+          mailTokenRepository.save(
+            ChangeMailToken(testUserId, "q22", LocalDateTime.now().minusDays(1))))
         awaitForResult(mailTokenRepository.removeExpiredTokens())
 
         awaitForResult(mailTokenRepository.get("q11")).isDefined shouldBe true
@@ -73,7 +79,8 @@ class MailTokensRepositoryTest extends BaseTest {
     val testToken = "token"
     val testUserId = 1L
 
-    val mailTokenRepository: TokenRepository[ChangeMailToken] = new MailChangesTokenRepositorySQL(
+    val mailTokenRepository: TokenRepository[ChangeMailToken] = TokenRepository[ChangeMailToken](
+      TokenType.MailChange,
       InMemoryPostgresStorage.databaseConnector)
   }
 }

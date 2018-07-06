@@ -2,28 +2,31 @@ package io.sportadvisor.core.user.token
 
 import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.ChangeMailToken
 import io.sportadvisor.util.db.DatabaseConnector
+import slick.jdbc.JdbcType
 import slick.lifted.ProvenShape
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-private[token] trait MailTokenTable {
+private[token] trait TokenTable {
   protected val connector: DatabaseConnector
   import connector.profile.api._
 
+  implicit lazy val typeMapper: JdbcType[TokenType] =
+    connector.profile.mappedColumnTypeForEnum(TokenType)
+
   // scalastyle:off
-  class MailTokenScheme(tag: Tag) extends Table[ChangeMailToken](tag, "MAIL_TOKENS") {
+  class TokenScheme(tag: Tag) extends Table[ExpiredToken](tag, "TOKENS") {
     def userId: Rep[Long] = column[Long]("user_id")
     def token: Rep[String] = column[String]("token", O.PrimaryKey)
     def expireAt: Rep[LocalDateTime] = column[LocalDateTime]("expire_at")
+    def tokenType: Rep[TokenType] = column[TokenType]("type")
 
-    override def * : ProvenShape[ChangeMailToken] =
-      (userId, token, expireAt) <> (ChangeMailToken.tupled, ChangeMailToken.unapply)
+    override def * : ProvenShape[ExpiredToken] =
+      (userId, token, expireAt, tokenType) <> (ExpiredToken.tupled, ExpiredToken.unapply)
   }
   // scalastyle:on
 
-  protected val tokens = TableQuery[MailTokenScheme]
-
+  protected val tokens = TableQuery[TokenScheme]
 }

@@ -30,7 +30,7 @@ trait AuthTokenRepository {
 
 class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
     implicit executionContext: ExecutionContext)
-    extends TokenTable
+    extends AuthTokenTable
     with AuthTokenRepository {
 
   import connector._

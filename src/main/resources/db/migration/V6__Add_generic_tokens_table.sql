@@ -1,0 +1,10 @@
+DROP TABLE "MAIL_TOKENS";
+DROP TABLE "RESET_PWD_TOKENS";
+
+CREATE TABLE "TOKENS" (
+  "user_id" BIGINT NOT NULL,
+  "token" VARCHAR(255) NOT NULL,
+  "expire_at" TIMESTAMP,
+  "type" VARCHAR(31) NOT NULL,
+  CONSTRAINT  tokens_pkey PRIMARY KEY ("token", "type")
+);

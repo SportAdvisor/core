@@ -147,11 +147,16 @@ class UserServiceTest extends BaseTest {
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
-        when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
+
+        private val user = UserData(testUserId, "test", "", "", None)
+
+        when(userRepository.find("test")).thenReturn(Future.successful(Some(user)))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
-        when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
+        when(userRepository.save(user.copy(email = "test2")))
+          .thenReturn(Future.successful(Right(user.copy(email = "test2"))))
+        when(mailChangesTokenRepository.removeByUser(testUserId)).thenReturn(Future.successful(1))
         when(tokenRepository.removeByUser(any[UserID]())).thenReturn(Future.successful(()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
@@ -161,16 +166,21 @@ class UserServiceTest extends BaseTest {
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
           .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
+
+        private val user = UserData(testUserId, "test", testPassword, testName, None)
+
         when(userRepository.find("test"))
-          .thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
+          .thenReturn(Future.successful(Some(user)))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]()))
           .thenReturn(Future.successful(Right(())))
-        when(userRepository.save(any[UserData]()))
-          .thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
+        when(userRepository.save(user.copy(email = "test2")))
+          .thenReturn(Future.successful(Right(user.copy(email = "test2"))))
         when(tokenRepository.removeByUser(any[UserID]()))
           .thenReturn(Future.failed[Unit](new IllegalStateException()))
+        when(mailChangesTokenRepository.removeByUser(testUserId))
+          .thenReturn(Future.failed[Int](new IllegalStateException()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
     }

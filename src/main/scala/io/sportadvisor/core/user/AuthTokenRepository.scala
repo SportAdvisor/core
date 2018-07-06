@@ -21,7 +21,7 @@ trait AuthTokenRepository {
 
   def removeByUser(id: UserID): Future[Unit]
 
-  def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Unit]
+  def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Int]
 
   def getByUserId(userID: UserID): Future[Seq[RefreshToken]]
 
@@ -63,10 +63,10 @@ class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
   }
 
   override def removeByDate(dateRemember: LocalDateTime,
-                            dateNotRemember: LocalDateTime): Future[Unit] = {
+                            dateNotRemember: LocalDateTime): Future[Int] = {
     val query = tokens.filter(t =>
       (t.remember === true && t.lastTouch < dateRemember) || (!t.remember && t.lastTouch < dateNotRemember))
-    db.run(query.delete).map(_ => { () })
+    db.run(query.delete)
   }
 
   override def getByUserId(userID: UserID): Future[Seq[RefreshToken]] = {

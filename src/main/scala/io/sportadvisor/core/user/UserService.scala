@@ -85,7 +85,7 @@ abstract class UserService(userRepository: UserRepository,
           .flatMapTOuter(u => userRepository.save(u))
           .flatMapTInner(e => e.toOption)
           .flatMapTOuter(u => sendChangeEmailConfirmation(u, t.from).map(_ => u))
-          .flatMapTOuter(u => mailTokenRepository.removeByUser(u.id).map(_ => u))
+          .flatMapTOuter(u => mailTokenRepository.removeByUser(u.id).transform(_ => Success(u)))
           .flatMapTOuter(u => tokenRepository.removeByUser(u.id).transform(_ => Success(u)))
       }
       .map {
@@ -276,12 +276,13 @@ object UserService {
 
   def apply(config: Config,
             databaseConnector: DatabaseConnector,
-            mailService: MailService[I18n, Throwable, Unit])(
+            mailService: MailService[I18n, Throwable, Unit],
+            mailTokenRepository: TokenRepository[ChangeMailToken],
+            resetPasswordTokenRepository: TokenRepository[ResetPasswordToken])(
       implicit executionContext: ExecutionContext): UserService = {
     val userRepository = new UserRepositorySQL(databaseConnector)
     val tokenRepository = new AuthTokenRepositorySQL(databaseConnector)
-    val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
-    val resetPasswordTokenRepository = new ResetPasswordTokenRepositorySQL(databaseConnector)
+
     new UserService(userRepository,
                     tokenRepository,
                     config.secretKey,

@@ -84,16 +84,14 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleSignUp(): Route = {
-    entity(as[RegistrationModel]) { request =>
+    validate(regValidator, this).apply { request =>
       selectLanguage() { lang =>
-        validatorDirective(request, regValidator, this) {
-          complete(
-            signUp(request.email, request.password, request.name).map {
-              case Left(e)      => handleEmailDuplicate(e, "email", lang)
-              case Right(token) => r(Response.objectResponse(token, None))
-            }
-          )
-        }
+        complete(
+          signUp(request.email, request.password, request.name).map {
+            case Left(e)      => handleEmailDuplicate(e, "email", lang)
+            case Right(token) => r(Response.objectResponse(token, None))
+          }
+        )
       }
     }
   }
@@ -110,18 +108,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangeEmail(id: UserID): Route = {
-    entity(as[EmailChange]) { request =>
-      authenticate(userService.secret) { userId =>
-        checkAccess(id, userId) {
+    authenticate(userService.secret) { userId =>
+      checkAccess(id, userId) {
+        validate(changeMailValidator, this).apply { request =>
           selectLanguage() { lang =>
-            validatorDirective(request, changeMailValidator, this) {
-              complete(
-                changeEmail(userId, request.email, request.redirectUrl).map {
-                  case Left(e)  => handleEmailDuplicate(e, "email", lang)
-                  case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-                }
-              )
-            }
+            complete(
+              changeEmail(userId, request.email, request.redirectUrl).map {
+                case Left(e)  => handleEmailDuplicate(e, "email", lang)
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+            )
           }
         }
       }
@@ -157,33 +153,29 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleResetPassword(): Route = {
-    entity(as[ResetPassword]) { request =>
-      validatorDirective(request, resetPasswordValidator, this) {
-        selectLanguage() { lang =>
-          complete(
-            resetPassword(request.email, request.redirectUrl)
-              .map {
-                case Left(e)  => handleTokenDuplicate(e, lang)
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-              }
-          )
-        }
+    validate(resetPasswordValidator, this).apply { request =>
+      selectLanguage() { lang =>
+        complete(
+          resetPassword(request.email, request.redirectUrl)
+            .map {
+              case Left(e)  => handleTokenDuplicate(e, lang)
+              case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+            }
+        )
       }
     }
   }
 
   def handleConfirmNewPassword(): Route = {
-    entity(as[ConfirmPassword]) { request =>
-      validatorDirective(request, confirmPasswordValidator, this) {
-        selectLanguage() { language =>
-          complete(
-            setNewPassword(request.token, request.password)
-              .map {
-                case Left(e)  => handleResetPasswordErrors(e, "token", language)
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-              }
-          )
-        }
+    validate(confirmPasswordValidator, this).apply { request =>
+      selectLanguage() { language =>
+        complete(
+          setNewPassword(request.token, request.password)
+            .map {
+              case Left(e)  => handleResetPasswordErrors(e, "token", language)
+              case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+            }
+        )
       }
     }
   }
@@ -208,22 +200,20 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangeAccount(id: UserID): Route = {
-    entity(as[AccountSettings]) { req =>
-      authenticate(userService.secret) { userId =>
-        checkAccess(id, userId) {
-          validatorDirective(req, accountSettingsValidator, this) {
-            onComplete(changeAccount(userId, req.name, req.language)) {
-              case Success(o) =>
-                o match {
-                  case Some(u) =>
-                    respondWithHeaders(Location(s"/api/users/${u.id}")) {
-                      complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
-                    }
-                  case _ => complete(r(Response.failResponse(None)))
-                }
+    authenticate(userService.secret) { userId =>
+      checkAccess(id, userId) {
+        validate(accountSettingsValidator, this).apply { req =>
+          onComplete(changeAccount(userId, req.name, req.language)) {
+            case Success(o) =>
+              o match {
+                case Some(u) =>
+                  respondWithHeaders(Location(s"/api/users/${u.id}")) {
+                    complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
+                  }
+                case _ => complete(r(Response.failResponse(None)))
+              }
 
-              case _ => complete(r(Response.failResponse(None)))
-            }
+            case _ => complete(r(Response.failResponse(None)))
           }
         }
       }
@@ -231,18 +221,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangePassword(id: UserID): Route = {
-    entity(as[PasswordChange]) { req =>
+    validate(changePasswordValidator, this).apply { req =>
       authenticate(userService.secret) { userId =>
         checkAccess(id, userId) {
-          validatorDirective(req, changePasswordValidator, this) {
-            selectLanguage() { lang =>
-              complete(
-                changePassword(userId, req.password, req.newPassword).map {
-                  case Left(e)  => handlePasswordMismatch(e, "password", lang)
-                  case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-                }
-              )
-            }
+          selectLanguage() { lang =>
+            complete(
+              changePassword(userId, req.password, req.newPassword).map {
+                case Left(e)  => handlePasswordMismatch(e, "password", lang)
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+            )
           }
         }
       }

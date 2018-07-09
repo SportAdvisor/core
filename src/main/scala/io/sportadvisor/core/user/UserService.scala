@@ -1,7 +1,6 @@
 package io.sportadvisor.core.user
 
-import java.time.{LocalDateTime, ZoneId}
-import java.util.Date
+import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.circe.{Decoder, Encoder}
@@ -21,6 +20,8 @@ import io.sportadvisor.util._
 import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage}
 import cats.instances.string._
 import cats.syntax.eq._
+import io.sportadvisor.core.auth.AuthModels.AuthToken
+import io.sportadvisor.core.auth.AuthService
 
 import scala.util.Success
 
@@ -28,7 +29,7 @@ import scala.util.Success
   * @author sss3 (Vladimir Alekseev)
   */
 abstract class UserService(userRepository: UserRepository,
-                           tokenRepository: TokenRepository,
+                           authService: AuthService,
                            secretKey: String,
                            mailService: MailService[I18n, Throwable, _],
                            mailTokenRepository: MailChangesTokenRepository,
@@ -37,7 +38,6 @@ abstract class UserService(userRepository: UserRepository,
     extends Logging
     with I18nService {
 
-  private[this] val expPeriod = 2.hour
   private[this] val mailChangeExpPeriod = 1.day
   private[this] val passwordRessetExpPerion = 1.day
 
@@ -48,14 +48,14 @@ abstract class UserService(userRepository: UserRepository,
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
         case Left(e)  => Future.successful(Left(e))
-        case Right(u) => createAndSaveToken(u, Boolean.box(true)).map(t => Right(t))
+        case Right(u) => authService.createToken(u, remember = true).map(t => Right(t))
       }
 
   def signIn(email: String, password: String, remember: Boolean): Future[Option[AuthToken]] =
     userRepository
       .find(email)
       .filterT(u => password.sha256.hex == u.password)
-      .flatMapTOuter(u => createAndSaveToken(u, remember))
+      .flatMapTOuter(u => authService.createToken(u, remember))
 
   def changeEmail(userID: UserID,
                   email: String,
@@ -83,7 +83,7 @@ abstract class UserService(userRepository: UserRepository,
           .flatMapTOuter(u => userRepository.save(u))
           .flatMapTInner(e => e.toOption)
           .flatMapTOuter(u => sendChangeEmailConfirmation(u, t.from).map(_ => u))
-          .flatMapTOuter(u => tokenRepository.removeByUser(u.id).transform(_ => Success(u)))
+          .flatMapTOuter(u => authService.revokeAllTokens(u.id).transform(_ => Success(u)))
       }
       .map {
         case Some(_) => true
@@ -161,6 +161,8 @@ abstract class UserService(userRepository: UserRepository,
     }
   }
 
+  def logout(token: String): Future[Either[ApiError, Unit]] = authService.signOut(token)
+
   private def updatePass(u: UserData,
                          oldPass: String,
                          newPass: String): Future[Either[ApiError, Unit]] = {
@@ -175,11 +177,7 @@ abstract class UserService(userRepository: UserRepository,
     val updatedUser = u.copy(password = newPass.sha256.hex)
     userRepository
       .save(updatedUser)
-      .flatMapRight(user => tokenRepository.removeByUser(user.id))
-  }
-
-  def logout(authData: AuthTokenContent): Future[Unit] = {
-    tokenRepository.removeById(authData.refreshTokenId)
+      .flatMapRight(user => authService.revokeAllTokens(user.id))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -204,24 +202,6 @@ abstract class UserService(userRepository: UserRepository,
     } else {
       s"$redirectUrl?token=$token"
     }
-  }
-
-  private def createAndSaveToken(user: UserData, remember: Boolean): Future[AuthToken] = {
-    val refreshToken =
-      JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secret, None)
-    val time = LocalDateTime.now()
-    saveRefreshToken(user, refreshToken, remember, time).map(_.id) map { refreshTokenId =>
-      val expTime = time.plusMinutes(expPeriod.toMinutes)
-      val token = JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secret, Option(expTime))
-      AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
-    }
-  }
-
-  private def saveRefreshToken(user: UserData,
-                               refreshToken: Token,
-                               remember: Boolean,
-                               creation: LocalDateTime): Future[RefreshTokenData] = {
-    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, creation))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -264,14 +244,13 @@ object UserService {
 
   def apply(config: Config,
             databaseConnector: DatabaseConnector,
-            mailService: MailService[I18n, Throwable, Unit])(
-      implicit executionContext: ExecutionContext): UserService = {
+            mailService: MailService[I18n, Throwable, Unit],
+            authService: AuthService)(implicit executionContext: ExecutionContext): UserService = {
     val userRepository = new UserRepositorySQL(databaseConnector)
-    val tokenRepository = new TokenRepositorySQL(databaseConnector)
     val mailTokenRepository = new MailChangesTokenRepositorySQL(databaseConnector)
     val ressetPasswordTokenRepository = new ResetPasswordTokenRepositorySQL(databaseConnector)
     new UserService(userRepository,
-                    tokenRepository,
+                    authService,
                     config.secretKey,
                     mailService,
                     mailTokenRepository,

@@ -7,12 +7,13 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
 import io.circe.syntax._
-import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
+import io.sportadvisor.core.user.UserModels.UserID
 import io.sportadvisor.http.common._
 import io.sportadvisor.util.{I18nService, JwtUtil}
 import org.slf4s.Logging
 import cats.syntax.eq._
 import cats.instances.long._
+import io.sportadvisor.core.auth.AuthModels._
 
 /**
   * @author sss3 (Vladimir Alekseev)

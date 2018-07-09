@@ -1,9 +1,11 @@
 package io.sportadvisor.core.user
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 
 import com.roundeights.hasher.Implicits._
 import io.sportadvisor.BaseTest
+import io.sportadvisor.core.auth.AuthModels.AuthToken
+import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, UnhandledException}
 import io.sportadvisor.exception._
@@ -12,7 +14,6 @@ import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail.MailModel.MailMessage
 import io.sportadvisor.util.mail.{MailRenderService, MailSenderService, MailService}
 import org.mockito.Matchers
-import pdi.jwt.{Jwt, JwtAlgorithm}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 
@@ -29,11 +30,10 @@ class UserServiceTest extends BaseTest {
       "return valid auth token" in new Context {
         when(userRepository.save(CreateUser(testEmail, testPassword.sha256.hex, testName)))
           .thenReturn(Future.successful(Right(testUser)))
-        when(tokenRepository.save(any[RefreshToken]()))
-          .thenReturn(Future.successful(RefreshTokenData(1L, 1L, "", remember = false, LocalDateTime.now())))
+        when(authService.createToken(any[UserData](), anyBoolean()))
+          .thenReturn(Future.successful(AuthToken("", "", ZonedDateTime.now())))
         val value: Either[ApiError, AuthToken] = awaitForResult(userService.signUp(testEmail, testPassword, testName))
         value.isRight shouldBe true
-        Jwt.decodeRaw(value.right.get.token, testSecretKey, Seq(JwtAlgorithm.HS256)).isSuccess shouldBe true
       }
 
       "return user already registered" in new Context {
@@ -47,11 +47,10 @@ class UserServiceTest extends BaseTest {
     "signIn" should {
       "return valid auth token" in new Context {
         when(userRepository.find(testEmail)).thenReturn(Future.successful(Some(testUser)))
-        when(tokenRepository.save(any[RefreshToken]()))
-          .thenReturn(Future.successful(RefreshTokenData(1L, 1L, "", remember = false, LocalDateTime.now())))
+        when(authService.createToken(any[UserData](), anyBoolean()))
+          .thenReturn(Future.successful(AuthToken("", "", ZonedDateTime.now())))
         val token: Option[AuthToken] = awaitForResult(userService.signIn(testEmail, testPassword, remember = false))
         token.isDefined shouldBe true
-        Jwt.decodeRaw(token.get.token, testSecretKey, Seq(JwtAlgorithm.HS256)).isSuccess shouldBe true
       }
 
       "return empty if user not found" in new Context {
@@ -151,7 +150,7 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
         when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
-        when(tokenRepository.removeByUser(any[UserID]())).thenReturn(Future.successful(()))
+        when(authService.revokeAllTokens(any[UserID]())).thenReturn(Future.successful(()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
 
@@ -168,7 +167,7 @@ class UserServiceTest extends BaseTest {
           .thenReturn(Future.successful(Right(())))
         when(userRepository.save(any[UserData]()))
           .thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
-        when(tokenRepository.removeByUser(any[UserID]()))
+        when(authService.revokeAllTokens(any[UserID]()))
           .thenReturn(Future.failed[Unit](new IllegalStateException()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
@@ -227,7 +226,7 @@ class UserServiceTest extends BaseTest {
         when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
         when(userRepository.save(Matchers.eq[UserData](testUser.copy(password = "123".sha256.hex))))
           .thenReturn(Future.successful(Right(testUser.copy(password = "123".sha256.hex))))
-        when(tokenRepository.removeByUser(testId)).thenReturn(Future.successful(()))
+        when(authService.revokeAllTokens(testId)).thenReturn(Future.successful(()))
         awaitForResult(userService.changePassword(testId, testPassword, "123")) match {
           case Right(_) =>
           case Left(_) => throw new IllegalStateException
@@ -286,13 +285,13 @@ class UserServiceTest extends BaseTest {
 
     val testSecretKey = "test-key"
     val userRepository: UserRepository = mock[UserRepository]
-    val tokenRepository: TokenRepository = mock[TokenRepository]
     val mailChangesTokenRepository: MailChangesTokenRepository = mock[MailChangesTokenRepository]
     val resetPasswordTokenRepository: ResetPasswordTokenRepository =
       mock[ResetPasswordTokenRepository]
+    val authService: AuthService = mock[AuthService]
 
     val userService = new UserService(userRepository,
-                                      tokenRepository,
+                                      authService,
                                       testSecretKey,
                                       mailService,
                                       mailChangesTokenRepository,

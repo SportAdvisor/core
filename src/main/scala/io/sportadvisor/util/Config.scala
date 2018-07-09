@@ -7,7 +7,8 @@ import pureconfig.loadConfig
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-final case class Config(secretKey: String,
+final case class Config(authKey: String,
+                        secretKey: String,
                         http: HttpConfig,
                         database: DatabaseConfig,
                         mail: MailConfig)
@@ -25,5 +26,5 @@ object Config {
   }
 
   def empty(): Config =
-    new Config("", HttpConfig("", 0), DatabaseConfig("", "", ""), MailConfig("", 0, "", ""))
+    new Config("", "", HttpConfig("", 0), DatabaseConfig("", "", ""), MailConfig("", 0, "", ""))
 }

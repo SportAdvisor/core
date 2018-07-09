@@ -5,6 +5,8 @@ import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
+import io.sportadvisor.core.auth.{AuthService, TokenRepositorySQL}
+import io.sportadvisor.core.system.TokenCleaner
 import io.sportadvisor.core.user._
 import io.sportadvisor.http.HttpRoute
 import io.sportadvisor.util.Config
@@ -50,7 +52,9 @@ object Application extends Logging {
     val mailService = MailService(config.mail)
 
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
-    val usersService = UserService(config, databaseConnector, mailService)
+
+    val authService = new AuthService(tokenRepository, config.authKey)
+    val usersService = UserService(config, databaseConnector, mailService, authService)
     val httpRoute = new HttpRoute(usersService)
 
     val tokenCleaner = new TokenCleaner(tokenRepository)

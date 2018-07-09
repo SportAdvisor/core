@@ -6,7 +6,8 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.UserModels.{AuthToken, AuthTokenContent, PasswordMismatch, UserData, UserID}
+import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.ApiError
 import io.sportadvisor.exception.Exceptions._
@@ -467,8 +468,8 @@ class UserRouteTest extends BaseTest {
     "POST /api/users/logout" should {
        "return 200 success" in new Context {
          val authTokenContent = AuthTokenContent(testRefreshTokenId, testUserId)
-         val token = JwtUtil.encode(AuthTokenContent(testRefreshTokenId, testUserId), testSecret, Option(LocalDateTime.now().plusHours(1)))
-         when(userService.logout(authTokenContent)).thenReturn(Future.successful(()))
+         val token = JwtUtil.encode(authTokenContent, testSecret, Option(LocalDateTime.now().plusHours(1)))
+         when(userService.logout(token)).thenReturn(Future.successful(Right(())))
          Post(s"/api/users/logout", token).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
            val resp = r[EmptyResponse]
            resp.code shouldBe 200
@@ -477,8 +478,8 @@ class UserRouteTest extends BaseTest {
 
       "return 401 if token was expired" in new Context {
         val authTokenContent = AuthTokenContent(testRefreshTokenId, testUserId)
-        val token = JwtUtil.encode(AuthTokenContent(testRefreshTokenId, testUserId), testSecret, Option(LocalDateTime.now().minusHours(1)))
-        when(userService.logout(authTokenContent)).thenReturn(Future.successful(()))
+        val token = JwtUtil.encode(authTokenContent, testSecret, Option(LocalDateTime.now().minusHours(1)))
+        when(userService.logout(token)).thenReturn(Future.successful(Left(BadToken)))
         Post(s"/api/users/logout", token)
           .withHeaders(authHeader(testRefreshTokenId, testUserId, LocalDateTime.now().minusHours(1), testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]

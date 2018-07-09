@@ -1,11 +1,11 @@
-package io.sportadvisor.core.user
+package io.sportadvisor.core.system
 
-import java.time.LocalDateTime
+import java.time.{Duration, LocalDateTime}
 
-import scala.concurrent.duration._
-import java.time.Duration
+import io.sportadvisor.core.auth.TokenRepository
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
 class TokenCleaner(repository: TokenRepository,

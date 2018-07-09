@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
+import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.user.UserModels.UserID
 import io.sportadvisor.util.JwtUtil
 
 /**

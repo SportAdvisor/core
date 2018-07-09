@@ -84,7 +84,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleSignUp(): Route = {
-    validate(regValidator, this).apply { request =>
+    validate(regValidator).apply { request =>
       selectLanguage() { lang =>
         complete(
           signUp(request.email, request.password, request.name).map {
@@ -110,7 +110,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   def handleChangeEmail(id: UserID): Route = {
     authenticate(userService.secret) { userId =>
       checkAccess(id, userId) {
-        validate(changeMailValidator, this).apply { request =>
+        validate(changeMailValidator).apply { request =>
           selectLanguage() { lang =>
             complete(
               changeEmail(userId, request.email, request.redirectUrl).map {
@@ -153,7 +153,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleResetPassword(): Route = {
-    validate(resetPasswordValidator, this).apply { request =>
+    validate(resetPasswordValidator).apply { request =>
       selectLanguage() { lang =>
         complete(
           resetPassword(request.email, request.redirectUrl)
@@ -167,7 +167,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleConfirmNewPassword(): Route = {
-    validate(confirmPasswordValidator, this).apply { request =>
+    validate(confirmPasswordValidator).apply { request =>
       selectLanguage() { language =>
         complete(
           setNewPassword(request.token, request.password)
@@ -202,7 +202,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   def handleChangeAccount(id: UserID): Route = {
     authenticate(userService.secret) { userId =>
       checkAccess(id, userId) {
-        validate(accountSettingsValidator, this).apply { req =>
+        validate(accountSettingsValidator).apply { req =>
           onComplete(changeAccount(userId, req.name, req.language)) {
             case Success(o) =>
               o match {
@@ -221,7 +221,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangePassword(id: UserID): Route = {
-    validate(changePasswordValidator, this).apply { req =>
+    validate(changePasswordValidator).apply { req =>
       authenticate(userService.secret) { userId =>
         checkAccess(id, userId) {
           selectLanguage() { lang =>
@@ -236,6 +236,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
       }
     }
   }
+
+  private implicit def i18nService: I18nService = this
 
   private def handleEmailDuplicate(err: ApiError,
                                    field: String,

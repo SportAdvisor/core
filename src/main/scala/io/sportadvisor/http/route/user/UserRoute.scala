@@ -10,6 +10,7 @@ import io.circe.Json
 import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
@@ -26,7 +27,8 @@ import scala.util.Success
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext)
+abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext,
+                                                   authService: AuthService)
     extends FailFastCirceSupport
     with I18nService
     with Logging {
@@ -112,7 +114,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleChangeEmail(id: UserID): Route = {
     entity(as[EmailChange]) { request =>
-      authenticate(userService.secret) { userId =>
+      authenticate.apply { userId =>
         checkAccess(id, userId) {
           selectLanguage() { lang =>
             validatorDirective(request, changeMailValidator, this) {
@@ -185,13 +187,13 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleGetMe(): Route = {
-    authenticate(userService.secret) { userId =>
+    authenticate.apply { userId =>
       redirect(s"/api/users/$userId", StatusCodes.SeeOther)
     }
   }
 
   def handleGetUser(id: UserID): Route = {
-    authenticate(userService.secret) { userId =>
+    authenticate.apply { userId =>
       checkAccess(id, userId) {
         complete(
           getById(id).map {
@@ -205,7 +207,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleChangeAccount(id: UserID): Route = {
     entity(as[AccountSettings]) { req =>
-      authenticate(userService.secret) { userId =>
+      authenticate.apply { userId =>
         checkAccess(id, userId) {
           validatorDirective(req, accountSettingsValidator, this) {
             onComplete(changeAccount(userId, req.name, req.language)) {
@@ -228,7 +230,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleChangePassword(id: UserID): Route = {
     entity(as[PasswordChange]) { req =>
-      authenticate(userService.secret) { userId =>
+      authenticate.apply { userId =>
         checkAccess(id, userId) {
           validatorDirective(req, changePasswordValidator, this) {
             selectLanguage() { lang =>

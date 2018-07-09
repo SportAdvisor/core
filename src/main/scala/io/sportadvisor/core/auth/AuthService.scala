@@ -20,29 +20,27 @@ class AuthService(tokenRepository: TokenRepository, secretKey: String)(
 
   private[this] val expPeriod = 2.hour
 
-  def secret: String = secretKey
-
   def createToken(user: UserData, remember: Boolean): Future[AuthToken] = {
     val refreshToken =
-      JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secret, None)
+      JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secretKey, None)
     val time = LocalDateTime.now()
     tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map(_.id) map {
       refreshTokenId =>
         val expTime = time.plusMinutes(expPeriod.toMinutes)
         val token =
-          JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secret, Option(expTime))
+          JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secretKey, Option(expTime))
         AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
     }
   }
 
   def revokeAllTokens(userID: UserID): Future[Unit] = tokenRepository.removeByUser(userID)
 
-  def signOut(token: String): Future[Either[ApiError, Unit]] =
-    JwtUtil.decode[AuthTokenContent](token, secret) match {
+  def revokeToken(token: String): Future[Either[ApiError, Unit]] =
+    JwtUtil.decode[AuthTokenContent](token, secretKey) match {
       case None    => Future.successful(Left(BadToken))
       case Some(t) => tokenRepository.removeById(t.refreshTokenId).map(Right(_))
     }
 
   def userId(token: String): Option[UserID] =
-    JwtUtil.decode[AuthTokenContent](token, secret).map(_.userID)
+    JwtUtil.decode[AuthTokenContent](token, secretKey).map(_.userID)
 }

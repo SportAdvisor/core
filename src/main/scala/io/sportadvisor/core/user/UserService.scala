@@ -161,7 +161,7 @@ abstract class UserService(userRepository: UserRepository,
     }
   }
 
-  def logout(token: String): Future[Either[ApiError, Unit]] = authService.signOut(token)
+  def logout(token: String): Future[Either[ApiError, Unit]] = authService.revokeToken(token)
 
   private def updatePass(u: UserData,
                          oldPass: String,

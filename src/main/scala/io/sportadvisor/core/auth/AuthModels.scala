@@ -25,7 +25,7 @@ object AuthModels {
 
   final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime)
 
-  final case class AuthTokenContent(refreshTokenId: Long, userID: UserID)
+  private[auth] final case class AuthTokenContent(refreshTokenId: Long, userID: UserID)
   private[auth] final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
 
   private[auth] final case class RefreshTokenData(id: Long,
@@ -43,8 +43,8 @@ object AuthModels {
 
   final case object BadToken extends ApiError("Token is expired", None)
 
-  implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
-  implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder
+  private[auth] implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
+  private[auth] implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder
   private[auth] implicit val refreshTokenDecoder: Decoder[RefreshTokenContent] = deriveDecoder
   private[auth] implicit val refreshTokenEncoder: Encoder[RefreshTokenContent] = deriveEncoder
 

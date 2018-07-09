@@ -9,11 +9,11 @@ import io.sportadvisor.http.Response._
 import io.circe.syntax._
 import io.sportadvisor.core.user.UserModels.UserID
 import io.sportadvisor.http.common._
-import io.sportadvisor.util.{I18nService, JwtUtil}
+import io.sportadvisor.util.I18nService
 import org.slf4s.Logging
 import cats.syntax.eq._
 import cats.instances.long._
-import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.auth.AuthService
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -64,12 +64,12 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     }
   }
 
-  def authenticate(secretKey: String): Directive1[UserID] = {
+  def authenticate()(implicit authService: AuthService): Directive1[UserID] = {
     optionalHeaderValueByName(authorizationHeader).flatMap {
       case Some(token) =>
-        JwtUtil.decode[AuthTokenContent](token, secretKey) match {
-          case Some(r) => provide(r.userID)
-          case _       => reject(Unauthorized())
+        authService.userId(token) match {
+          case Some(id) => provide(id)
+          case _        => reject(Unauthorized())
         }
       case None => reject(Unauthorized())
     }

@@ -53,7 +53,7 @@ object Application extends Logging {
 
     val tokenRepository = new TokenRepositorySQL(databaseConnector)
 
-    val authService = new AuthService(tokenRepository, config.authKey)
+    implicit val authService: AuthService = new AuthService(tokenRepository, config.authKey)
     val usersService = UserService(config, databaseConnector, mailService, authService)
     val httpRoute = new HttpRoute(usersService)
 

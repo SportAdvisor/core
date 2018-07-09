@@ -1,6 +1,7 @@
 package io.sportadvisor.http.route.user
 
 import io.sportadvisor.core.system.SystemService
+import io.sportadvisor.http.common.Validated.ValidationRule
 import io.sportadvisor.http.common.{Validated, ValidationResult}
 
 /**
@@ -60,7 +61,7 @@ object UserRouteValidators {
       (u: ConfirmPassword) => passwordValidator("password")(u.password)
     )
 
-  private def emailValidator(field: String): (String => Option[ValidationResult]) = u => {
+  private def emailValidator(field: String): ValidationRule[String] = u => {
     if (!u.matches(".+@.+\\..+")) {
       Some(ValidationResult(field, emailInvalid))
     } else {
@@ -68,11 +69,11 @@ object UserRouteValidators {
     }
   }
 
-  private def nameValidator(field: String): (String => Option[ValidationResult]) = name => {
+  private def nameValidator(field: String): ValidationRule[String] = name => {
     if (name.trim.isEmpty) { Some(ValidationResult(field, nameIsEmpty)) } else None
   }
 
-  private def passwordValidator(field: String): (String => Option[ValidationResult]) = password => {
+  private def passwordValidator(field: String): ValidationRule[String] = password => {
     if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[\\S]{8,}$")) {
       Some(ValidationResult(field, passwordIsWeak))
     } else {

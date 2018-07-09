@@ -10,11 +10,13 @@ import io.sportadvisor.util.i18n.I18n
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-trait Validator[T] extends (T => List[ValidationResult])
+trait Validated[T] {
+  def validate(model: T): List[ValidationResult]
+}
 
-private final class DefaultValidator[T](rules: Seq[T => Option[ValidationResult]])
-    extends Validator[T] {
-  override def apply(v1: T): List[ValidationResult] = {
+private final class DefaultValidated[T](rules: Seq[T => Option[ValidationResult]])
+    extends Validated[T] {
+  override def validate(v1: T): List[ValidationResult] = {
     rules.flatMap(rule => rule(v1).toList).toList
   }
 }
@@ -25,9 +27,14 @@ final case class ValidationResult(field: String, msgId: String) {
   }
 }
 
-object Validator {
-  def apply[T](rules: (T => Option[ValidationResult])*): Validator[T] =
-    new DefaultValidator[T](rules)
+@SuppressWarnings(Array("org.wartremover.warts.Overloading"))
+object Validated {
+
+  def apply[T](rules: (T => Option[ValidationResult])*): Validated[T] =
+    new DefaultValidated[T](rules)
+
+  def apply[T](implicit v: Validated[T]): Validated[T] = v
+
 }
 
 final case class ValidationError(errors: List[FormError]) extends SARejection {

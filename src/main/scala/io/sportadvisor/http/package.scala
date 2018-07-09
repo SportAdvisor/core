@@ -42,22 +42,11 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     .result()
     .withFallback(RejectionHandler.default)
 
-  def validatorDirective[T](model: T,
-                            validator: Validator[T],
-                            i18nService: I18nService): Directive0 = {
-    selectLanguage().tflatMap(t =>
-      validator(model) match {
-        case Nil => pass
-        case errors: List[ValidationResult] =>
-          reject(ValidationError(errors.map(_.toFormError(i18nService.errors(t._1)))))
-    })
-  }
-
-  def validate[T: FromRequestUnmarshaller](validator: Validator[T])(
+  def validate[T: FromRequestUnmarshaller: Validated](
       implicit i18nService: I18nService): Directive1[T] = {
     entity(as[T]).tflatMap { eT =>
       selectLanguage().tflatMap { lT =>
-        validator(eT._1) match {
+        Validated[T].validate(eT._1) match {
           case Nil => provide(eT._1)
           case errors: List[ValidationResult] =>
             reject(ValidationError(errors.map(_.toFormError(i18nService.errors(lT._1)))))

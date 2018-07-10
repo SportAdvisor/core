@@ -73,7 +73,9 @@ val dependencies = Seq(
   "com.pauldijou" %% "jwt-core" % "0.14.0",
   "com.github.pureconfig" %% "pureconfig" % "0.9.0" exclude ("com.typesafe", "config"),
   "com.wix" %% "accord-core" % "0.7.1",
-  "tv.cntt" %% "scaposer" % "1.10"
+  "tv.cntt" %% "scaposer" % "1.10",
+  "com.beachape" %% "enumeratum" % "1.5.13",
+  "com.beachape" %% "enumeratum-slick" % "1.5.15"
 )
 
 libraryDependencies ++= dependencies ++ akkaDependencies ++ dbDependencies ++ circeDependencies ++ testDependencies ++ loggingDependencies ++ mailDependencies

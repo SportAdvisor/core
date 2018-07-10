@@ -75,7 +75,7 @@ class AuthServiceTest extends BaseTest {
     val testUser = UserData(testUserId, testEmail, testPassword, testName, None)
 
     val secret = "secret"
-    val tokenRepository: TokenRepository = mock[TokenRepository]
+    val tokenRepository: AuthTokenRepository = mock[AuthTokenRepository]
 
     when(tokenRepository.save(any[RefreshToken])).thenAnswer((invocation: InvocationOnMock) => {
       val arguments = invocation.getArguments

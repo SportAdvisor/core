@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-class TokenRepositoryTest extends BaseTest {
+class AuthTokenRepositoryTest extends BaseTest {
 
   "TokenRepositorySQL" when {
 
@@ -107,7 +107,7 @@ class TokenRepositoryTest extends BaseTest {
   }
 
   trait Context {
-    val tokenRepository: TokenRepository = new TokenRepositorySQL(
+    val tokenRepository: AuthTokenRepository = new AuthTokenRepositorySQL(
       InMemoryPostgresStorage.databaseConnector)
   }
 

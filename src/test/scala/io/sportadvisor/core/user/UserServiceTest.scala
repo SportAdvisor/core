@@ -7,6 +7,7 @@ import io.sportadvisor.BaseTest
 import io.sportadvisor.core.auth.AuthModels.AuthToken
 import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.core.user.UserModels._
+import io.sportadvisor.core.user.token.TokenRepository
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, UnhandledException}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
@@ -100,13 +101,13 @@ class UserServiceTest extends BaseTest {
 
       "return Right(Unit) if all success" in new Context {
         when(userRepository.find(newEmail)).thenReturn(Future.successful(None))
-        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(Some(testUser)))
         when(render.renderI18n(Matchers.eq("mails/mail-change.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
         when(mailChangesTokenRepository.save(any[ChangeMailToken]))
-          .thenReturn(Future.successful(ChangeMailToken("", LocalDateTime.now())))
-        val result: Either[ApiError, Unit] = awaitForResult(userService.changeEmail(testId, newEmail, "https://sportadvisor.io/t"))
+          .thenReturn(Future.successful(Right(ChangeMailToken(testUserId, "", LocalDateTime.now()))))
+        val result: Either[ApiError, Unit] = awaitForResult(userService.changeEmail(testUserId, newEmail, "https://sportadvisor.io/t"))
         result.isRight shouldBe true
       }
     }
@@ -119,7 +120,7 @@ class UserServiceTest extends BaseTest {
 
       "return false if token is invalid" in new Context {
         when(mailChangesTokenRepository.get("test"))
-          .thenReturn(Future.successful(Some(ChangeMailToken("test", LocalDateTime.now()))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, "test", LocalDateTime.now()))))
         awaitForResult(userService.confirmEmail("test")) shouldBe false
       }
 
@@ -127,7 +128,7 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().minusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
         awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
 
@@ -135,7 +136,7 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
         when(userRepository.find("test")).thenReturn(Future.successful(None))
         awaitForResult(userService.confirmEmail(token)) shouldBe false
       }
@@ -144,12 +145,17 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
-        when(userRepository.find("test")).thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
+
+        private val user = UserData(testUserId, "test", "", "", None)
+
+        when(userRepository.find("test")).thenReturn(Future.successful(Some(user)))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]())).thenReturn(Future.successful(Right(())))
-        when(userRepository.save(any[UserData]())).thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
+        when(userRepository.save(user.copy(email = "test2")))
+          .thenReturn(Future.successful(Right(user.copy(email = "test2"))))
+        when(mailChangesTokenRepository.removeByUser(testUserId)).thenReturn(Future.successful(1))
         when(authService.revokeAllTokens(any[UserID]())).thenReturn(Future.successful(()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
@@ -158,51 +164,56 @@ class UserServiceTest extends BaseTest {
         val time: LocalDateTime = LocalDateTime.now().plusHours(1)
         val token: String = UserService.generateChangeEmailToken("test", "test2", testSecretKey, time)
         when(mailChangesTokenRepository.get(token))
-          .thenReturn(Future.successful(Some(ChangeMailToken(token, time))))
+          .thenReturn(Future.successful(Some(ChangeMailToken(testUserId, token, time))))
+
+        private val user = UserData(testUserId, "test", testPassword, testName, None)
+
         when(userRepository.find("test"))
-          .thenReturn(Future.successful(Some(UserData(1L, "test", "", "", None))))
+          .thenReturn(Future.successful(Some(user)))
         when(render.renderI18n(Matchers.eq("mails/mail-change-confirm.ssp"), any[Map[String, Any]](), any[I18n]()))
           .thenReturn(Random.nextString(20))
         when(sender.send(any[MailMessage]()))
           .thenReturn(Future.successful(Right(())))
-        when(userRepository.save(any[UserData]()))
-          .thenReturn(Future.successful(Right(UserData(1L, "", "", "", None))))
+        when(userRepository.save(user.copy(email = "test2")))
+          .thenReturn(Future.successful(Right(user.copy(email = "test2"))))
         when(authService.revokeAllTokens(any[UserID]()))
           .thenReturn(Future.failed[Unit](new IllegalStateException()))
+        when(mailChangesTokenRepository.removeByUser(testUserId))
+          .thenReturn(Future.failed[Int](new IllegalStateException()))
         awaitForResult(userService.confirmEmail(token)) shouldBe true
       }
     }
 
     "changeAccount" should {
       "return None if user not found " in new Context {
-        when(userRepository.get(testId)).thenReturn(Future.successful(None))
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(None))
 
-        awaitForResult(userService.changeAccount(testId, "test", Some("ru"))).isDefined shouldBe false
+        awaitForResult(userService.changeAccount(testUserId, "test", Some("ru"))).isDefined shouldBe false
       }
 
       "return Some(new userdata) if all ok" in new Context {
-        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(Some(testUser)))
         when(userRepository.save(Matchers.eq[UserData](testUser.copy(name = "newName", language = Some("en")))))
             .thenReturn(Future.successful(Right(testUser.copy(name = "newName", language = Some("en")))))
-        val userData: Option[UserData] = awaitForResult(userService.changeAccount(testId, "newName", Some("en")))
+        val userData: Option[UserData] = awaitForResult(userService.changeAccount(testUserId, "newName", Some("en")))
         userData.isDefined shouldBe true
         userData.get.name shouldBe "newName"
         userData.get.language.get shouldBe "en"
       }
 
       "return None if save end with error" in new Context {
-        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(Some(testUser)))
         when(userRepository.save(any[UserData]))
           .thenReturn(Future.successful(Left(UnhandledException(new Exception))))
 
-        awaitForResult(userService.changeAccount(testId, "test", Some("ru"))).isDefined shouldBe false
+        awaitForResult(userService.changeAccount(testUserId, "test", Some("ru"))).isDefined shouldBe false
       }
     }
 
     "changePassword" should {
       "return user not found" in new Context {
-        when(userRepository.get(testId)).thenReturn(Future.successful(None))
-        awaitForResult(userService.changePassword(testId, "123", "123")) match {
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(None))
+        awaitForResult(userService.changePassword(testUserId, "123", "123")) match {
           case Right(_) => throw new IllegalStateException
           case Left(e) => e match {
             case ResourceNotFound(_) =>
@@ -212,8 +223,8 @@ class UserServiceTest extends BaseTest {
       }
 
       "return password mismatch" in new Context {
-        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
-        awaitForResult(userService.changePassword(testId, "123", "123")) match {
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(Some(testUser)))
+        awaitForResult(userService.changePassword(testUserId, "123", "123")) match {
           case Right(_) => throw new IllegalStateException
           case Left(e) => e match {
             case PasswordMismatch() =>
@@ -223,11 +234,11 @@ class UserServiceTest extends BaseTest {
       }
 
       "return unit if success" in new Context {
-        when(userRepository.get(testId)).thenReturn(Future.successful(Some(testUser)))
+        when(userRepository.get(testUserId)).thenReturn(Future.successful(Some(testUser)))
         when(userRepository.save(Matchers.eq[UserData](testUser.copy(password = "123".sha256.hex))))
           .thenReturn(Future.successful(Right(testUser.copy(password = "123".sha256.hex))))
-        when(authService.revokeAllTokens(testId)).thenReturn(Future.successful(()))
-        awaitForResult(userService.changePassword(testId, testPassword, "123")) match {
+        when(authService.revokeAllTokens(testUserId)).thenReturn(Future.successful(()))
+        awaitForResult(userService.changePassword(testUserId, testPassword, "123")) match {
           case Right(_) =>
           case Left(_) => throw new IllegalStateException
         }
@@ -285,11 +296,11 @@ class UserServiceTest extends BaseTest {
 
     val testSecretKey = "test-key"
     val userRepository: UserRepository = mock[UserRepository]
-    val mailChangesTokenRepository: MailChangesTokenRepository = mock[MailChangesTokenRepository]
-    val resetPasswordTokenRepository: ResetPasswordTokenRepository =
-      mock[ResetPasswordTokenRepository]
-    val authService: AuthService = mock[AuthService]
+    val mailChangesTokenRepository: TokenRepository[ChangeMailToken] = mock[TokenRepository[ChangeMailToken]]
+    val resetPasswordTokenRepository: TokenRepository[ResetPasswordToken] =
+      mock[TokenRepository[ResetPasswordToken]]
 
+    val authService: AuthService = mock[AuthService]
     val userService = new UserService(userRepository,
                                       authService,
                                       testSecretKey,
@@ -297,13 +308,13 @@ class UserServiceTest extends BaseTest {
                                       mailChangesTokenRepository,
                                       resetPasswordTokenRepository) with I18nStub
 
-    val testId: Long = Random.nextLong()
+    val testUserId: Long = Random.nextLong()
     val testName: String = Random.nextString(10)
     val testEmail: String = Random.nextString(10)
     val newEmail: String = "valekseev@sportadvisor.io"
     val testPassword: String = Random.nextString(10)
 
-    val testUser = UserData(testId, testEmail, testPassword.sha256.hex, testName, None)
+    val testUser = UserData(testUserId, testEmail, testPassword.sha256.hex, testName, None)
 
   }
 

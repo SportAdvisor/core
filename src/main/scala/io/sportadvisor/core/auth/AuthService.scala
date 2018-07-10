@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @author sss3 (Vladimir Alekseev)
   */
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-class AuthService(tokenRepository: TokenRepository,
+class AuthService(tokenRepository: AuthTokenRepository,
                   secretKey: String,
                   expPeriod: FiniteDuration = 2.hour)(implicit executionContext: ExecutionContext) {
 

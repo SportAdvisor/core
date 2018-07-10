@@ -15,10 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-class AuthService(tokenRepository: TokenRepository, secretKey: String)(
-    implicit executionContext: ExecutionContext) {
-
-  private[this] val expPeriod = 2.hour
+@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
+class AuthService(tokenRepository: TokenRepository,
+                  secretKey: String,
+                  expPeriod: FiniteDuration = 2.hour)(implicit executionContext: ExecutionContext) {
 
   def createToken(user: UserData, remember: Boolean): Future[AuthToken] = {
     val refreshToken =
@@ -26,7 +26,7 @@ class AuthService(tokenRepository: TokenRepository, secretKey: String)(
     val time = LocalDateTime.now()
     tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map(_.id) map {
       refreshTokenId =>
-        val expTime = time.plusMinutes(expPeriod.toMinutes)
+        val expTime = time.plusNanos(expPeriod.toNanos)
         val token =
           JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secretKey, Option(expTime))
         AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))

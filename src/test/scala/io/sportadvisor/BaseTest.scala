@@ -24,6 +24,8 @@ trait BaseTest extends WordSpec with Matchers with ScalatestRouteTest with Mocki
       .getOrElse(null.asInstanceOf[T])
   }
 
+  def sleep(t: Duration): Unit = Thread.sleep(t.toMillis)
+
   val unitVal: Unit = ()
 
 }

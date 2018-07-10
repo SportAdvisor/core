@@ -9,7 +9,7 @@ import slick.lifted.ProvenShape
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-private[user] trait TokenTable {
+private[user] trait AuthTokenTable {
   protected val connector: DatabaseConnector
   import connector.profile.api._
 

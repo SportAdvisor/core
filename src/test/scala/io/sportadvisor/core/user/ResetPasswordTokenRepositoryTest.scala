@@ -3,6 +3,8 @@ package io.sportadvisor.core.user
 import java.time.LocalDateTime
 
 import io.sportadvisor.core.user.UserModels.ResetPasswordToken
+import io.sportadvisor.core.user.token.{TokenRepository, TokenType}
+import io.sportadvisor.core.user.token.TokenRepository._
 import io.sportadvisor.exception.ApiError
 import io.sportadvisor.{BaseTest, InMemoryPostgresStorage}
 
@@ -53,8 +55,9 @@ class ResetPasswordTokenRepositoryTest extends BaseTest {
     val testToken2 = "token2"
     val testToken3 = "token3"
 
-    val resetTokenRepository: ResetPasswordTokenRepository = new ResetPasswordTokenRepositorySQL(
-      InMemoryPostgresStorage.databaseConnector)
+    val resetTokenRepository: TokenRepository[ResetPasswordToken] =
+      TokenRepository[ResetPasswordToken](TokenType.ResetPassword,
+                                          InMemoryPostgresStorage.databaseConnector)
   }
 
 }

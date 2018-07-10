@@ -15,23 +15,23 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-trait TokenRepository {
+trait AuthTokenRepository {
 
   def save(token: RefreshToken): Future[RefreshTokenData]
 
   def removeByUser(id: UserID): Future[Unit]
 
-  def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Unit]
+  def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Int]
 
   def getByUserId(userID: UserID): Future[Seq[RefreshToken]]
 
   def removeById(refreshTokenId: Long): Future[Unit]
 }
 
-class TokenRepositorySQL(val connector: DatabaseConnector)(
+class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
     implicit executionContext: ExecutionContext)
-    extends TokenTable
-    with TokenRepository {
+    extends AuthTokenTable
+    with AuthTokenRepository {
 
   import connector._
   import connector.profile.api._
@@ -63,10 +63,10 @@ class TokenRepositorySQL(val connector: DatabaseConnector)(
   }
 
   override def removeByDate(dateRemember: LocalDateTime,
-                            dateNotRemember: LocalDateTime): Future[Unit] = {
+                            dateNotRemember: LocalDateTime): Future[Int] = {
     val query = tokens.filter(t =>
       (t.remember === true && t.lastTouch < dateRemember) || (!t.remember && t.lastTouch < dateNotRemember))
-    db.run(query.delete).map(_ => { () })
+    db.run(query.delete)
   }
 
   override def getByUserId(userID: UserID): Future[Seq[RefreshToken]] = {

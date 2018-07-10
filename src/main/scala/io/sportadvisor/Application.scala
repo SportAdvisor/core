@@ -5,7 +5,10 @@ import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
+import io.sportadvisor.core.user.UserModels.{ChangeMailToken, ResetPasswordToken}
 import io.sportadvisor.core.user._
+import io.sportadvisor.core.user.token.{TokenRepository, TokenType}
+import io.sportadvisor.core.user.token.TokenRepository._
 import io.sportadvisor.http.HttpRoute
 import io.sportadvisor.util.Config
 import io.sportadvisor.util.Config.ConfigReaderFailuresExt
@@ -49,11 +52,20 @@ object Application extends Logging {
 
     val mailService = MailService(config.mail)
 
-    val tokenRepository = new TokenRepositorySQL(databaseConnector)
-    val usersService = UserService(config, databaseConnector, mailService)
+    val tokenRepository = new AuthTokenRepositorySQL(databaseConnector)
+    val mailTokenRepository =
+      TokenRepository[ChangeMailToken](TokenType.MailChange, databaseConnector)
+    val resetPasswordTokenRepository =
+      TokenRepository[ResetPasswordToken](TokenType.ResetPassword, databaseConnector)
+    val usersService = UserService(config,
+                                   databaseConnector,
+                                   mailService,
+                                   mailTokenRepository,
+                                   resetPasswordTokenRepository)
     val httpRoute = new HttpRoute(usersService)
 
-    val tokenCleaner = new TokenCleaner(tokenRepository)
+    val tokenCleaner =
+      new TokenCleaner(tokenRepository, mailTokenRepository, resetPasswordTokenRepository)
     actorSystem.scheduler.schedule(12.hour, 3.hour)(tokenCleaner.clean())
 
     val clientRouteLogged =

@@ -464,12 +464,12 @@ class UserRouteTest extends BaseTest {
       }
     }
 
-    "POST /api/users/logout" should {
+    "POST /api/users/sign-out" should {
        "return 200 success" in new Context {
          val authTokenContent = AuthTokenContent(testRefreshTokenId, testUserId)
          val token = JwtUtil.encode(AuthTokenContent(testRefreshTokenId, testUserId), testSecret, Option(LocalDateTime.now().plusHours(1)))
          when(userService.logout(authTokenContent)).thenReturn(Future.successful(()))
-         Post(s"/api/users/logout", token).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+         Post(s"/api/users/sign-out", token).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
            val resp = r[EmptyResponse]
            resp.code shouldBe 200
          }
@@ -479,7 +479,7 @@ class UserRouteTest extends BaseTest {
         val authTokenContent = AuthTokenContent(testRefreshTokenId, testUserId)
         val token = JwtUtil.encode(AuthTokenContent(testRefreshTokenId, testUserId), testSecret, Option(LocalDateTime.now().minusHours(1)))
         when(userService.logout(authTokenContent)).thenReturn(Future.successful(()))
-        Post(s"/api/users/logout", token)
+        Post(s"/api/users/sign-out", token)
           .withHeaders(authHeader(testRefreshTokenId, testUserId, LocalDateTime.now().minusHours(1), testSecret)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
@@ -487,7 +487,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 401 if token wasnt transferred to post" in new Context {
-        Post(s"/api/users/logout") ~> userRoute ~> check {
+        Post(s"/api/users/sign-out") ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }

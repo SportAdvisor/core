@@ -2,7 +2,14 @@ package io.sportadvisor.http.route.user
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.directives.PathDirectives._
+import akka.http.scaladsl.server.directives.RouteDirectives._
+import akka.http.scaladsl.server.directives.MarshallingDirectives._
+import akka.http.scaladsl.server.directives.FutureDirectives._
+import akka.http.scaladsl.server.directives.RespondWithDirectives._
+import akka.http.scaladsl.server.directives.ExecutionDirectives._
+import akka.http.scaladsl.server.directives.MethodDirectives._
+import akka.http.scaladsl.server.RouteConcatenation._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport

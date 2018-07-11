@@ -15,9 +15,9 @@ final case class Config(authKey: String,
 
 object Config {
 
-  private[util] final case class HttpConfig(host: String, port: Int)
-  private[util] final case class DatabaseConfig(jdbcUrl: String, username: String, password: String)
-  private[util] final case class MailConfig(smtp: String, smtpPort: Int, user: String, pass: String)
+  final private[util] case class HttpConfig(host: String, port: Int)
+  final private[util] case class DatabaseConfig(jdbcUrl: String, username: String, password: String)
+  final private[util] case class MailConfig(smtp: String, smtpPort: Int, user: String, pass: String)
 
   def load(): Either[ConfigReaderFailures, Config] = loadConfig[Config]
 

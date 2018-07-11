@@ -27,6 +27,7 @@ private[mail] class MailServiceImpl(config: MailConfig)(implicit executionContex
 }
 
 object MailService {
+
   def apply(config: MailConfig)(
       implicit executionContext: ExecutionContext): MailService[I18n, Throwable, Unit] =
     new MailServiceImpl(config)

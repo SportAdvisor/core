@@ -12,11 +12,10 @@ import scala.io.{Codec, Source}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-@SuppressWarnings(
-  Array("org.wartremover.warts.MutableDataStructures", "org.wartremover.warts.While"))
+@SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures", "org.wartremover.warts.While"))
 private[i18n] object PoLoader extends Logging {
 
-  private final case class CacheKey(language: String, bundle: String)
+  final private case class CacheKey(language: String, bundle: String)
 
   private val cache = MMap.empty[CacheKey, scaI18n]
 

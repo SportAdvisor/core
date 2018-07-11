@@ -3,16 +3,16 @@ package io.sportadvisor.http.route.user
 import io.sportadvisor.core.system.SystemService
 import io.sportadvisor.http.common.Validated.ValidationRule
 import io.sportadvisor.http.common.{Validated, ValidationResult}
+import io.sportadvisor.http.route.user.UserRouteProtocol._
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
 object UserRouteValidators {
 
-  import UserRouteProtocol._
-
   val emailInvalid = "Email is invalid"
   val nameIsEmpty = "Name is required"
+
   val passwordIsWeak: String =
     "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
       "one uppercase letter, and a number. Your password can't contain spaces"
@@ -48,8 +48,7 @@ object UserRouteValidators {
     )
 
   implicit val changePasswordValidator: Validated[PasswordChange] =
-    Validated[PasswordChange]((p: PasswordChange) =>
-      passwordValidator("newPassword")(p.newPassword))
+    Validated[PasswordChange]((p: PasswordChange) => passwordValidator("newPassword")(p.newPassword))
 
   implicit val resetPasswordValidator: Validated[ResetPassword] =
     Validated[ResetPassword](

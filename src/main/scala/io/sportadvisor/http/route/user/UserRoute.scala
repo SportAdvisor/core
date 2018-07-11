@@ -2,7 +2,14 @@ package io.sportadvisor.http.route.user
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.directives.PathDirectives._
+import akka.http.scaladsl.server.directives.RouteDirectives._
+import akka.http.scaladsl.server.directives.MarshallingDirectives._
+import akka.http.scaladsl.server.directives.FutureDirectives._
+import akka.http.scaladsl.server.directives.RespondWithDirectives._
+import akka.http.scaladsl.server.directives.ExecutionDirectives._
+import akka.http.scaladsl.server.directives.MethodDirectives._
+import akka.http.scaladsl.server.RouteConcatenation._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -13,7 +20,7 @@ import io.sportadvisor.core.auth.AuthModels._
 import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
-import io.sportadvisor.http
+import io.sportadvisor.http._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRoute._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
@@ -33,7 +40,6 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     with I18nService
     with Logging {
 
-  import http._
   import userService._
 
   val route: Route = pathPrefix("users") {
@@ -92,7 +98,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         complete(
           signUp(request.email, request.password, request.name).map {
             case Left(e)      => handleEmailDuplicate(e, "email", lang)
-            case Right(token) => r(Response.objectResponse(token, None))
+            case Right(token) => r(Response.objectR(token, None))
           }
         )
       }
@@ -103,8 +109,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[EmailPassword]) { req =>
       complete(
         signIn(req.email, req.password, req.remember).map {
-          case Some(token) => r(Response.objectResponse(token, None))
-          case None        => r(Response.emptyResponse(StatusCodes.BadRequest.intValue))
+          case Some(token) => r(Response.objectR(token, None))
+          case None        => r(Response.empty(StatusCodes.BadRequest.intValue))
         }
       )
     }
@@ -118,7 +124,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             complete(
               changeEmail(userId, request.email, request.redirectUrl).map {
                 case Left(e)  => handleEmailDuplicate(e, "email", lang)
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+                case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
               }
             )
           }
@@ -131,10 +137,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     optionalHeaderValueByName(authorizationHeader) {
       case Some(value) =>
         complete(logout(value).map {
-          case Left(_)  => r(Response.emptyResponse(StatusCodes.Unauthorized.intValue))
-          case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+          case Left(_)  => r(Response.empty(StatusCodes.Unauthorized.intValue))
+          case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
         })
-      case None => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
+      case None => complete(r(Response.empty(StatusCodes.Unauthorized.intValue)))
     }
   }
 
@@ -142,9 +148,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[EmailToken]) { entity =>
       complete(
         confirmEmail(entity.token).map { res =>
-          r(
-            Response.emptyResponse(
-              if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))
+          r(Response.empty(if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))
         }
       )
     }
@@ -157,7 +161,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           resetPassword(request.email, request.redirectUrl)
             .map {
               case Left(e)  => handleTokenDuplicate(e, lang)
-              case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
             }
         )
       }
@@ -171,7 +175,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           setNewPassword(request.token, request.password)
             .map {
               case Left(e)  => handleResetPasswordErrors(e, "token", language)
-              case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
             }
         )
       }
@@ -189,8 +193,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
       checkAccess(id, userId) {
         complete(
           getById(id).map {
-            case Some(u) => r(Response.objectResponse(userView(u), Option(s"/api/users/$userId")))
-            case _       => r(Response.emptyResponse(StatusCodes.NotFound.intValue))
+            case Some(u) => r(Response.objectR(userView(u), Option(s"/api/users/$userId")))
+            case _       => r(Response.empty(StatusCodes.NotFound.intValue))
           }
         )
       }
@@ -206,12 +210,12 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
               o match {
                 case Some(u) =>
                   respondWithHeaders(Location(s"/api/users/${u.id}")) {
-                    complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
+                    complete(r(Response.empty(StatusCodes.OK.intValue)))
                   }
-                case _ => complete(r(Response.failResponse(None)))
+                case _ => complete(r(Response.fail(None)))
               }
 
-            case _ => complete(r(Response.failResponse(None)))
+            case _ => complete(r(Response.fail(None)))
           }
         }
       }
@@ -226,7 +230,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             complete(
               changePassword(userId, req.password, req.newPassword).map {
                 case Left(e)  => handlePasswordMismatch(e, "password", lang)
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+                case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
               }
             )
           }
@@ -235,26 +239,22 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private implicit def i18nService: I18nService = this
+  implicit private def i18nService: I18nService = this
 
-  private def handleEmailDuplicate(err: ApiError,
-                                   field: String,
-                                   lang: String): (StatusCode, Json) = {
+  private def handleEmailDuplicate(err: ApiError, field: String, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case DuplicateException() =>
-        r(Response.errorResponse(List(FormError(field, errors(lang).t(emailDuplication)))))
+        r(Response.error(List(FormError(field, errors(lang).t(emailDuplication)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
 
-  private def handleResetPasswordErrors(err: ApiError,
-                                        field: String,
-                                        lang: String): (StatusCode, Json) = {
+  private def handleResetPasswordErrors(err: ApiError, field: String, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case TokenDoesntExist(_) =>
-        r(Response.errorResponse(List(FormError(field, errors(lang).t(resetPwdExpired)))))
+        r(Response.error(List(FormError(field, errors(lang).t(resetPwdExpired)))))
       case TokenExpired(_) =>
-        r(Response.errorResponse(List(FormError(field, errors(lang).t(resetPwdExpired)))))
+        r(Response.error(List(FormError(field, errors(lang).t(resetPwdExpired)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -262,17 +262,15 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def handleTokenDuplicate(err: ApiError, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case DuplicateException() =>
-        r(Response.emptyResponse(StatusCodes.OK.intValue))
+        r(Response.empty(StatusCodes.OK.intValue))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
 
-  private def handlePasswordMismatch(err: ApiError,
-                                     field: String,
-                                     lang: String): (StatusCode, Json) = {
+  private def handlePasswordMismatch(err: ApiError, field: String, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case PasswordMismatch() =>
-        r(Response.errorResponse(List(FormError(field, errors(lang).t(passwordIncorrect)))))
+        r(Response.error(List(FormError(field, errors(lang).t(passwordIncorrect)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -281,12 +279,12 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     case ResourceNotFound(id) =>
       log.warn(s"Api error. User with id $id not found")
       val msg = errors(lang).t(authError)
-      r(Response.failResponse(Some(msg)))
+      r(Response.fail(Some(msg)))
     case exception =>
       exception.error.fold(log.error(s"Api error: ${exception.msg}")) { e =>
         log.error(s"Api error: ${exception.msg}", e)
       }
-      r(Response.failResponse(None))
+      r(Response.fail(None))
   }
 
 }

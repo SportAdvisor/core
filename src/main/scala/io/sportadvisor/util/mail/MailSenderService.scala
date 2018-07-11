@@ -18,10 +18,8 @@ trait MailSenderService[L, R] {
 
 }
 
-class CourierMailSenderService(val smtp: String,
-                               val smtpPort: Int,
-                               val user: String,
-                               val pass: String)(implicit executionContext: ExecutionContext)
+class CourierMailSenderService(val smtp: String, val smtpPort: Int, val user: String, val pass: String)(
+    implicit executionContext: ExecutionContext)
     extends MailSenderService[Throwable, Unit]
     with Logging {
 
@@ -75,7 +73,7 @@ class CourierMailSenderService(val smtp: String,
 }
 
 object CourierMailSenderService {
-  def apply(config: MailConfig)(
-      implicit executionContext: ExecutionContext): CourierMailSenderService =
+
+  def apply(config: MailConfig)(implicit executionContext: ExecutionContext): CourierMailSenderService =
     new CourierMailSenderService(config.smtp, config.smtpPort, config.user, config.pass)
 }

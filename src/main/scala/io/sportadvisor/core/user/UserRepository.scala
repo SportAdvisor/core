@@ -24,12 +24,11 @@ trait UserRepository {
 
   def save(user: User): Future[Either[ApiError, UserData]]
 
-  def remove(userID: UserID): Future[Option[UserData]]
+  def remove(userID: UserID): Future[Int]
 
 }
 
-class UserRepositorySQL(val connector: DatabaseConnector)(
-    implicit executionContext: ExecutionContext)
+class UserRepositorySQL(val connector: DatabaseConnector)(implicit executionContext: ExecutionContext)
     extends UserTable
     with UserRepository {
 
@@ -49,7 +48,7 @@ class UserRepositorySQL(val connector: DatabaseConnector)(
     case u: UserData             => updateUser(u)
   }
 
-  override def remove(userID: UserID): Future[Option[UserData]] = ???
+  override def remove(userID: UserID): Future[Int] = db.run(users.filter(_.id === userID).delete)
 
   private def createUser(u: CreateUser): Future[Either[ApiError, UserData]] = {
     val action = insertQuery += UserData(0, u.email, u.password, u.name, None)

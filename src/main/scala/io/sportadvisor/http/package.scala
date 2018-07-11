@@ -4,6 +4,10 @@ import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.model.headers.Language
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
+import akka.http.scaladsl.server.directives.BasicDirectives._
+import akka.http.scaladsl.server.directives.RouteDirectives._
+import akka.http.scaladsl.server.directives.HeaderDirectives._
+import akka.http.scaladsl.server.directives.MarshallingDirectives._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
@@ -21,17 +25,12 @@ import io.sportadvisor.core.auth.AuthService
   */
 package object http extends FailFastCirceSupport with Logging with Response.Encoders {
 
-  import akka.http.scaladsl.server.directives.BasicDirectives._
-  import akka.http.scaladsl.server.directives.RouteDirectives._
-  import akka.http.scaladsl.server.directives.HeaderDirectives._
-  import akka.http.scaladsl.server.directives.MarshallingDirectives._
-
   val authorizationHeader = "Authorization"
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case e: Throwable =>
       log.error("request failed", e)
-      complete(StatusCodes.InternalServerError -> Response.failResponse(None))
+      complete(StatusCodes.InternalServerError -> Response.fail(None))
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler
@@ -43,8 +42,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     .result()
     .withFallback(RejectionHandler.default)
 
-  def validate[T: FromRequestUnmarshaller: Validated](
-      implicit i18nService: I18nService): Directive1[T] = {
+  def validate[T: FromRequestUnmarshaller: Validated](implicit i18nService: I18nService): Directive1[T] = {
     entity(as[T]).tflatMap { eT =>
       selectLanguage().tflatMap { lT =>
         Validated[T].validate(eT._1) match {

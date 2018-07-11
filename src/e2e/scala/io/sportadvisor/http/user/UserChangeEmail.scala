@@ -1,7 +1,7 @@
 package io.sportadvisor.http.user
 
 import akka.http.scaladsl.model.StatusCodes._
-import io.sportadvisor.core.user.UserModels.AuthToken
+import io.sportadvisor.core.auth.AuthModels.AuthToken
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.UserRouteValidators

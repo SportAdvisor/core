@@ -1,10 +1,10 @@
-package io.sportadvisor.core.user
+package io.sportadvisor.core.system
 
-import java.time.LocalDateTime
+import java.time.{Duration, LocalDateTime}
+
+import io.sportadvisor.core.auth.AuthTokenRepository
 
 import scala.concurrent.duration._
-import java.time.Duration
-
 import io.sportadvisor.core.user.UserModels.{ChangeMailToken, ResetPasswordToken}
 import io.sportadvisor.core.user.token.TokenRepository
 import org.slf4s.Logging

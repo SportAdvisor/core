@@ -1,13 +1,9 @@
-package io.sportadvisor.core.user
+package io.sportadvisor.core.auth
 
 import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.{
-  CreateRefreshToken,
-  RefreshToken,
-  RefreshTokenData,
-  UserID
-}
+import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.user.UserModels.UserID
 import io.sportadvisor.util.db.DatabaseConnector
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,7 +26,7 @@ trait AuthTokenRepository {
 
 class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
     implicit executionContext: ExecutionContext)
-    extends AuthTokenTable
+    extends TokenTable
     with AuthTokenRepository {
 
   import connector._

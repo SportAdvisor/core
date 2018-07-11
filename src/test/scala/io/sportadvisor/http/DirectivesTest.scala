@@ -1,15 +1,15 @@
 package io.sportadvisor.http
 
-import java.time.LocalDateTime
-
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
 import io.sportadvisor.BaseTest
+import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.http.Response.EmptyResponse
 import io.sportadvisor.http.Decoders._
 import io.sportadvisor.http.HttpTestUtils._
+import org.mockito.Mockito.when
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -64,13 +64,15 @@ class DirectivesTest extends BaseTest {
     }
 
     "reject if token is expired" in new Context {
-      Get("/authorize").withHeaders(authHeader(1L, 1L, LocalDateTime.now().minusHours(1), secretKey)) ~> authorizeRoute ~> check {
+      val token = "token"
+      when(authService.userId(token)).thenReturn(None)
+      Get("/authorize").withHeaders(authHeader(token)) ~> authorizeRoute ~> check {
         r[EmptyResponse].code shouldBe 401
       }
     }
 
     "return user id if all success" in new Context {
-      Get("/authorize").withHeaders(authHeader(1L, 1L, LocalDateTime.now().plusHours(1), secretKey)) ~> authorizeRoute ~> check {
+      Get("/authorize").withHeaders(authHeader(1L)) ~> authorizeRoute ~> check {
         r[Long] shouldBe 1L
       }
     }
@@ -78,13 +80,13 @@ class DirectivesTest extends BaseTest {
 
   "check access" should {
     "reject 403" in new Context {
-      Get("/access/2").withHeaders(authHeader(1L,1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
+      Get("/access/2").withHeaders(authHeader(1L)) ~> checkAccessRoute ~> check {
         r[EmptyResponse].code shouldBe 403
       }
     }
 
     "return true" in new Context {
-      Get("/access/1").withHeaders(authHeader(1L, 1L, LocalDateTime.now().plusHours(1), secretKey)) ~> checkAccessRoute ~> check {
+      Get("/access/1").withHeaders(authHeader(1L)) ~> checkAccessRoute ~> check {
         r[Boolean] shouldBe true
       }
     }
@@ -100,7 +102,7 @@ class DirectivesTest extends BaseTest {
   }
 
   trait Context {
-    val secretKey = "test-secret"
+    implicit val authService: AuthService = mock[AuthService]
 
     val selectLang: Route = pathPrefix("lang") {
       pathEndOrSingleSlash {
@@ -113,7 +115,7 @@ class DirectivesTest extends BaseTest {
     val authorizeRoute: Route = pathPrefix("authorize") {
       pathEndOrSingleSlash {
         handleRejections(rejectionHandler) {
-          authenticate(secretKey) { userId =>
+          authenticate.apply { userId =>
             complete(userId)
           }
         }
@@ -122,7 +124,7 @@ class DirectivesTest extends BaseTest {
 
     val checkAccessRoute: Route = path("access" / LongNumber) { id =>
       handleRejections(rejectionHandler) {
-        authenticate(secretKey) { userId =>
+        authenticate.apply { userId =>
           checkAccess(id, userId) {
             complete(id == userId)
           }

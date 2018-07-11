@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.http.route.SystemRoute
 import io.sportadvisor.http.route.user.UserRoute
@@ -14,7 +15,8 @@ import scala.concurrent.ExecutionContext
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-class HttpRoute(userService: UserService)(implicit executionContext: ExecutionContext) {
+class HttpRoute(userService: UserService)(implicit executionContext: ExecutionContext,
+                                          authService: AuthService) {
 
   private val userRoute = new UserRoute(userService) with I18nServiceImpl
   private val systemRoute = new SystemRoute

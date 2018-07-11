@@ -1,0 +1,4 @@
+exclude_paths:
+  - 'src/test/**'
+  - 'src/e2e/**'
+  - 'scalastyle-config.xml'

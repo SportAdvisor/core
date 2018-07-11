@@ -15,13 +15,14 @@ trait Validated[T] {
   def validate(model: T): List[ValidationResult]
 }
 
-private final class DefaultValidated[T](rules: Seq[ValidationRule[T]]) extends Validated[T] {
+final private class DefaultValidated[T](rules: Seq[ValidationRule[T]]) extends Validated[T] {
   override def validate(v1: T): List[ValidationResult] = {
     rules.flatMap(rule => rule(v1).toList).toList
   }
 }
 
 final case class ValidationResult(field: String, msgId: String) {
+
   def toFormError(i18n: I18n): FormError = {
     FormError(field, i18n.t(msgId))
   }

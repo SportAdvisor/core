@@ -141,9 +141,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[EmailToken]) { entity =>
       complete(
         confirmEmail(entity.token).map { res =>
-          r(
-            Response.empty(
-              if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))
+          r(Response.empty(if (res) StatusCodes.OK.intValue else StatusCodes.BadRequest.intValue))
         }
       )
     }
@@ -234,11 +232,9 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private implicit def i18nService: I18nService = this
+  implicit private def i18nService: I18nService = this
 
-  private def handleEmailDuplicate(err: ApiError,
-                                   field: String,
-                                   lang: String): (StatusCode, Json) = {
+  private def handleEmailDuplicate(err: ApiError, field: String, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case DuplicateException() =>
         r(Response.error(List(FormError(field, errors(lang).t(emailDuplication)))))
@@ -246,9 +242,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     (handler orElse apiErrorHandler(lang))(err)
   }
 
-  private def handleResetPasswordErrors(err: ApiError,
-                                        field: String,
-                                        lang: String): (StatusCode, Json) = {
+  private def handleResetPasswordErrors(err: ApiError, field: String, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case TokenDoesntExist(_) =>
         r(Response.error(List(FormError(field, errors(lang).t(resetPwdExpired)))))
@@ -266,9 +260,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     (handler orElse apiErrorHandler(lang))(err)
   }
 
-  private def handlePasswordMismatch(err: ApiError,
-                                     field: String,
-                                     lang: String): (StatusCode, Json) = {
+  private def handlePasswordMismatch(err: ApiError, field: String, lang: String): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case PasswordMismatch() =>
         r(Response.error(List(FormError(field, errors(lang).t(passwordIncorrect)))))

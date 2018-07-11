@@ -25,8 +25,6 @@ import io.sportadvisor.core.auth.AuthService
   */
 package object http extends FailFastCirceSupport with Logging with Response.Encoders {
 
-
-
   val authorizationHeader = "Authorization"
 
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
@@ -44,8 +42,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     .result()
     .withFallback(RejectionHandler.default)
 
-  def validate[T: FromRequestUnmarshaller: Validated](
-      implicit i18nService: I18nService): Directive1[T] = {
+  def validate[T: FromRequestUnmarshaller: Validated](implicit i18nService: I18nService): Directive1[T] = {
     entity(as[T]).tflatMap { eT =>
       selectLanguage().tflatMap { lT =>
         Validated[T].validate(eT._1) match {

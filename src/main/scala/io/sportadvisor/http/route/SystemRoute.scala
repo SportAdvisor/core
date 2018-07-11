@@ -10,6 +10,7 @@ import io.sportadvisor.http._
   * @author sss3 (Vladimir Alekseev)
   */
 class SystemRoute extends FailFastCirceSupport {
+
   val route: Route = pathPrefix("system") {
     path("languages") {
       get {

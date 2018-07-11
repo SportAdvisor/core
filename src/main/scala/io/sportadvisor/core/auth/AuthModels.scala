@@ -25,17 +25,17 @@ object AuthModels {
 
   final case class AuthToken(token: Token, refreshToken: Token, expireAt: ZonedDateTime)
 
-  private[auth] final case class AuthTokenContent(refreshTokenId: Long, userID: UserID)
-  private[auth] final case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
+  final private[auth] case class AuthTokenContent(refreshTokenId: Long, userID: UserID)
+  final private[auth] case class RefreshTokenContent(userID: UserID, dateOfCreation: Long)
 
-  private[auth] final case class RefreshTokenData(id: Long,
+  final private[auth] case class RefreshTokenData(id: Long,
                                                   userId: UserID,
                                                   token: Token,
                                                   remember: Boolean,
                                                   lastTouch: LocalDateTime)
       extends RefreshToken
 
-  private[auth] final case class CreateRefreshToken(userId: UserID,
+  final private[auth] case class CreateRefreshToken(userId: UserID,
                                                     token: Token,
                                                     remember: Boolean,
                                                     lastTouch: LocalDateTime)
@@ -43,10 +43,10 @@ object AuthModels {
 
   final case object BadToken extends ApiError("Token is expired", None)
 
-  private[auth] implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
-  private[auth] implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder
-  private[auth] implicit val refreshTokenDecoder: Decoder[RefreshTokenContent] = deriveDecoder
-  private[auth] implicit val refreshTokenEncoder: Encoder[RefreshTokenContent] = deriveEncoder
+  implicit private[auth] val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
+  implicit private[auth] val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder
+  implicit private[auth] val refreshTokenDecoder: Decoder[RefreshTokenContent] = deriveDecoder
+  implicit private[auth] val refreshTokenEncoder: Encoder[RefreshTokenContent] = deriveEncoder
 
   implicit val authTokenEncoder: Encoder[AuthToken] = deriveEncoder
   implicit val authTokenDecoder: Decoder[AuthToken] = deriveDecoder

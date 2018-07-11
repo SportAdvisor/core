@@ -38,8 +38,7 @@ object Response extends Logging {
       extends Links
 
   final case class ObjectData[A](data: A, links: Option[ObjectLinks]) extends Data[A]
-  final case class CollectionData[A](data: List[ObjectData[A]], links: CollectionLinks)
-      extends Data[A]
+  final case class CollectionData[A](data: List[ObjectData[A]], links: CollectionLinks) extends Data[A]
 
   def objectData[A](data: A, self: Option[String]): ObjectData[A] = {
     ObjectData(data, self.map(ObjectLinks(_)))
@@ -90,7 +89,7 @@ object Response extends Logging {
     FailResponse(StatusCodes.InternalServerError.intValue, message)
   }
 
-  private[this] implicit def stringToLink(link: String): Link = Link(link)
+  implicit private[this] def stringToLink(link: String): Link = Link(link)
 
   trait Encoders extends AutoDerivation {
 
@@ -105,9 +104,10 @@ object Response extends Logging {
     implicit val failResponseEncoder: Encoder[FailResponse] = deriveEncoder[FailResponse]
 
     implicit final def errorResponseEncoder[E <: Error](
-        implicit encoder: Encoder[E]): Encoder[ErrorResponse[E]] = (a: ErrorResponse[E]) => {
-      Json.obj("code" -> Json.fromInt(a.code), "errors" -> Encoder.encodeList[E].apply(a.errors))
-    }
+        implicit encoder: Encoder[E]): Encoder[ErrorResponse[E]] =
+      (a: ErrorResponse[E]) => {
+        Json.obj("code" -> Json.fromInt(a.code), "errors" -> Encoder.encodeList[E].apply(a.errors))
+      }
 
     implicit val linkEncoder: Encoder[Link] = deriveEncoder
     implicit val objectLinksEncoder: Encoder[ObjectLinks] = deriveEncoder
@@ -118,8 +118,7 @@ object Response extends Logging {
         Json.obj("data" -> e(a.data), "_links" -> Encoder.encodeOption[ObjectLinks].apply(a.links))
       }
 
-    implicit final def encoderCollectionData[A](
-        implicit e: Encoder[A]): Encoder[CollectionData[A]] =
+    implicit final def encoderCollectionData[A](implicit e: Encoder[A]): Encoder[CollectionData[A]] =
       (a: CollectionData[A]) => {
         Json.obj("data" -> Encoder.encodeList[ObjectData[A]].apply(a.data),
                  "_links" -> collectionLinksEncoder(a.links))
@@ -130,8 +129,7 @@ object Response extends Logging {
       case d: CollectionData[A] => encoderCollectionData[A](e)(d)
     }
 
-    implicit final def dataResponseEncoder[A](
-        implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
+    implicit final def dataResponseEncoder[A](implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
       (a: DataResponse[A, Data[A]]) => {
         Json.obj("code" -> Json.fromInt(a.code), "data" -> dataEncoder[A].apply(a.data))
       }

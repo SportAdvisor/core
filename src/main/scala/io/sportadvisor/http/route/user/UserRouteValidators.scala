@@ -12,6 +12,7 @@ object UserRouteValidators {
 
   val emailInvalid = "Email is invalid"
   val nameIsEmpty = "Name is required"
+
   val passwordIsWeak: String =
     "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
       "one uppercase letter, and a number. Your password can't contain spaces"
@@ -47,8 +48,7 @@ object UserRouteValidators {
     )
 
   implicit val changePasswordValidator: Validated[PasswordChange] =
-    Validated[PasswordChange]((p: PasswordChange) =>
-      passwordValidator("newPassword")(p.newPassword))
+    Validated[PasswordChange]((p: PasswordChange) => passwordValidator("newPassword")(p.newPassword))
 
   implicit val resetPasswordValidator: Validated[ResetPassword] =
     Validated[ResetPassword](

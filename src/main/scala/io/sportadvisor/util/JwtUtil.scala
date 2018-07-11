@@ -15,9 +15,9 @@ object JwtUtil extends FailFastCirceSupport {
 
   def encode[C](content: C, secret: String, expAt: Option[LocalDateTime])(
       implicit encoder: Encoder[C]): String = {
-    val claim = JwtClaim.apply(
-      content = content.asJson.noSpaces,
-      expiration = expAt.map(e => e.atZone(ZoneId.systemDefault()).toInstant.getEpochSecond))
+    val claim = JwtClaim.apply(content = content.asJson.noSpaces,
+                               expiration =
+                                 expAt.map(e => e.atZone(ZoneId.systemDefault()).toInstant.getEpochSecond))
     Jwt.encode(claim, secret, JwtAlgorithm.HS256)
   }
 

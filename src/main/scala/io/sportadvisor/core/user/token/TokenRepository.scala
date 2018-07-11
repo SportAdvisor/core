@@ -73,11 +73,12 @@ abstract class SqlTokenRepository[T](val connector: DatabaseConnector)(
 
 @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object TokenRepository {
+
   def apply[T](tType: TokenType, connector: DatabaseConnector)(
       implicit saISO: SAIso[T, ExpiredToken],
       executionContext: ExecutionContext): TokenRepository[T] =
     new SqlTokenRepository[T](connector) {
-      override implicit def iso: SAIso[T, ExpiredToken] = saISO
+      implicit override def iso: SAIso[T, ExpiredToken] = saISO
 
       override def tokenType: TokenType = tType
     }

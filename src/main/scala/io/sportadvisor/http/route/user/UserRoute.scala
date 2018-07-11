@@ -219,9 +219,9 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangePassword(id: UserID): Route = {
-    validate[PasswordChange].apply { req =>
-      authenticate.apply { userId =>
-        checkAccess(id, userId) {
+    authenticate.apply { userId =>
+      checkAccess(id, userId) {
+        validate[PasswordChange].apply { req =>
           selectLanguage() { lang =>
             complete(
               changePassword(userId, req.password, req.newPassword).map {

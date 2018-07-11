@@ -20,12 +20,12 @@ object HttpTestUtils {
     when(authService.userId(anyString)).thenReturn(Option(userID))
     HttpHeader.parse(authorizationHeader, Random.nextString(headerLen)) match {
       case ParsingResult.Ok(h, _) => h
-      case _                      => throw new IllegalArgumentException
+      case ParsingResult.Error(e) => throw new IllegalArgumentException(e.formatPretty)
     }
   }
 
   def authHeader(token: String): HttpHeader = HttpHeader.parse(authorizationHeader, token) match {
     case ParsingResult.Ok(h, _) => h
-    case _                      => throw new IllegalArgumentException
+    case ParsingResult.Error(e) => throw new IllegalArgumentException(e.formatPretty)
   }
 }

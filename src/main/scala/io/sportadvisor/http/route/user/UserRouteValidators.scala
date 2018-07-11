@@ -3,13 +3,12 @@ package io.sportadvisor.http.route.user
 import io.sportadvisor.core.system.SystemService
 import io.sportadvisor.http.common.Validated.ValidationRule
 import io.sportadvisor.http.common.{Validated, ValidationResult}
+import io.sportadvisor.http.route.user.UserRouteProtocol._
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
 object UserRouteValidators {
-
-  import UserRouteProtocol._
 
   val emailInvalid = "Email is invalid"
   val nameIsEmpty = "Name is required"

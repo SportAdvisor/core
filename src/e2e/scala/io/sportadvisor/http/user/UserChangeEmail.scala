@@ -49,8 +49,8 @@ class UserChangeEmail
     val data = me.data
     data.data.id shouldBe user.id
     data.data.email shouldBe newMail
-    data._links.isDefined shouldBe true
-    data._links.get.self.href endsWith user.id.toString shouldBe true
+    data.links.isDefined shouldBe true
+    data.links.get.self.href endsWith user.id.toString shouldBe true
     user = user.copy(email = newMail)
   }
 

@@ -54,7 +54,7 @@ abstract class UserService(userRepository: UserRepository,
   def signIn(email: String, password: String, remember: Boolean): Future[Option[AuthToken]] =
     userRepository
       .find(email)
-      .filterT(u => password.sha256.hex == u.password)
+      .filterT(u => password.sha256.hex === u.password)
       .flatMapTOuter(u => authService.createToken(u, remember))
 
   def changeEmail(userID: UserID,

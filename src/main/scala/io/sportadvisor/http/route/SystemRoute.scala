@@ -20,6 +20,6 @@ class SystemRoute extends FailFastCirceSupport {
 
   def languages(): Route = {
     val langs = SystemService.supportedLanguage()
-    complete(r(Response.objectResponse(langs, None)))
+    complete(r(Response.objectR(langs, None)))
   }
 }

@@ -42,5 +42,5 @@ object Validated {
 final case class ValidationError(errors: List[FormError]) extends SARejection {
   override def code: StatusCode = StatusCodes.BadRequest
 
-  override def response: Json = Response.errorResponse(errors).asJson
+  override def response: Json = Response.error(errors).asJson
 }

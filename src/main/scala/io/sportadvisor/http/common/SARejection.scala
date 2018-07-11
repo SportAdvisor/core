@@ -12,7 +12,7 @@ import io.sportadvisor.http.Response
 trait SARejection extends Rejection {
   def code: StatusCode
 
-  def response: Json = Response.emptyResponse(code.intValue).asJson
+  def response: Json = Response.empty(code.intValue).asJson
 }
 
 final case class Forbidden() extends SARejection {

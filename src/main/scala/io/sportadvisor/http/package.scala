@@ -3,16 +3,18 @@ package io.sportadvisor
 import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.model.headers.Language
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
 import io.circe.syntax._
-import io.sportadvisor.core.user.UserModels.{AuthTokenContent, UserID}
+import io.sportadvisor.core.user.UserModels.UserID
 import io.sportadvisor.http.common._
-import io.sportadvisor.util.{I18nService, JwtUtil}
+import io.sportadvisor.util.I18nService
 import org.slf4s.Logging
 import cats.syntax.eq._
 import cats.instances.long._
+import io.sportadvisor.core.auth.AuthService
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -22,6 +24,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._
   import akka.http.scaladsl.server.directives.HeaderDirectives._
+  import akka.http.scaladsl.server.directives.MarshallingDirectives._
 
   val authorizationHeader = "Authorization"
 
@@ -40,15 +43,17 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     .result()
     .withFallback(RejectionHandler.default)
 
-  def validatorDirective[T](model: T,
-                            validator: Validator[T],
-                            i18nService: I18nService): Directive0 = {
-    selectLanguage().tflatMap(t =>
-      validator(model) match {
-        case Nil => pass
-        case errors: List[ValidationResult] =>
-          reject(ValidationError(errors.map(_.toFormError(i18nService.errors(t._1)))))
-    })
+  def validate[T: FromRequestUnmarshaller: Validated](
+      implicit i18nService: I18nService): Directive1[T] = {
+    entity(as[T]).tflatMap { eT =>
+      selectLanguage().tflatMap { lT =>
+        Validated[T].validate(eT._1) match {
+          case Nil => provide(eT._1)
+          case errors: List[ValidationResult] =>
+            reject(ValidationError(errors.map(_.toFormError(i18nService.errors(lT._1)))))
+        }
+      }
+    }
   }
 
   def selectLanguage(): Directive1[String] = {
@@ -63,12 +68,12 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     }
   }
 
-  def authenticate(secretKey: String): Directive1[UserID] = {
+  def authenticate()(implicit authService: AuthService): Directive1[UserID] = {
     optionalHeaderValueByName(authorizationHeader).flatMap {
       case Some(token) =>
-        JwtUtil.decode[AuthTokenContent](token, secretKey) match {
-          case Some(r) => provide(r.userID)
-          case _       => reject(Unauthorized())
+        authService.userId(token) match {
+          case Some(id) => provide(id)
+          case _        => reject(Unauthorized())
         }
       case None => reject(Unauthorized())
     }

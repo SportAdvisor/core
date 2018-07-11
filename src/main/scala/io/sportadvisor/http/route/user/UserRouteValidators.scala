@@ -1,7 +1,8 @@
 package io.sportadvisor.http.route.user
 
 import io.sportadvisor.core.system.SystemService
-import io.sportadvisor.http.common.{ValidationResult, Validator}
+import io.sportadvisor.http.common.Validated.ValidationRule
+import io.sportadvisor.http.common.{Validated, ValidationResult}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -18,12 +19,12 @@ object UserRouteValidators {
   val EUALIsRequired = "You must accept the end-user license agreement"
   val langNotSupported = "Selected language not supported"
 
-  val regValidator: Validator[RegistrationModel] =
-    Validator[RegistrationModel](
-      u => nameValidator("name")(u.name),
-      u => emailValidator("email")(u.email),
-      u => passwordValidator("password")(u.password),
-      u =>
+  implicit val regValidator: Validated[RegistrationModel] =
+    Validated[RegistrationModel](
+      (u: RegistrationModel) => nameValidator("name")(u.name),
+      (u: RegistrationModel) => emailValidator("email")(u.email),
+      (u: RegistrationModel) => passwordValidator("password")(u.password),
+      (u: RegistrationModel) =>
         if (!u.EULA) {
           Some(ValidationResult("EULA", EUALIsRequired))
         } else {
@@ -31,35 +32,36 @@ object UserRouteValidators {
       }
     )
 
-  val changeMailValidator: Validator[EmailChange] =
-    Validator[EmailChange](
-      u => emailValidator("email")(u.email)
+  implicit val changeMailValidator: Validated[EmailChange] =
+    Validated[EmailChange](
+      (u: EmailChange) => emailValidator("email")(u.email)
     )
 
-  val accountSettingsValidator: Validator[AccountSettings] =
-    Validator[AccountSettings](
-      a => nameValidator("name")(a.name),
-      a =>
+  implicit val accountSettingsValidator: Validated[AccountSettings] =
+    Validated[AccountSettings](
+      (a: AccountSettings) => nameValidator("name")(a.name),
+      (a: AccountSettings) =>
         a.language
           .map(l => SystemService.supportedLanguage().contains(l))
           .filter(b => !b)
           .map(_ => ValidationResult("language", langNotSupported))
     )
 
-  val changePasswordValidator: Validator[PasswordChange] =
-    Validator[PasswordChange](p => passwordValidator("newPassword")(p.newPassword))
+  implicit val changePasswordValidator: Validated[PasswordChange] =
+    Validated[PasswordChange]((p: PasswordChange) =>
+      passwordValidator("newPassword")(p.newPassword))
 
-  val resetPasswordValidator: Validator[ResetPassword] =
-    Validator[ResetPassword](
-      u => emailValidator("email")(u.email)
+  implicit val resetPasswordValidator: Validated[ResetPassword] =
+    Validated[ResetPassword](
+      (u: ResetPassword) => emailValidator("email")(u.email)
     )
 
-  val confirmPasswordValidator: Validator[ConfirmPassword] =
-    Validator[ConfirmPassword](
-      u => passwordValidator("password")(u.password)
+  implicit val confirmPasswordValidator: Validated[ConfirmPassword] =
+    Validated[ConfirmPassword](
+      (u: ConfirmPassword) => passwordValidator("password")(u.password)
     )
 
-  private def emailValidator(field: String): (String => Option[ValidationResult]) = u => {
+  private def emailValidator(field: String): ValidationRule[String] = u => {
     if (!u.matches(".+@.+\\..+")) {
       Some(ValidationResult(field, emailInvalid))
     } else {
@@ -67,11 +69,11 @@ object UserRouteValidators {
     }
   }
 
-  private def nameValidator(field: String): (String => Option[ValidationResult]) = name => {
+  private def nameValidator(field: String): ValidationRule[String] = name => {
     if (name.trim.isEmpty) { Some(ValidationResult(field, nameIsEmpty)) } else None
   }
 
-  private def passwordValidator(field: String): (String => Option[ValidationResult]) = password => {
+  private def passwordValidator(field: String): ValidationRule[String] = password => {
     if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[\\S]{8,}$")) {
       Some(ValidationResult(field, passwordIsWeak))
     } else {

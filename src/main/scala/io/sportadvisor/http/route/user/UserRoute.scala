@@ -7,8 +7,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.{AuthTokenContent, PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
 import io.sportadvisor.core.user.UserService
+import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
@@ -16,7 +18,7 @@ import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRoute._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._
-import io.sportadvisor.util.{I18nService, JwtUtil}
+import io.sportadvisor.util.I18nService
 import org.slf4s.Logging
 
 import scala.concurrent.ExecutionContext
@@ -25,7 +27,8 @@ import scala.util.Success
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext)
+abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext,
+                                                   authService: AuthService)
     extends FailFastCirceSupport
     with I18nService
     with Logging {
@@ -84,16 +87,14 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleSignUp(): Route = {
-    entity(as[RegistrationModel]) { request =>
+    validate[RegistrationModel].apply { request =>
       selectLanguage() { lang =>
-        validatorDirective(request, regValidator, this) {
-          complete(
-            signUp(request.email, request.password, request.name).map {
-              case Left(e)      => handleEmailDuplicate(e, "email", lang)
-              case Right(token) => r(Response.objectResponse(token, None))
-            }
-          )
-        }
+        complete(
+          signUp(request.email, request.password, request.name).map {
+            case Left(e)      => handleEmailDuplicate(e, "email", lang)
+            case Right(token) => r(Response.objectResponse(token, None))
+          }
+        )
       }
     }
   }
@@ -110,18 +111,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangeEmail(id: UserID): Route = {
-    entity(as[EmailChange]) { request =>
-      authenticate(userService.secret) { userId =>
-        checkAccess(id, userId) {
+    authenticate.apply { userId =>
+      checkAccess(id, userId) {
+        validate[EmailChange].apply { request =>
           selectLanguage() { lang =>
-            validatorDirective(request, changeMailValidator, this) {
-              complete(
-                changeEmail(userId, request.email, request.redirectUrl).map {
-                  case Left(e)  => handleEmailDuplicate(e, "email", lang)
-                  case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-                }
-              )
-            }
+            complete(
+              changeEmail(userId, request.email, request.redirectUrl).map {
+                case Left(e)  => handleEmailDuplicate(e, "email", lang)
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+            )
           }
         }
       }
@@ -130,16 +129,11 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleSignOut(): Route = {
     optionalHeaderValueByName(authorizationHeader) {
-      case Some(value) => {
-        JwtUtil.decode[AuthTokenContent](value, userService.secret) match {
-          case Some(token) =>
-            complete(
-              userService
-                .logout(token)
-                .map(_ => r(Response.emptyResponse(StatusCodes.OK.intValue))))
-          case _ => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
-        }
-      }
+      case Some(value) =>
+        complete(logout(value).map {
+          case Left(_)  => r(Response.emptyResponse(StatusCodes.Unauthorized.intValue))
+          case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+        })
       case None => complete(r(Response.emptyResponse(StatusCodes.Unauthorized.intValue)))
     }
   }
@@ -157,45 +151,41 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleResetPassword(): Route = {
-    entity(as[ResetPassword]) { request =>
-      validatorDirective(request, resetPasswordValidator, this) {
-        selectLanguage() { lang =>
-          complete(
-            resetPassword(request.email, request.redirectUrl)
-              .map {
-                case Left(e)  => handleTokenDuplicate(e, lang)
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-              }
-          )
-        }
+    validate[ResetPassword].apply { request =>
+      selectLanguage() { lang =>
+        complete(
+          resetPassword(request.email, request.redirectUrl)
+            .map {
+              case Left(e)  => handleTokenDuplicate(e, lang)
+              case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+            }
+        )
       }
     }
   }
 
   def handleConfirmNewPassword(): Route = {
-    entity(as[ConfirmPassword]) { request =>
-      validatorDirective(request, confirmPasswordValidator, this) {
-        selectLanguage() { language =>
-          complete(
-            setNewPassword(request.token, request.password)
-              .map {
-                case Left(e)  => handleResetPasswordErrors(e, "token", language)
-                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-              }
-          )
-        }
+    validate[ConfirmPassword].apply { request =>
+      selectLanguage() { language =>
+        complete(
+          setNewPassword(request.token, request.password)
+            .map {
+              case Left(e)  => handleResetPasswordErrors(e, "token", language)
+              case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+            }
+        )
       }
     }
   }
 
   def handleGetMe(): Route = {
-    authenticate(userService.secret) { userId =>
+    authenticate.apply { userId =>
       redirect(s"/api/users/$userId", StatusCodes.SeeOther)
     }
   }
 
   def handleGetUser(id: UserID): Route = {
-    authenticate(userService.secret) { userId =>
+    authenticate.apply { userId =>
       checkAccess(id, userId) {
         complete(
           getById(id).map {
@@ -208,22 +198,20 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangeAccount(id: UserID): Route = {
-    entity(as[AccountSettings]) { req =>
-      authenticate(userService.secret) { userId =>
-        checkAccess(id, userId) {
-          validatorDirective(req, accountSettingsValidator, this) {
-            onComplete(changeAccount(userId, req.name, req.language)) {
-              case Success(o) =>
-                o match {
-                  case Some(u) =>
-                    respondWithHeaders(Location(s"/api/users/${u.id}")) {
-                      complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
-                    }
-                  case _ => complete(r(Response.failResponse(None)))
-                }
+    authenticate.apply { userId =>
+      checkAccess(id, userId) {
+        validate[AccountSettings].apply { req =>
+          onComplete(changeAccount(userId, req.name, req.language)) {
+            case Success(o) =>
+              o match {
+                case Some(u) =>
+                  respondWithHeaders(Location(s"/api/users/${u.id}")) {
+                    complete(r(Response.emptyResponse(StatusCodes.OK.intValue)))
+                  }
+                case _ => complete(r(Response.failResponse(None)))
+              }
 
-              case _ => complete(r(Response.failResponse(None)))
-            }
+            case _ => complete(r(Response.failResponse(None)))
           }
         }
       }
@@ -231,23 +219,23 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleChangePassword(id: UserID): Route = {
-    entity(as[PasswordChange]) { req =>
-      authenticate(userService.secret) { userId =>
-        checkAccess(id, userId) {
-          validatorDirective(req, changePasswordValidator, this) {
-            selectLanguage() { lang =>
-              complete(
-                changePassword(userId, req.password, req.newPassword).map {
-                  case Left(e)  => handlePasswordMismatch(e, "password", lang)
-                  case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
-                }
-              )
-            }
+    authenticate.apply { userId =>
+      checkAccess(id, userId) {
+        validate[PasswordChange].apply { req =>
+          selectLanguage() { lang =>
+            complete(
+              changePassword(userId, req.password, req.newPassword).map {
+                case Left(e)  => handlePasswordMismatch(e, "password", lang)
+                case Right(_) => r(Response.emptyResponse(StatusCodes.OK.intValue))
+              }
+            )
           }
         }
       }
     }
   }
+
+  private implicit def i18nService: I18nService = this
 
   private def handleEmailDuplicate(err: ApiError,
                                    field: String,

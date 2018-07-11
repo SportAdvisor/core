@@ -1,15 +1,16 @@
-package io.sportadvisor.core.user
+package io.sportadvisor.core.auth
 
 import java.time.LocalDateTime
 
-import io.sportadvisor.core.user.UserModels.{RefreshTokenData, UserID}
+import io.sportadvisor.core.auth.AuthModels.RefreshTokenData
+import io.sportadvisor.core.user.UserModels.UserID
 import io.sportadvisor.util.db.DatabaseConnector
 import slick.lifted.ProvenShape
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-private[user] trait AuthTokenTable {
+private[auth] trait TokenTable {
   protected val connector: DatabaseConnector
   import connector.profile.api._
 

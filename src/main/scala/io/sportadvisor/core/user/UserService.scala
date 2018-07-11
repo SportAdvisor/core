@@ -1,7 +1,6 @@
 package io.sportadvisor.core.user
 
-import java.time.{LocalDateTime, ZoneId}
-import java.util.Date
+import java.time.LocalDateTime
 
 import com.roundeights.hasher.Implicits._
 import io.circe.{Decoder, Encoder}
@@ -9,12 +8,10 @@ import io.circe.generic.semiauto._
 import io.sportadvisor.core.user.UserModels._
 import io.sportadvisor.core.user.UserService._
 import io.sportadvisor.exception.Exceptions._
-
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import org.slf4s.Logging
 import io.sportadvisor.util.MonadTransformers._
-import io.sportadvisor.util.db.DatabaseConnector
 import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail._
 import io.sportadvisor.exception._
@@ -22,6 +19,8 @@ import io.sportadvisor.util._
 import io.sportadvisor.util.mail.MailModel.{HtmlContent, MailMessage}
 import cats.instances.string._
 import cats.syntax.eq._
+import io.sportadvisor.core.auth.AuthModels.AuthToken
+import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.core.user.token._
 
 import scala.util.Success
@@ -30,7 +29,7 @@ import scala.util.Success
   * @author sss3 (Vladimir Alekseev)
   */
 abstract class UserService(userRepository: UserRepository,
-                           tokenRepository: AuthTokenRepository,
+                           authService: AuthService,
                            secretKey: String,
                            mailService: MailService[I18n, Throwable, _],
                            mailTokenRepository: TokenRepository[ChangeMailToken],
@@ -39,7 +38,6 @@ abstract class UserService(userRepository: UserRepository,
     extends Logging
     with I18nService {
 
-  private[this] val expPeriod = 2.hour
   private[this] val mailChangeExpPeriod = 1.day
   private[this] val passwordRessetExpPerion = 1.day
 
@@ -50,14 +48,14 @@ abstract class UserService(userRepository: UserRepository,
       .save(CreateUser(email, password.sha256.hex, name))
       .flatMap {
         case Left(e)  => Future.successful(Left(e))
-        case Right(u) => createAndSaveToken(u, Boolean.box(true)).map(t => Right(t))
+        case Right(u) => authService.createToken(u, remember = true).map(t => Right(t))
       }
 
   def signIn(email: String, password: String, remember: Boolean): Future[Option[AuthToken]] =
     userRepository
       .find(email)
       .filterT(u => password.sha256.hex == u.password)
-      .flatMapTOuter(u => createAndSaveToken(u, remember))
+      .flatMapTOuter(u => authService.createToken(u, remember))
 
   def changeEmail(userID: UserID,
                   email: String,
@@ -86,7 +84,7 @@ abstract class UserService(userRepository: UserRepository,
           .flatMapTInner(e => e.toOption)
           .flatMapTOuter(u => sendChangeEmailConfirmation(u, t.from).map(_ => u))
           .flatMapTOuter(u => mailTokenRepository.removeByUser(u.id).transform(_ => Success(u)))
-          .flatMapTOuter(u => tokenRepository.removeByUser(u.id).transform(_ => Success(u)))
+          .flatMapTOuter(u => authService.revokeAllTokens(u.id).transform(_ => Success(u)))
       }
       .map {
         case Some(_) => true
@@ -167,6 +165,8 @@ abstract class UserService(userRepository: UserRepository,
     }
   }
 
+  def logout(token: String): Future[Either[ApiError, Unit]] = authService.revokeToken(token)
+
   private def updatePass(u: UserData,
                          oldPass: String,
                          newPass: String): Future[Either[ApiError, Unit]] = {
@@ -181,11 +181,7 @@ abstract class UserService(userRepository: UserRepository,
     val updatedUser = u.copy(password = newPass.sha256.hex)
     userRepository
       .save(updatedUser)
-      .flatMapRight(user => tokenRepository.removeByUser(user.id))
-  }
-
-  def logout(authData: AuthTokenContent): Future[Unit] = {
-    tokenRepository.removeById(authData.refreshTokenId)
+      .flatMapRight(user => authService.revokeAllTokens(user.id))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -216,24 +212,6 @@ abstract class UserService(userRepository: UserRepository,
     } else {
       s"$redirectUrl?token=$token"
     }
-  }
-
-  private def createAndSaveToken(user: UserData, remember: Boolean): Future[AuthToken] = {
-    val refreshToken =
-      JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secret, None)
-    val time = LocalDateTime.now()
-    saveRefreshToken(user, refreshToken, remember, time).map(_.id) map { refreshTokenId =>
-      val expTime = time.plusMinutes(expPeriod.toMinutes)
-      val token = JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secret, Option(expTime))
-      AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
-    }
-  }
-
-  private def saveRefreshToken(user: UserData,
-                               refreshToken: Token,
-                               remember: Boolean,
-                               creation: LocalDateTime): Future[RefreshTokenData] = {
-    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, creation))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
@@ -273,23 +251,6 @@ object UserService {
     deriveEncoder
   private implicit val resetPasswordTokenContentDencoder: Decoder[ResetPasswordTokenContent] =
     deriveDecoder
-
-  def apply(config: Config,
-            databaseConnector: DatabaseConnector,
-            mailService: MailService[I18n, Throwable, Unit],
-            mailTokenRepository: TokenRepository[ChangeMailToken],
-            resetPasswordTokenRepository: TokenRepository[ResetPasswordToken])(
-      implicit executionContext: ExecutionContext): UserService = {
-    val userRepository = new UserRepositorySQL(databaseConnector)
-    val tokenRepository = new AuthTokenRepositorySQL(databaseConnector)
-
-    new UserService(userRepository,
-                    tokenRepository,
-                    config.secretKey,
-                    mailService,
-                    mailTokenRepository,
-                    resetPasswordTokenRepository) with I18nServiceImpl
-  }
 
   private[user] def generateChangeEmailToken(from: String,
                                              to: String,

@@ -1,12 +1,14 @@
 package io.sportadvisor.http.route
 
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.ZonedDateTime
 
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.PathDirectives._
 import io.sportadvisor.BaseTest
-import io.sportadvisor.core.user.UserModels.{AuthToken, AuthTokenContent, PasswordMismatch, UserData, UserID}
+import io.sportadvisor.core.auth.AuthModels._
+import io.sportadvisor.core.auth.AuthService
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserData, UserID}
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.ApiError
 import io.sportadvisor.exception.Exceptions._
@@ -17,7 +19,6 @@ import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
-import io.sportadvisor.util.JwtUtil
 import org.mockito.Mockito._
 
 import scala.concurrent.Future
@@ -207,7 +208,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
         Put(s"/api/users/$testUserId/email", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("email", UserRoute.emailDuplication)) and have size 1)
@@ -220,7 +221,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(DuplicateException())))
         Put(s"/api/users/$testUserId/email", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
@@ -241,7 +242,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`,
                                        s"""{"email": "test@test.com", "redirectUrl":"test"}""")
         Put(s"/api/users/1$testUserId/email", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -253,7 +254,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Right(())))
         Put(s"/api/users/$testUserId/email", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -265,7 +266,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changeEmail(testUserId, "test@test.com", "test"))
           .thenReturn(Future.successful(Left(ResourceNotFound(testUserId))))
         Put(s"/api/users/$testUserId/email", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code shouldBe 500
           resp.message.isDefined shouldBe true
@@ -303,7 +304,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return redirect" in new Context {
-        Get("/api/users/me").withHeaders(authHeader(testRefreshTokenId, 1, testSecret)) ~> userRoute ~> check {
+        Get("/api/users/me").withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           response.status.intValue shouldBe 303
           val header = response.getHeader("Location")
           header.isPresent shouldBe true
@@ -322,7 +323,7 @@ class UserRouteTest extends BaseTest {
 
       "return 403 if user hasnt access" in new Context {
         Get(s"/api/users/2$testUserId")
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp  = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -332,7 +333,7 @@ class UserRouteTest extends BaseTest {
         when(userService.getById(testUserId))
           .thenReturn(Future.successful(None))
         Get(s"/api/users/$testUserId")
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 404
         }
@@ -343,7 +344,7 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(
             Option(UserData(testUserId, "testemail", "testpassword", "testname", Some("ru")))))
         Get(s"/api/users/$testUserId")
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[DataResponse[UserView, ObjectData[UserView]]]
           resp.code shouldBe 200
           val data = resp.data
@@ -366,7 +367,7 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`, s"""{"name": "", "language":"ru"}""")
 
         Put(s"/api/users/$testUserId", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 1)
@@ -378,7 +379,7 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`, s"""{"name": "test", "language":"ch"}""")
 
         Put(s"/api/users/$testUserId", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("language", UserRouteValidators.langNotSupported)) and have size 1)
@@ -390,7 +391,7 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`, s"""{"name": "", "language":"ch"}""")
 
         Put(s"/api/users/2$testUserId", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 403
         }
@@ -403,7 +404,7 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(Some(UserData(testUserId, "t@t.t", "t", "test", None))))
 
         Put(s"/api/users/$testUserId", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
           val location = header("Location")
@@ -418,7 +419,7 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(None))
 
         Put(s"/api/users/$testUserId", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 500
         }
@@ -431,7 +432,7 @@ class UserRouteTest extends BaseTest {
                                        s"""{"password": "asd", "newPassword":"easypass"}""")
 
         Put(s"/api/users/$testUserId/password", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("newPassword", UserRouteValidators.passwordIsWeak)) and have size 1)
@@ -444,7 +445,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changePassword(testUserId, "asd", "str0nGpass"))
           .thenReturn(Future.successful(Left(PasswordMismatch())))
         Put(s"/api/users/$testUserId/password", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
           resp.errors should (contain(FormError("password", UserRoute.passwordIncorrect)) and have size 1)
@@ -457,7 +458,7 @@ class UserRouteTest extends BaseTest {
         when(userService.changePassword(testUserId, "asd", "str0nGpass"))
           .thenReturn(Future.successful(Right(())))
         Put(s"/api/users/$testUserId/password", requestEntity)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+          .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 200
         }
@@ -466,21 +467,19 @@ class UserRouteTest extends BaseTest {
 
     "POST /api/users/sign-out" should {
        "return 200 success" in new Context {
-         val authTokenContent = AuthTokenContent(testRefreshTokenId, testUserId)
-         val token = JwtUtil.encode(AuthTokenContent(testRefreshTokenId, testUserId), testSecret, Option(LocalDateTime.now().plusHours(1)))
-         when(userService.logout(authTokenContent)).thenReturn(Future.successful(()))
-         Post(s"/api/users/sign-out", token).withHeaders(authHeader(testRefreshTokenId, testUserId, testSecret)) ~> userRoute ~> check {
+           val token = "authToken"
+           when(userService.logout(token)).thenReturn(Future.successful(Right(())))
+           Post(s"/api/users/sign-out", token).withHeaders(authHeader(token)) ~> userRoute ~> check {
            val resp = r[EmptyResponse]
            resp.code shouldBe 200
          }
        }
 
       "return 401 if token was expired" in new Context {
-        val authTokenContent = AuthTokenContent(testRefreshTokenId, testUserId)
-        val token = JwtUtil.encode(AuthTokenContent(testRefreshTokenId, testUserId), testSecret, Option(LocalDateTime.now().minusHours(1)))
-        when(userService.logout(authTokenContent)).thenReturn(Future.successful(()))
-        Post(s"/api/users/sign-out", token)
-          .withHeaders(authHeader(testRefreshTokenId, testUserId, LocalDateTime.now().minusHours(1), testSecret)) ~> userRoute ~> check {
+          val token = "authToken"
+          when(userService.logout(token)).thenReturn(Future.successful(Left(BadToken)))
+          Post(s"/api/users/sign-out", token)
+            .withHeaders(authHeader(token)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }
@@ -588,6 +587,7 @@ class UserRouteTest extends BaseTest {
     val testRefreshTokenId: Long = 1L
     val testEmail: String = "test@test.com"
     val userService: UserService = mock[UserService]
+    implicit val authService: AuthService = mock[AuthService]
     when(userService.secret).thenReturn(testSecret)
 
     val userRoute: Route = pathPrefix("api") {

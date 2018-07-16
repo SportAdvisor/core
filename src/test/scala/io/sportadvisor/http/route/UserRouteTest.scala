@@ -465,28 +465,28 @@ class UserRouteTest extends BaseTest {
       }
     }
 
-    "POST /api/users/logout" should {
+    "POST /api/users/sign-out" should {
        "return 200 success" in new Context {
-         val token = "authToken"
-         when(userService.logout(token)).thenReturn(Future.successful(Right(())))
-         Post(s"/api/users/logout", token).withHeaders(authHeader(token)) ~> userRoute ~> check {
+           val token = "authToken"
+           when(userService.logout(token)).thenReturn(Future.successful(Right(())))
+           Post(s"/api/users/sign-out", token).withHeaders(authHeader(token)) ~> userRoute ~> check {
            val resp = r[EmptyResponse]
            resp.code shouldBe 200
          }
        }
 
       "return 401 if token was expired" in new Context {
-        val token = "authToken"
-        when(userService.logout(token)).thenReturn(Future.successful(Left(BadToken)))
-        Post(s"/api/users/logout", token)
-          .withHeaders(authHeader(token)) ~> userRoute ~> check {
+          val token = "authToken"
+          when(userService.logout(token)).thenReturn(Future.successful(Left(BadToken)))
+          Post(s"/api/users/sign-out", token)
+            .withHeaders(authHeader(token)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }
       }
 
       "return 401 if token wasnt transferred to post" in new Context {
-        Post(s"/api/users/logout") ~> userRoute ~> check {
+        Post(s"/api/users/sign-out") ~> userRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe 401
         }

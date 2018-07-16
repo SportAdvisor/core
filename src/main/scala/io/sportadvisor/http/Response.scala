@@ -38,8 +38,7 @@ object Response extends Logging {
       extends Links
 
   final case class ObjectData[A](data: A, _links: Option[ObjectLinks]) extends Data[A]
-  final case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks)
-      extends Data[A]
+  final case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data[A]
 
   def objectData[A](data: A, self: Option[String]): ObjectData[A] = {
     ObjectData(data, self.map(ObjectLinks(_)))
@@ -118,8 +117,7 @@ object Response extends Logging {
         Json.obj("data" -> e(a.data), "_links" -> Encoder.encodeOption[ObjectLinks].apply(a._links))
       }
 
-    implicit final def encoderCollectionData[A](
-        implicit e: Encoder[A]): Encoder[CollectionData[A]] =
+    implicit final def encoderCollectionData[A](implicit e: Encoder[A]): Encoder[CollectionData[A]] =
       (a: CollectionData[A]) => {
         Json.obj("data" -> Encoder.encodeList[ObjectData[A]].apply(a.data),
                  "_links" -> collectionLinksEncoder(a._links))
@@ -130,8 +128,7 @@ object Response extends Logging {
       case d: CollectionData[A] => encoderCollectionData[A](e)(d)
     }
 
-    implicit final def dataResponseEncoder[A](
-        implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
+    implicit final def dataResponseEncoder[A](implicit e: Encoder[A]): Encoder[DataResponse[A, Data[A]]] =
       (a: DataResponse[A, Data[A]]) => {
         Json.obj("code" -> Json.fromInt(a.code), "data" -> dataEncoder[A].apply(a.data))
       }

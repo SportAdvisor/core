@@ -48,8 +48,7 @@ object UserRouteValidators {
     )
 
   implicit val changePasswordValidator: Validated[PasswordChange] =
-    Validated[PasswordChange]((p: PasswordChange) =>
-      passwordValidator("newPassword")(p.newPassword))
+    Validated[PasswordChange]((p: PasswordChange) => passwordValidator("newPassword")(p.newPassword))
 
   implicit val resetPasswordValidator: Validated[ResetPassword] =
     Validated[ResetPassword](

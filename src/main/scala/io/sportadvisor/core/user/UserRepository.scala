@@ -28,8 +28,7 @@ trait UserRepository {
 
 }
 
-class UserRepositorySQL(val connector: DatabaseConnector)(
-    implicit executionContext: ExecutionContext)
+class UserRepositorySQL(val connector: DatabaseConnector)(implicit executionContext: ExecutionContext)
     extends UserTable
     with UserRepository {
 

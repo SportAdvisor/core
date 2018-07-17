@@ -31,7 +31,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case e: Throwable =>
       log.error("request failed", e)
-      complete(StatusCodes.InternalServerError -> Response.failResponse(None))
+      complete(StatusCodes.InternalServerError -> Response.fail(None))
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler

@@ -37,8 +37,8 @@ object Response extends Logging {
   final case class CollectionLinks(self: Link, first: Link, last: Link, previous: Link, next: Link)
       extends Links
 
-  final case class ObjectData[A](data: A, _links: Option[ObjectLinks]) extends Data[A]
-  final case class CollectionData[A](data: List[ObjectData[A]], _links: CollectionLinks) extends Data[A]
+  final case class ObjectData[A](data: A, links: Option[ObjectLinks]) extends Data[A]
+  final case class CollectionData[A](data: List[ObjectData[A]], links: CollectionLinks) extends Data[A]
 
   def objectData[A](data: A, self: Option[String]): ObjectData[A] = {
     ObjectData(data, self.map(ObjectLinks(_)))
@@ -56,36 +56,36 @@ object Response extends Logging {
     CollectionData[A](objectWrappers, _links)
   }
 
-  def emptyResponse(code: Int): Response[Unit] = {
+  def empty(code: Int): Response[Unit] = {
     if (code >= 100 && code < 600) {
       EmptyResponse(code)
     } else {
       log.warn(s"undefined code $code")
-      failResponse(None)
+      fail(None)
     }
   }
 
-  def objectResponse[A](data: A, self: Option[String]): Response[A] = {
+  def data[A](data: A, self: Option[String]): Response[A] = {
     val value: ObjectData[A] = Response.objectData(data, self)
     DataResponse[A, ObjectData[A]](StatusCodes.OK.intValue, value)
   }
 
-  def collectionResponse[A](data: List[A],
-                            selfGenerator: A => String,
-                            self: String,
-                            first: String,
-                            last: String,
-                            previous: String,
-                            next: String): Response[A] = {
+  def collection[A](data: List[A],
+                    selfGenerator: A => String,
+                    self: String,
+                    first: String,
+                    last: String,
+                    previous: String,
+                    next: String): Response[A] = {
     val value = Response.collectionData(data, selfGenerator, self, first, last, previous, next)
     DataResponse[A, CollectionData[A]](StatusCodes.OK.intValue, value)
   }
 
-  def errorResponse[E <: Error](errors: List[E]): Response[E] = {
+  def error[E <: Error](errors: List[E]): Response[E] = {
     ErrorResponse[E](StatusCodes.BadRequest.intValue, errors)
   }
 
-  def failResponse(message: Option[String]): Response[Unit] = {
+  def fail(message: Option[String]): Response[Unit] = {
     FailResponse(StatusCodes.InternalServerError.intValue, message)
   }
 
@@ -114,13 +114,13 @@ object Response extends Logging {
 
     implicit final def encoderObjectData[A](implicit e: Encoder[A]): Encoder[ObjectData[A]] =
       (a: ObjectData[A]) => {
-        Json.obj("data" -> e(a.data), "_links" -> Encoder.encodeOption[ObjectLinks].apply(a._links))
+        Json.obj("data" -> e(a.data), "_links" -> Encoder.encodeOption[ObjectLinks].apply(a.links))
       }
 
     implicit final def encoderCollectionData[A](implicit e: Encoder[A]): Encoder[CollectionData[A]] =
       (a: CollectionData[A]) => {
         Json.obj("data" -> Encoder.encodeList[ObjectData[A]].apply(a.data),
-                 "_links" -> collectionLinksEncoder(a._links))
+                 "_links" -> collectionLinksEncoder(a.links))
       }
 
     implicit final def dataEncoder[A](implicit e: Encoder[A]): Encoder[Data[A]] = {

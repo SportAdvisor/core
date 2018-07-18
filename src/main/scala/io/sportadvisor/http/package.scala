@@ -31,7 +31,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
   val exceptionHandler: ExceptionHandler = ExceptionHandler {
     case e: Throwable =>
       log.error("request failed", e)
-      complete(StatusCodes.InternalServerError -> Response.failResponse(None))
+      complete(StatusCodes.InternalServerError -> Response.fail(None))
   }
 
   val rejectionHandler: RejectionHandler = RejectionHandler
@@ -43,8 +43,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     .result()
     .withFallback(RejectionHandler.default)
 
-  def validate[T: FromRequestUnmarshaller: Validated](
-      implicit i18nService: I18nService): Directive1[T] = {
+  def validate[T: FromRequestUnmarshaller: Validated](implicit i18nService: I18nService): Directive1[T] = {
     entity(as[T]).tflatMap { eT =>
       selectLanguage().tflatMap { lT =>
         Validated[T].validate(eT._1) match {

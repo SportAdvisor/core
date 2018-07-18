@@ -22,8 +22,7 @@ val akkaDependencies = Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpV exclude ("com.typesafe", "config"),
   "com.typesafe.akka" %% "akka-stream" % "2.5.11",
   "ch.megard" %% "akka-http-cors" % "0.3.0",
-  "de.heikoseeberger" %% "akka-http-circe" % "1.19.0" excludeAll ExclusionRule(
-    organization = "io.circe") exclude ("com.typesafe", "config")
+  "de.heikoseeberger" %% "akka-http-circe" % "1.19.0" excludeAll ExclusionRule(organization = "io.circe") exclude ("com.typesafe", "config")
 )
 
 val dbDependencies = Seq(

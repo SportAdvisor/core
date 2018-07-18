@@ -477,7 +477,7 @@ class UserRouteTest extends BaseTest {
 
       "return 401 if token was expired" in new Context {
           val token = "authToken"
-          when(userService.logout(token)).thenReturn(Future.successful(Left(BadToken)))
+          when(userService.logout(token)).thenReturn(Future.successful(Left(BadToken())))
           Post(s"/api/users/sign-out", token)
             .withHeaders(authHeader(token)) ~> userRoute ~> check {
           val resp = r[EmptyResponse]

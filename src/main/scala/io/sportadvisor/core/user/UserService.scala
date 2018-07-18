@@ -39,7 +39,7 @@ abstract class UserService(userRepository: UserRepository,
     with I18nService {
 
   private[this] val mailChangeExpPeriod = 1.day
-  private[this] val passwordRessetExpPerion = 1.day
+  private[this] val passwordResetExpPeriod = 1.day
 
   def secret: String = secretKey
 
@@ -58,12 +58,10 @@ abstract class UserService(userRepository: UserRepository,
     userRepository.find(email).flatMap {
       case Some(_) => Future.successful(Left(DuplicateException()))
       case None =>
-        userRepository
-          .get(userID)
-          .flatMap {
-            case Some(u) => sendRequestOfChangeEmail(u, email, redirectUrl)
-            case None    => Future.successful(Left(ResourceNotFound(userID)))
-          }
+        EitherT
+          .fromOptionF(userRepository.get(userID), ResourceNotFound(userID))
+          .flatMapF(u => sendRequestOfChangeEmail(u, email, redirectUrl))
+          .value
     }
   }
 
@@ -85,13 +83,11 @@ abstract class UserService(userRepository: UserRepository,
   def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
     val eitherT = for {
       tokenFromDb <- EitherT
-        .fromOptionF(resetPasswordTokenRepository.get(token),
-                     TokenDoesntExist("reset password"): ApiError)
-      decodedToken <- EitherT.fromOption[Future](
-        decodeResetPasswordToken(tokenFromDb.token, secret),
-        TokenExpired("reset password"): ApiError)
+        .fromOptionF(resetPasswordTokenRepository.get(token), TokenDoesntExist("reset password"))
+      decodedToken <- EitherT.fromOption[Future](decodeResetPasswordToken(tokenFromDb.token, secret),
+                                                 TokenExpired("reset password"))
       user <- EitherT.fromOptionF(userRepository.find(decodedToken.email),
-                                  ResourceNotFound(decodedToken.email): ApiError)
+                                  ResourceNotFound(decodedToken.email))
       result <- updatePassword(user, password)
     } yield result
     eitherT
@@ -101,17 +97,13 @@ abstract class UserService(userRepository: UserRepository,
 
   def getById(id: UserID): Future[Option[UserData]] = userRepository.get(id)
 
-  def changeAccount(userID: UserID,
-                    name: String,
-                    language: Option[String]): Future[Option[UserData]] =
+  def changeAccount(userID: UserID, name: String, language: Option[String]): Future[Option[UserData]] =
     OptionT(userRepository.get(userID))
       .map(_.copy(name = name, language = language))
       .flatMapF(u => userRepository.save(u).map(_.toOption))
       .value
 
-  def changePassword(userID: UserID,
-                     oldPass: String,
-                     newPass: String): Future[Either[ApiError, Unit]] = {
+  def changePassword(userID: UserID, oldPass: String, newPass: String): Future[Either[ApiError, Unit]] = {
     EitherT
       .fromOptionF(userRepository
                      .get(userID),
@@ -151,20 +143,18 @@ abstract class UserService(userRepository: UserRepository,
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any"))
-  private def sendResetPasswordToken(user: UserData,
-                                     redirectUrl: String): Future[Either[ApiError, Unit]] = {
-    val time = LocalDateTime.now().plusMinutes(passwordRessetExpPerion.toMinutes)
+  private def sendResetPasswordToken(user: UserData, redirectUrl: String): Future[Either[ApiError, Unit]] = {
+    val time = LocalDateTime.now().plusMinutes(passwordResetExpPeriod.toMinutes)
     val token = generateResetPasswordToken(user.email, secret, time)
-    EitherT(resetPasswordTokenRepository.save(ResetPasswordToken(user.id, token, time))).flatMapF {
-      _ =>
-        val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
-                                    "user" -> user,
-                                    "expAt" -> dateToString(time))
-        val body =
-          mailService.mailRender.renderI18n("mails/reset-password.ssp", args, mails(user.lang))
-        val subject = mails(user.lang).t("Reset password on SportAdvisor")
-        val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
-        sendMessage(msg, Future.successful(Right(())))
+    EitherT(resetPasswordTokenRepository.save(ResetPasswordToken(user.id, token, time))).flatMapF { _ =>
+      val args = Map[String, Any]("redirect" -> buildUrl(redirectUrl, token),
+                                  "user" -> user,
+                                  "expAt" -> dateToString(time))
+      val body =
+        mailService.mailRender.renderI18n("mails/reset-password.ssp", args, mails(user.lang))
+      val subject = mails(user.lang).t("Reset password on SportAdvisor")
+      val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
+      sendMessage(msg, Future.successful(Right(())))
     }.value
   }
 

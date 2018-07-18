@@ -44,7 +44,7 @@ class UserRouteTest extends BaseTest {
           data.refreshToken should not be null
           data.expireAt should not be null
 
-          resp.data._links should be(None)
+          resp.data.links should be(None)
           status.isSuccess should be(true)
         }
       }
@@ -107,7 +107,7 @@ class UserRouteTest extends BaseTest {
           data.refreshToken should not be null
           data.expireAt should not be null
 
-          resp.data._links should be(None)
+          resp.data.links should be(None)
           status.isSuccess should be(true)
         }
       }
@@ -348,8 +348,8 @@ class UserRouteTest extends BaseTest {
           val resp = r[DataResponse[UserView, ObjectData[UserView]]]
           resp.code shouldBe 200
           val data = resp.data
-          data._links.isDefined shouldBe true
-          data._links.get.self.href shouldBe "/api/users/1"
+          data.links.isDefined shouldBe true
+          data.links.get.self.href shouldBe "/api/users/1"
           data.data.id shouldBe 1L
           data.data.email shouldBe "testemail"
           data.data.name shouldBe "testname"

@@ -54,9 +54,7 @@ abstract class UserService(userRepository: UserRepository,
       .semiflatMap(authService.createToken(_, remember))
       .value
 
-  def changeEmail(userID: UserID,
-                  email: String,
-                  redirectUrl: String): Future[Either[ApiError, Unit]] = {
+  def changeEmail(userID: UserID, email: String, redirectUrl: String): Future[Either[ApiError, Unit]] = {
     userRepository.find(email).flatMap {
       case Some(_) => Future.successful(Left(DuplicateException()))
       case None =>
@@ -212,9 +210,8 @@ abstract class UserService(userRepository: UserRepository,
     }
   }
 
-  private def sendMessage[T](
-      msg: MailMessage,
-      successHandle: => Future[Either[ApiError, T]]): Future[Either[ApiError, T]] = {
+  private def sendMessage[T](msg: MailMessage,
+                             successHandle: => Future[Either[ApiError, T]]): Future[Either[ApiError, T]] = {
     mailService.mailSender.send(msg).flatMap {
       case Left(t)  => Future.successful(Left(UnhandledException(t)))
       case Right(_) => successHandle
@@ -242,13 +239,10 @@ object UserService {
                                              exp: LocalDateTime): String =
     JwtUtil.encode(ChangeMailTokenContent(from, to), secret, Option(exp))
 
-  private[user] def decodeChangeEmailToken(token: String,
-                                           secret: String): Option[ChangeMailTokenContent] =
+  private[user] def decodeChangeEmailToken(token: String, secret: String): Option[ChangeMailTokenContent] =
     JwtUtil.decode[ChangeMailTokenContent](token, secret)
 
-  private[user] def generateResetPasswordToken(email: String,
-                                               secret: String,
-                                               exp: LocalDateTime): String =
+  private[user] def generateResetPasswordToken(email: String, secret: String, exp: LocalDateTime): String =
     JwtUtil.encode(ResetPasswordTokenContent(email), secret, Option(exp))
 
   private[user] def decodeResetPasswordToken(token: String,

@@ -15,6 +15,7 @@ import org.slf4s.Logging
 import cats.syntax.eq._
 import cats.instances.long._
 import io.sportadvisor.core.auth.AuthService
+import io.sportadvisor.util.i18n.I18nModel.{Language => SALanguage}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -55,7 +56,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
     }
   }
 
-  def selectLanguage(): Directive1[String] = {
+  def selectLanguage(): Directive1[SALanguage] = {
     extractRequest.map { request ⇒
       val negotiator = LanguageNegotiator(request.headers)
       val pickLanguage = negotiator.pickLanguage(List(Language("ru"), Language("en"))) getOrElse Language(
@@ -63,7 +64,8 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
       negotiator.acceptedLanguageRanges
         .find(l => l.matches(pickLanguage))
         .map(l => l.primaryTag)
-        .getOrElse("en")
+        .flatMap(SALanguage.find)
+        .getOrElse(SALanguage.default)
     }
   }
 

@@ -2,13 +2,15 @@ package io.sportadvisor.util.i18n
 
 import java.util.Locale
 
+import io.sportadvisor.util.i18n.I18nModel.Language
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
 @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 trait I18n {
 
-  def language: String
+  def language: Language
 
   /**
     * The language should have a corresponding file
@@ -17,7 +19,7 @@ trait I18n {
   def bundle: String
 
   /** The locale corresponding to the [[language]]. It will be updated automatically when you update [[language]]. */
-  def locale: Locale = Locale.forLanguageTag(language)
+  def locale: Locale = Locale.forLanguageTag(language.entryName.toLowerCase)
 
   def t(singular: String): String = po.t(singular)
 
@@ -46,7 +48,7 @@ trait I18n {
   protected def po: scaposer.I18n
 }
 
-class I18nImpl(val language: String, val bundle: String) extends I18n {
+class I18nImpl(val language: Language, val bundle: String) extends I18n {
 
   override protected def po: scaposer.I18n = PoLoader.get(language, bundle)
 

@@ -107,7 +107,7 @@ class DirectivesTest extends BaseTest {
     val selectLang: Route = pathPrefix("lang") {
       pathEndOrSingleSlash {
         selectLanguage() { lang =>
-          complete(lang)
+          complete(lang.entryName.toLowerCase)
         }
       }
     }

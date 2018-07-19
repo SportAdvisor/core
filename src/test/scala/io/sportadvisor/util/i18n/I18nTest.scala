@@ -1,6 +1,7 @@
 package io.sportadvisor.util.i18n
 
 import io.sportadvisor.BaseTest
+import io.sportadvisor.util.i18n.I18nModel.Language
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -34,21 +35,12 @@ class I18nTest extends BaseTest {
     }
   }
 
-  "I18n undefined" should {
-    "t(language) return English" in new UndefinedContext {
-      i18n.t("language") shouldEqual "language"
-    }
-  }
-
   trait RuContext {
-    val i18n = new I18nImpl("ru", "test")
+    val i18n = new I18nImpl(Language.RU, "test")
   }
 
   trait EnContext {
-    val i18n = new I18nImpl("en", "test")
+    val i18n = new I18nImpl(Language.EN, "test")
   }
 
-  trait UndefinedContext {
-    val i18n = new I18nImpl("it", "test")
-  }
 }

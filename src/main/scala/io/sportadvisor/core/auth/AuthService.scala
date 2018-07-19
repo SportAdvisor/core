@@ -3,6 +3,8 @@ package io.sportadvisor.core.auth
 import java.time.{LocalDateTime, ZoneId}
 import java.util.Date
 
+import cats.data.EitherT
+import cats.instances.future._
 import io.sportadvisor.core.auth.AuthModels._
 
 import scala.concurrent.duration._
@@ -35,10 +37,10 @@ class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPe
   def revokeAllTokens(userID: UserID): Future[Unit] = tokenRepository.removeByUser(userID)
 
   def revokeToken(token: String): Future[Either[ApiError, Unit]] =
-    JwtUtil.decode[AuthTokenContent](token, secretKey) match {
-      case None    => Future.successful(Left(BadToken))
-      case Some(t) => tokenRepository.removeById(t.refreshTokenId).map(Right(_))
-    }
+    EitherT
+      .fromOption[Future](JwtUtil.decode[AuthTokenContent](token, secretKey), BadToken())
+      .semiflatMap(t => tokenRepository.removeById(t.refreshTokenId))
+      .value
 
   def userId(token: String): Option[UserID] =
     JwtUtil.decode[AuthTokenContent](token, secretKey).map(_.userID)

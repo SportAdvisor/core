@@ -15,11 +15,15 @@ object I18nModel {
 
   object Language extends Enum[Language] {
 
+    private lazy val enums = findValues
+
     def default: Language = Language.EN
 
-    override def values: immutable.IndexedSeq[Language] = findValues
+    override def values: immutable.IndexedSeq[Language] = enums
 
     def find(key: String): Option[Language] = withNameLowercaseOnlyOption(key.toLowerCase)
+
+    def supported: Seq[Language] = values
 
     case object RU extends Language
     case object EN extends Language

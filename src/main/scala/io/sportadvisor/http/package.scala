@@ -59,8 +59,8 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
   def selectLanguage(): Directive1[SALanguage] = {
     extractRequest.map { request ⇒
       val negotiator = LanguageNegotiator(request.headers)
-      val pickLanguage = negotiator.pickLanguage(List(Language("ru"), Language("en"))) getOrElse Language(
-        "en")
+      val pickLanguage = negotiator.pickLanguage(SALanguage.supported.map(mapLang).toList) getOrElse mapLang(
+        SALanguage.default)
       negotiator.acceptedLanguageRanges
         .find(l => l.matches(pickLanguage))
         .map(l => l.primaryTag)
@@ -90,5 +90,7 @@ package object http extends FailFastCirceSupport with Logging with Response.Enco
 
   def r[A](response: Response[A])(implicit e: Encoder[A]): (StatusCode, Json) =
     StatusCode.int2StatusCode(response.code) -> response.asJson
+
+  private def mapLang(language: SALanguage): Language = Language(language.entryName.toLowerCase)
 
 }

@@ -3,6 +3,7 @@ package io.sportadvisor.core.user
 import java.time.LocalDateTime
 
 import io.sportadvisor.exception.ApiError
+import io.sportadvisor.util.i18n.I18nModel.Language
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -23,7 +24,7 @@ object UserModels {
                             name: String,
                             language: Option[String])
       extends User {
-    def lang: String = language.fold("ru")(l => l)
+    def lang: Language = language.flatMap(Language.find).getOrElse(Language.default)
   }
 
   final case class ChangeMailToken(userID: UserID, token: String, expireAt: LocalDateTime)

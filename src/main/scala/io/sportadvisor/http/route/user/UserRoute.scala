@@ -7,10 +7,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
-import io.sportadvisor.core.user.UserService
 import io.sportadvisor.core.auth.AuthModels._
 import io.sportadvisor.core.auth.AuthService
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
@@ -46,6 +46,10 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         } ~ path("sign-in") {
           post {
             handleSignIn()
+          } ~ path("refresh") {
+            get {
+              handleRefreshToken()
+            }
           }
         } ~ pathPrefix(LongNumber) { userId =>
           path("email") {
@@ -232,6 +236,17 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           }
         }
       }
+    }
+  }
+
+  def handleRefreshToken(): Route = {
+    entity(as[String]) { entity =>
+      complete(
+        authService.refreshToken(entity).map {
+          case Left(_) => r(Response.emptyResponse(StatusCodes.BadRequest.intValue))
+          case Right(tokenData) => r(Response.objectResponse(tokenView(tokenData, entity), None))
+        }
+      )
     }
   }
 

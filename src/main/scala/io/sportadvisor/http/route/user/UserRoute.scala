@@ -240,11 +240,11 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   }
 
   def handleRefreshToken(): Route = {
-    entity(as[String]) { entity =>
+    entity(as[TokenRefresh]) { refreshToken =>
       complete(
-        authService.refreshToken(entity).map {
-          case Left(_) => r(Response.emptyResponse(StatusCodes.BadRequest.intValue))
-          case Right(tokenData) => r(Response.objectResponse(tokenView(tokenData, entity), None))
+        authService.refreshAccessToken(refreshToken.token).map {
+          case Left(_) => r(Response.emptyResponse(StatusCodes.Unauthorized.intValue))
+          case Right(tokenData) => r(Response.objectResponse(tokenData, None))
         }
       )
     }

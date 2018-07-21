@@ -1,10 +1,8 @@
 package io.sportadvisor.http.route.user
 
-import java.time.LocalDateTime
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import io.sportadvisor.core.auth.AuthModels.RefreshToken
 import io.sportadvisor.core.user.UserModels.UserData
 
 /**
@@ -20,9 +18,9 @@ object UserRouteProtocol {
   final case class ConfirmPassword(token: String, password: String)
   final case class AccountSettings(name: String, language: Option[String])
   final case class PasswordChange(password: String, newPassword: String)
+  final case class TokenRefresh(token: String)
 
   final case class UserView(id: Long, email: String, name: String, language: Option[String])
-  final case class TokenView(token: String, refreshToken: String, expireAt: LocalDateTime)
 
   implicit val userNamePasswordDecoder: Decoder[RegistrationModel] = deriveDecoder
   implicit val emailPasswordDecoder: Decoder[EmailPassword] = deriveDecoder
@@ -32,10 +30,9 @@ object UserRouteProtocol {
   implicit val confirmPasswordDecoder: Decoder[ConfirmPassword] = deriveDecoder
   implicit val accountSettingsDecoder: Decoder[AccountSettings] = deriveDecoder
   implicit val passwordChangeDecoder: Decoder[PasswordChange] = deriveDecoder
+  implicit val refreshTokenDecoder: Decoder[TokenRefresh] = deriveDecoder
 
   implicit val userViewEncoder: Encoder[UserView] = deriveEncoder
-  implicit val tokenViewEncoder: Encoder[TokenView] = deriveEncoder
 
   def userView(user: UserData): UserView = UserView(user.id, user.email, user.name, user.language)
-  def tokenView(refreshTokenData: RefreshToken, refreshToken: String): TokenView = TokenView(refreshTokenData.token, refreshToken, refreshTokenData.lastTouch)
 }

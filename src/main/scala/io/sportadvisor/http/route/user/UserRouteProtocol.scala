@@ -1,6 +1,5 @@
 package io.sportadvisor.http.route.user
 
-
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import io.sportadvisor.core.user.UserModels.UserData
@@ -18,7 +17,7 @@ object UserRouteProtocol {
   final case class ConfirmPassword(token: String, password: String)
   final case class AccountSettings(name: String, language: Option[String])
   final case class PasswordChange(password: String, newPassword: String)
-  final case class TokenRefresh(token: String)
+  final case class TokenRefresh(refreshToken: String)
 
   final case class UserView(id: Long, email: String, name: String, language: Option[String])
 

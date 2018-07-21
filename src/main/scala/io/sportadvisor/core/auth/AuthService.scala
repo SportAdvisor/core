@@ -25,7 +25,7 @@ class AuthService(tokenRepository: AuthTokenRepository,
     val refreshToken =
       JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secretKey, None)
     val time = LocalDateTime.now()
-    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map  {
+    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map {
       refreshTokenData =>
         createAuthToken(refreshTokenData)
     }
@@ -44,13 +44,15 @@ class AuthService(tokenRepository: AuthTokenRepository,
 
   def refreshAccessToken(token: String): Future[Either[ApiError, AuthToken]] = {
     JwtUtil.decode[AuthTokenContent](token, secretKey) match {
-      case Some(authTokenContent) => tokenRepository.find(authTokenContent.refreshTokenId).flatMap {
-        case Some(refreshTokenData) =>
-          tokenRepository.save(refreshTokenData.copy(lastTouch = LocalDateTime.now()))
-            .map(createAuthToken)
-            .map(Right(_))
-        case None => Future.successful(Left(TokenDoesntExist("RefreshAuthToken")))
-      }
+      case Some(authTokenContent) =>
+        tokenRepository.find(authTokenContent.refreshTokenId).flatMap {
+          case Some(refreshTokenData) =>
+            tokenRepository
+              .save(refreshTokenData.copy(lastTouch = LocalDateTime.now()))
+              .map(createAuthToken)
+              .map(Right(_))
+          case None => Future.successful(Left(TokenDoesntExist("RefreshAuthToken")))
+        }
       case None => Future.successful(Left(TokenExpired("RefreshAuthToken")))
     }
   }
@@ -59,7 +61,9 @@ class AuthService(tokenRepository: AuthTokenRepository,
     val time = LocalDateTime.now()
     val expTime = time.plusNanos(expPeriod.toNanos)
     val token =
-      JwtUtil.encode(AuthTokenContent(refreshTokenData.id, refreshTokenData.userId), secretKey, Option(expTime))
+      JwtUtil.encode(AuthTokenContent(refreshTokenData.id, refreshTokenData.userId),
+                     secretKey,
+                     Option(expTime))
     AuthToken(token, refreshTokenData.token, expTime.atZone(ZoneId.systemDefault()))
   }
 }

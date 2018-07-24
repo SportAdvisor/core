@@ -10,21 +10,21 @@ import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-object Decoders extends AutoDerivation{
+object Decoders extends AutoDerivation {
 
   implicit val emptyResponseDecoder: Decoder[EmptyResponse] = deriveDecoder[EmptyResponse]
   implicit val failResponseDecoder: Decoder[FailResponse] = deriveDecoder[FailResponse]
   implicit val formErrorDecoder: Decoder[FormError] = deriveDecoder[FormError]
   implicit val errorDecoder: Decoder[Error] = (c: HCursor) => formErrorDecoder(c)
-  implicit final def errorResponseDecoder[E <: Error](
-                                                       implicit e: Decoder[E]): Decoder[ErrorResponse[E]] = (c: HCursor) => {
-    c.value.asObject.map { obj =>
-      val code = obj("code").map(Decoder[Int].decodeJson).orNull.right.get
-      val errors =
-        obj("errors").map(v => Decoder.decodeVector[E].decodeJson(v)).orNull.right.get.toList
-      Right(ErrorResponse[E](code, errors))
-    }.orNull
-  }
+  implicit final def errorResponseDecoder[E <: Error](implicit e: Decoder[E]): Decoder[ErrorResponse[E]] =
+    (c: HCursor) => {
+      c.value.asObject.map { obj =>
+        val code = obj("code").map(Decoder[Int].decodeJson).orNull.right.get
+        val errors =
+          obj("errors").map(v => Decoder.decodeVector[E].decodeJson(v)).orNull.right.get.toList
+        Right(ErrorResponse[E](code, errors))
+      }.orNull
+    }
 
   implicit val linkDecoder: Decoder[Link] = deriveDecoder
   implicit val objectLinksDecoder: Decoder[ObjectLinks] = deriveDecoder
@@ -66,7 +66,7 @@ object Decoders extends AutoDerivation{
   }
 
   implicit final def dataResponseDecoder[A, D <: Data[A]](
-                                                           implicit decoder: Decoder[A]): Decoder[DataResponse[A, D]] = (c: HCursor) => {
+      implicit decoder: Decoder[A]): Decoder[DataResponse[A, D]] = (c: HCursor) => {
     val res = c.value.asObject.map { obj =>
       val code = obj("code").map(c => c.as[Int]).orNull.right.get
       val data = obj("data").map(d => dataDecoder[A](decoder).apply(fromJson(d))).orNull.right.get

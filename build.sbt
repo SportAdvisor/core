@@ -14,7 +14,7 @@ val slickVersion = "3.2.1"
 val circeV = "0.9.3"
 val sttpV = "1.1.5"
 
-lazy val EndToEndTest = config("e2e") extend Runtime
+lazy val EndToEndTest = config("e2e") extend (Runtime, Test)
 
 dependencyOverrides += "com.typesafe.akka" %% "akka-http" % akkaHttpV
 
@@ -101,6 +101,8 @@ wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Nothing,
 coverageEnabled in Test := true
 coverageEnabled in EndToEndTest := false
 
+scalafmtOnCompile := true
+
 val e2eSettings =
   inConfig(EndToEndTest)(Defaults.testSettings) ++
     Seq(
@@ -108,7 +110,8 @@ val e2eSettings =
       parallelExecution in EndToEndTest := false,
       scalaSource in EndToEndTest := baseDirectory.value / "src/e2e/scala",
       resourceDirectory in EndToEndTest := baseDirectory.value / "src/e2e/resources",
-      libraryDependencies ++= e2eDependencies
+      libraryDependencies ++= e2eDependencies,
+      scalafmtCheck in EndToEndTest := true
     )
 
 val root = project

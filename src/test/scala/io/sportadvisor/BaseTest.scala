@@ -1,13 +1,13 @@
 package io.sportadvisor
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import io.circe.{Decoder, HCursor}
-import io.circe.parser._
+import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.mockito.MockitoSugar
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.reflect.ClassTag
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -19,10 +19,7 @@ trait BaseTest extends WordSpec with Matchers with ScalatestRouteTest with Mocki
   def awaitForResult[T](futureResult: Future[T]): T =
     Await.result(futureResult, 5.seconds)
 
-  def r[T](implicit decoder: Decoder[T]): T = {
-    decoder(HCursor.fromJson(parse(responseAs[String]).toOption.get)).toOption
-      .getOrElse(null.asInstanceOf[T])
-  }
+  def r[T: FromResponseUnmarshaller: ClassTag]: T = responseAs[T]
 
   def sleep(t: Duration): Unit = Thread.sleep(t.toMillis)
 

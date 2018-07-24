@@ -5,6 +5,7 @@ import io.circe.generic.semiauto._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.Decoders._
+
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -47,9 +48,15 @@ class ResponseMarshallerTest extends BaseTest {
       }
 
       "serialize and deserialize [CollectionData]" in {
-        val resp = Response.collection[D](List(D(1, true), D(2, false)), (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
-          "https://sportadvisor.io/api/d?page=3", "https://sportadvisor.io/api/d?page=1", "https://sportadvisor.io/api/d?page=7",
-          "https://sportadvisor.io/api/d?page=2", "https://sportadvisor.io/api/d?page=4")
+        val resp = Response.collection[D](
+          List(D(1, true), D(2, false)),
+          (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
+          "https://sportadvisor.io/api/d?page=3",
+          "https://sportadvisor.io/api/d?page=1",
+          "https://sportadvisor.io/api/d?page=7",
+          "https://sportadvisor.io/api/d?page=2",
+          "https://sportadvisor.io/api/d?page=4"
+        )
         val json = marshall(resp)
         val data = unmarshall(json, dataResponseDecoder[D, CollectionData[D]])
         resp shouldEqual data
@@ -76,9 +83,15 @@ class ResponseMarshallerTest extends BaseTest {
 
     "CollectionData" should {
       "serialize and deserealize" in {
-        val data = Response.collectionData[D](List(D(1, true), D(2, false)), (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
-          "https://sportadvisor.io/api/d?page=3", "https://sportadvisor.io/api/d?page=1", "https://sportadvisor.io/api/d?page=7",
-          "https://sportadvisor.io/api/d?page=2", "https://sportadvisor.io/api/d?page=4")
+        val data = Response.collectionData[D](
+          List(D(1, true), D(2, false)),
+          (d: D) => s"""https://sportadvisor.io/api/d/${d.int}""",
+          "https://sportadvisor.io/api/d?page=3",
+          "https://sportadvisor.io/api/d?page=1",
+          "https://sportadvisor.io/api/d?page=7",
+          "https://sportadvisor.io/api/d?page=2",
+          "https://sportadvisor.io/api/d?page=4"
+        )
         val json = marshall(data)
 
         val response = unmarshall(json, implicitly[Decoder[CollectionData[D]]])
@@ -91,7 +104,7 @@ class ResponseMarshallerTest extends BaseTest {
     encoder(value)
   }
 
-  private def unmarshall[T](json: Json, decoder: Decoder[T]) : T = {
+  private def unmarshall[T](json: Json, decoder: Decoder[T]): T = {
     decoder(HCursor.fromJson(json)).right.get
   }
 

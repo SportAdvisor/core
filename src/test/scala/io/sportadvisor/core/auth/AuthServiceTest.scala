@@ -11,7 +11,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
 
-
 /**
   * @author sss3 (Vladimir Alekseev)
   */
@@ -80,7 +79,8 @@ class AuthServiceTest extends BaseTest {
     when(tokenRepository.save(any[RefreshToken])).thenAnswer((invocation: InvocationOnMock) => {
       val arguments = invocation.getArguments
       val token = arguments(0).asInstanceOf[CreateRefreshToken]
-      Future.successful(RefreshTokenData(Random.nextLong(), token.userId, token.token, token.remember, token.lastTouch))
+      Future.successful(
+        RefreshTokenData(Random.nextLong(), token.userId, token.token, token.remember, token.lastTouch))
     })
 
     val authService: AuthService = new AuthService(tokenRepository, secret, 5.seconds)

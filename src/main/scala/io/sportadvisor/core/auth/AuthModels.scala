@@ -41,7 +41,7 @@ object AuthModels {
                                                     lastTouch: LocalDateTime)
       extends RefreshToken
 
-  final case object BadToken extends ApiError("Token is expired", None)
+  final case class BadToken() extends ApiError("Token is expired", None)
 
   private[auth] implicit val tokenDecoder: Decoder[AuthTokenContent] = deriveDecoder
   private[auth] implicit val tokenEncoder: Encoder[AuthTokenContent] = deriveEncoder

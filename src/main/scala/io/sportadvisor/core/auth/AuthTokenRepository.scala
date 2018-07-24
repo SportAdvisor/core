@@ -26,16 +26,14 @@ trait AuthTokenRepository {
   def removeById(refreshTokenId: Long): Future[Unit]
 }
 
-class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
-    implicit executionContext: ExecutionContext)
+class AuthTokenRepositorySQL(val connector: DatabaseConnector)(implicit executionContext: ExecutionContext)
     extends TokenTable
     with AuthTokenRepository {
 
   import connector._
   import connector.profile.api._
 
-  private val insertQuery = tokens returning tokens.map(_.id) into ((token,
-                                                                     id) => token.copy(id = id))
+  private val insertQuery = tokens returning tokens.map(_.id) into ((token, id) => token.copy(id = id))
 
   override def save(token: RefreshToken): Future[RefreshTokenData] = token match {
     case t: CreateRefreshToken => createToken(t)
@@ -60,8 +58,7 @@ class AuthTokenRepositorySQL(val connector: DatabaseConnector)(
     db.run(query.delete).map(_ => ())
   }
 
-  override def removeByDate(dateRemember: LocalDateTime,
-                            dateNotRemember: LocalDateTime): Future[Int] = {
+  override def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Int] = {
     val query = tokens.filter(t =>
       (t.remember === true && t.lastTouch < dateRemember) || (!t.remember && t.lastTouch < dateNotRemember))
     db.run(query.delete)

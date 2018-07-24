@@ -3,6 +3,8 @@ package io.sportadvisor.core.auth
 import java.time.{LocalDateTime, ZoneId}
 import java.util.Date
 
+import cats.data.EitherT
+import cats.instances.future._
 import io.sportadvisor.core.auth.AuthModels._
 
 import scala.concurrent.duration._
@@ -17,9 +19,8 @@ import scala.concurrent.{ExecutionContext, Future}
   * @author sss3 (Vladimir Alekseev)
   */
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-class AuthService(tokenRepository: AuthTokenRepository,
-                  secretKey: String,
-                  expPeriod: FiniteDuration = 2.hour)(implicit executionContext: ExecutionContext) {
+class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPeriod: FiniteDuration = 2.hour)(
+    implicit executionContext: ExecutionContext) {
 
   def createToken(user: UserData, remember: Boolean): Future[AuthToken] = {
     val refreshToken =
@@ -34,10 +35,10 @@ class AuthService(tokenRepository: AuthTokenRepository,
   def revokeAllTokens(userID: UserID): Future[Unit] = tokenRepository.removeByUser(userID)
 
   def revokeToken(token: String): Future[Either[ApiError, Unit]] =
-    JwtUtil.decode[AuthTokenContent](token, secretKey) match {
-      case None    => Future.successful(Left(BadToken))
-      case Some(t) => tokenRepository.removeById(t.refreshTokenId).map(Right(_))
-    }
+    EitherT
+      .fromOption[Future](JwtUtil.decode[AuthTokenContent](token, secretKey), BadToken())
+      .semiflatMap(t => tokenRepository.removeById(t.refreshTokenId))
+      .value
 
   def userId(token: String): Option[UserID] =
     JwtUtil.decode[AuthTokenContent](token, secretKey).map(_.userID)

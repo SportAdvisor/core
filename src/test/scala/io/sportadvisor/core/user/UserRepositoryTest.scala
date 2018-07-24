@@ -8,7 +8,6 @@ import scala.util.Random
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-
 class UserRepositoryTest extends BaseTest {
 
   "UserRepositorySQL" when {
@@ -49,7 +48,6 @@ class UserRepositoryTest extends BaseTest {
       }
     }
   }
-
 
   trait Context {
     val userRepository: UserRepository = new UserRepositorySQL(InMemoryPostgresStorage.databaseConnector)

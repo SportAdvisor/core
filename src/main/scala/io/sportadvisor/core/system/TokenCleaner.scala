@@ -13,12 +13,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-class TokenCleaner(
-    repository: AuthTokenRepository,
-    mailTokenRepository: TokenRepository[ChangeMailToken],
-    resetPwdTokenRepository: TokenRepository[ResetPasswordToken],
-    val rememberTime: FiniteDuration = 14.days,
-    val notRememberTime: FiniteDuration = 12.hour)(implicit executionContext: ExecutionContext)
+class TokenCleaner(repository: AuthTokenRepository,
+                   mailTokenRepository: TokenRepository[ChangeMailToken],
+                   resetPwdTokenRepository: TokenRepository[ResetPasswordToken],
+                   val rememberTime: FiniteDuration = 14.days,
+                   val notRememberTime: FiniteDuration = 12.hour)(implicit executionContext: ExecutionContext)
     extends Logging {
 
   def clean(): Unit = {

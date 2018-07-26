@@ -1,16 +1,11 @@
 package io.sportadvisor.core.user
 
-import java.sql.SQLException
-
 import io.sportadvisor.core.user.UserModels.{CreateUser, User, UserData, UserID}
 import io.sportadvisor.exception.ApiError
-import io.sportadvisor.exception.Exceptions.{DuplicateException, UnhandledException}
 import io.sportadvisor.util.db.DatabaseConnector
-import cats.instances.string._
-import cats.syntax.eq._
+import io.sportadvisor.util.db.Extractors.handleDuplicate
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -47,29 +42,16 @@ class UserRepositorySQL(val connector: DatabaseConnector)(implicit executionCont
     case u: UserData             => updateUser(u)
   }
 
-  override def remove(userID: UserID): Future[Int] = db.run(users.filter(_.id === userID).delete)
+  override def remove(userID: UserID): Future[Int] = db.run(users.filter(_.id === userID).delete)щ
 
   private def createUser(u: CreateUser): Future[Either[ApiError, UserData]] = {
     val action = insertQuery += UserData(0, u.email, u.password, u.name, None)
-    db.run(action.asTry).map {
-      case Success(e) => Right(e)
-      case Failure(e: SQLException) =>
-        if (e.getSQLState === "23505") { Left(new DuplicateException) } else {
-          Left(UnhandledException(e))
-        }
-      case Failure(e) => Left(UnhandledException(e))
-    }
+    db.run(action.asTry).map(handleDuplicate(_, identity[UserData]))
   }
 
   private def updateUser(u: UserData): Future[Either[ApiError, UserData]] = {
-    db.run(users.filter(user => user.id === u.id).update(u).asTry).map {
-      case Success(_) => Right(u)
-      case Failure(e: SQLException) =>
-        if (e.getSQLState === "23505") { Left(new DuplicateException) } else {
-          Left(UnhandledException(e))
-        }
-      case Failure(e) => Left(UnhandledException(e))
-    }
+    db.run(users.filter(user => user.id === u.id).update(u).asTry)
+      .map(handleDuplicate(_, (_: Int) => u))
   }
 
 }

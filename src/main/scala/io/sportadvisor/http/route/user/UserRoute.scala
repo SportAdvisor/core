@@ -44,12 +44,14 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           post {
             handleSignUp()
           }
-        } ~ path("sign-in") {
+        } ~ pathPrefix("sign-in") {
           post {
             handleSignIn()
           } ~ path("refresh") {
-            get {
-              handleRefreshToken()
+            pathEnd {
+              post {
+                handleRefreshToken()
+              }
             }
           }
         } ~ pathPrefix(LongNumber) { userId =>
@@ -242,8 +244,8 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     entity(as[TokenRefresh]) { refreshToken =>
       complete(
         authService.refreshAccessToken(refreshToken.refreshToken).map {
-          case Left(_)          => r(Response.emptyResponse(StatusCodes.Unauthorized.intValue))
-          case Right(tokenData) => r(Response.objectResponse(tokenData, None))
+          case Left(_)          => r(Response.empty(StatusCodes.Unauthorized.intValue))
+          case Right(tokenData) => r(Response.data(tokenData, None))
         }
       )
     }

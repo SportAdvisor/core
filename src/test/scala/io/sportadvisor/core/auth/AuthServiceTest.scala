@@ -78,9 +78,22 @@ class AuthServiceTest extends BaseTest {
 
     when(tokenRepository.save(any[RefreshToken])).thenAnswer((invocation: InvocationOnMock) => {
       val arguments = invocation.getArguments
-      val token = arguments(0).asInstanceOf[CreateRefreshToken]
-      Future.successful(
-        RefreshTokenData(Random.nextLong(), token.userId, token.token, token.remember, token.lastTouch))
+      arguments(0).asInstanceOf[RefreshToken] match {
+        case refreshToken: CreateRefreshToken =>
+          Future.successful(
+            RefreshTokenData(Random.nextLong(),
+                             refreshToken.userId,
+                             refreshToken.token,
+                             refreshToken.remember,
+                             refreshToken.lastTouch))
+        case refreshTokenData: RefreshTokenData =>
+          Future.successful(
+            RefreshTokenData(Random.nextLong(),
+                             refreshTokenData.userId,
+                             refreshTokenData.token,
+                             refreshTokenData.remember,
+                             refreshTokenData.lastTouch))
+      }
     })
 
     val authService: AuthService = new AuthService(tokenRepository, secret, 5.seconds)

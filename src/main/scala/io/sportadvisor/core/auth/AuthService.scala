@@ -26,9 +26,8 @@ class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPe
     val refreshToken =
       JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secretKey, None)
     val time = LocalDateTime.now()
-    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map {
-      refreshTokenData =>
-        createAuthToken(refreshTokenData)
+    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map { refreshTokenData =>
+      createAuthToken(refreshTokenData)
     }
   }
 

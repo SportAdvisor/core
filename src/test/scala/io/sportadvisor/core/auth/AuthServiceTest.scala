@@ -1,8 +1,11 @@
 package io.sportadvisor.core.auth
 
+import java.time.LocalDateTime
+
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.auth.AuthModels.{AuthToken, CreateRefreshToken, RefreshToken, RefreshTokenData}
 import io.sportadvisor.core.user.UserModels.{UserData, UserID}
+import io.sportadvisor.exception.ApiError
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.mockito.invocation.InvocationOnMock
@@ -59,12 +62,31 @@ class AuthServiceTest extends BaseTest {
         val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
         authService.userId(authToken.token).isDefined shouldBe true
       }
+    }2
+
+    "refreshAccessToken" should {
+      "return AuthToken if refresh was success" in new Context {
+        val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
+        when(tokenRepository.find(anyLong())).thenReturn(Future.successful(
+          Some(RefreshTokenData(testTokenId, testUserId, authToken.token, false, LocalDateTime.now()))))
+        val result: Either[ApiError, AuthToken] =
+          awaitForResult(authService.refreshAccessToken(authToken.refreshToken))
+        result.isRight shouldBe true
+      }
+
+      "return api error if token is invalid" in new Context {
+        awaitForResult(authService.createToken(testUser, false))
+        val result: Either[ApiError, AuthToken] =
+          awaitForResult(authService.refreshAccessToken("not a token"))
+        result.isLeft shouldBe true
+      }
     }
   }
 
   trait Context {
     val len = 10
 
+    val testTokenId: Long = Random.nextLong()
     val testUserId: Long = Random.nextLong()
     val testName: String = Random.nextString(len)
     val testEmail: String = Random.nextString(len)

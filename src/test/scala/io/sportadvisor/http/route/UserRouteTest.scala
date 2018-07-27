@@ -232,7 +232,7 @@ class UserRouteTest extends BaseTest {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"refreshToken": "token"}""")
         when(authService.refreshAccessToken("token"))
           .thenThrow(new RuntimeException)
-        Post("/api/users/sign-in", requestEntity) ~> userRoute ~> check {
+        Post("/api/users/sign-in/refresh", requestEntity) ~> userRoute ~> check {
           val resp = r[FailResponse]
           resp.code should be(500)
         }

@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 trait AuthTokenRepository {
 
-  def find(id: Long): Future[Option[RefreshTokenData]]
+  def find(token: String): Future[Option[RefreshTokenData]]
 
   def save(token: RefreshToken): Future[RefreshTokenData]
 
@@ -74,7 +74,7 @@ class AuthTokenRepositorySQL(val connector: DatabaseConnector)(implicit executio
     db.run(query.delete).map(_ => ())
   }
 
-  override def find(id: Long): Future[Option[RefreshTokenData]] = {
-    db.run(tokens.filter(token => token.id === id).take(1).result.headOption)
+  override def find(token: String): Future[Option[RefreshTokenData]] = {
+    db.run(tokens.filter(t => t.token === token).take(1).result.headOption)
   }
 }

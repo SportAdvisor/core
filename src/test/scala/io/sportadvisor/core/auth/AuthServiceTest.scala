@@ -62,12 +62,12 @@ class AuthServiceTest extends BaseTest {
         val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
         authService.userId(authToken.token).isDefined shouldBe true
       }
-    }2
+    }
 
     "refreshAccessToken" should {
       "return AuthToken if refresh was success" in new Context {
         val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
-        when(tokenRepository.find(anyLong())).thenReturn(Future.successful(
+        when(tokenRepository.find(authToken.refreshToken)).thenReturn(Future.successful(
           Some(RefreshTokenData(testTokenId, testUserId, authToken.token, false, LocalDateTime.now()))))
         val result: Either[ApiError, AuthToken] =
           awaitForResult(authService.refreshAccessToken(authToken.refreshToken))
@@ -75,9 +75,10 @@ class AuthServiceTest extends BaseTest {
       }
 
       "return api error if token is invalid" in new Context {
-        awaitForResult(authService.createToken(testUser, false))
+        val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
+        when(tokenRepository.find(authToken.refreshToken)).thenReturn(Future.successful(None))
         val result: Either[ApiError, AuthToken] =
-          awaitForResult(authService.refreshAccessToken("not a token"))
+          awaitForResult(authService.refreshAccessToken(authToken.refreshToken))
         result.isLeft shouldBe true
       }
     }

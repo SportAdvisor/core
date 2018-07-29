@@ -10,7 +10,7 @@ import io.sportadvisor.core.auth.AuthModels._
 import scala.concurrent.duration._
 import io.sportadvisor.core.user.UserModels.{UserData, UserID}
 import io.sportadvisor.exception.ApiError
-import io.sportadvisor.exception.Exceptions.{TokenDoesntExist, TokenExpired}
+import io.sportadvisor.exception.Exceptions.TokenDoesntExist
 import io.sportadvisor.util.JwtUtil
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,17 +43,13 @@ class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPe
     JwtUtil.decode[AuthTokenContent](token, secretKey).map(_.userID)
 
   def refreshAccessToken(token: String): Future[Either[ApiError, AuthToken]] = {
-    JwtUtil.decode[AuthTokenContent](token, secretKey) match {
-      case Some(authTokenContent) =>
-        tokenRepository.find(authTokenContent.refreshTokenId).flatMap {
-          case Some(refreshTokenData) =>
-            tokenRepository
-              .save(refreshTokenData.copy(lastTouch = LocalDateTime.now()))
-              .map(createAuthToken)
-              .map(Right(_))
-          case None => Future.successful(Left(TokenDoesntExist("RefreshAuthToken")))
-        }
-      case None => Future.successful(Left(TokenExpired("RefreshAuthToken")))
+    tokenRepository.find(token).flatMap {
+      case Some(refreshTokenData) =>
+        tokenRepository
+          .save(refreshTokenData.copy(lastTouch = LocalDateTime.now()))
+          .map(createAuthToken)
+          .map(Right(_))
+      case None => Future.successful(Left(TokenDoesntExist("RefreshAuthToken")))
     }
   }
 

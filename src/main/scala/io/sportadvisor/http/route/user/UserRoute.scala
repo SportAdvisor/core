@@ -45,15 +45,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             handleSignUp()
           }
         } ~ pathPrefix("sign-in") {
-          post {
-            handleSignIn()
-          } ~ path("refresh") {
-            pathEnd {
+          pathEnd {
+            post {
+              handleSignIn()
+            }
+          } ~
+            path("refresh") {
               post {
                 handleRefreshToken()
               }
             }
-          }
         } ~ pathPrefix(LongNumber) { userId =>
           path("email") {
             put {
@@ -242,12 +243,14 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
 
   def handleRefreshToken(): Route = {
     entity(as[TokenRefresh]) { refreshToken =>
-      complete(
-        authService.refreshAccessToken(refreshToken.refreshToken).map {
-          case Left(_)          => r(Response.empty(StatusCodes.Unauthorized.intValue))
-          case Right(tokenData) => r(Response.data(tokenData, None))
-        }
-      )
+      selectLanguage() { lang =>
+        complete(
+          authService.refreshAccessToken(refreshToken.refreshToken).map {
+            case Left(e)          => handleRefreshTokenError(e, lang)
+            case Right(tokenData) => r(Response.data(tokenData, None))
+          }
+        )
+      }
     }
   }
 
@@ -297,6 +300,16 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         log.error(s"Api error: ${exception.msg}", e)
       }
       r(Response.fail(None))
+  }
+
+  private def handleRefreshTokenError(err: ApiError, lang: Language): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case TokenDoesntExist(_) | TokenExpired(_) =>
+        r(Response.empty(StatusCodes.Unauthorized.intValue))
+      case _ =>
+        r(Response.empty(StatusCodes.InternalServerError.intValue))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
   }
 
 }

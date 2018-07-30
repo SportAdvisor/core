@@ -223,7 +223,7 @@ class UserRouteTest extends BaseTest {
         when(authService.refreshAccessToken("token"))
           .thenReturn(Future.successful(Left(TokenExpired("RefreshAuthToken"))))
         Post("/api/users/sign-in/refresh", requestEntity) ~> userRoute ~> check {
-          val resp = r[FailResponse]
+          val resp = r[EmptyResponse]
           resp.code should be(401)
         }
       }

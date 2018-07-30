@@ -71,6 +71,8 @@ class AuthServiceTest extends BaseTest {
           Some(RefreshTokenData(testTokenId, testUserId, authToken.token, false, LocalDateTime.now()))))
         val result: Either[ApiError, AuthToken] =
           awaitForResult(authService.refreshAccessToken(authToken.refreshToken))
+        private val userId: Option[UserID] = authService.userId(result.right.get.token)
+        userId.get shouldBe testUserId
         result.isRight shouldBe true
       }
 
@@ -110,12 +112,7 @@ class AuthServiceTest extends BaseTest {
                              refreshToken.remember,
                              refreshToken.lastTouch))
         case refreshTokenData: RefreshTokenData =>
-          Future.successful(
-            RefreshTokenData(Random.nextLong(),
-                             refreshTokenData.userId,
-                             refreshTokenData.token,
-                             refreshTokenData.remember,
-                             refreshTokenData.lastTouch))
+          Future.successful(refreshTokenData)
       }
     })
 

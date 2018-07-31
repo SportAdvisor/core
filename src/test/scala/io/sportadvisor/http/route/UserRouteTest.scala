@@ -218,7 +218,7 @@ class UserRouteTest extends BaseTest {
         }
       }
 
-      "return 401 if was error" in new Context {
+      "return 400 if was error" in new Context {
         val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"refreshToken": "token"}""")
         when(authService.refreshAccessToken("token"))
           .thenReturn(Future.successful(Left(TokenExpired("RefreshAuthToken"))))

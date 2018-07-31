@@ -305,9 +305,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def handleRefreshTokenError(err: ApiError, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case TokenDoesntExist(_) | TokenExpired(_) =>
-        r(Response.empty(StatusCodes.Unauthorized.intValue))
-      case _ =>
-        r(Response.empty(StatusCodes.InternalServerError.intValue))
+        r(Response.empty(StatusCodes.BadRequest.intValue))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }

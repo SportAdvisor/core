@@ -72,7 +72,7 @@ class UserChangeEmail
     errors.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
   }
 
-  "User change another email" should "return 403" in {
+  "User changes another email" should "return 403" in {
     val resp = post(
       req("sign-in"),
       s"""{"email": "${user.email}", "password": "${user.password}", "remember":true}""").asString

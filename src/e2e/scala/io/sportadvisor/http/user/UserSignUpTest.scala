@@ -86,7 +86,7 @@ class UserSignUpTest extends BaseE2ETest with UserMappings {
       contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 4)
   }
 
-  "POST /api/users/sign-up with valid data" should "return OK code and JWT token" in {
+  "POST /api/users/sign-up with duplicated email" should "return 400 code and JWT token" in {
     val response1 = post(
       req("sign-up"),
       s"""{"email": "validemail2@mail.com", "password": "str0nGpass", "name":"NormalName", "EULA":true}""").asString

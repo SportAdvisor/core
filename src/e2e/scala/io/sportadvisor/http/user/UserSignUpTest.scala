@@ -10,7 +10,7 @@ import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-class UserSignUpTest extends BaseE2ETest with UserMappings with DefaultUsersData {
+class UserSignUpTest extends BaseE2ETest with UserMappings {
 
   "POST /api/users/sign-up with valid data" should "return OK code and JWT token" in {
     val response = post(

@@ -20,7 +20,7 @@ class UserSignUpTest extends BaseE2ETest with UserMappings {
 
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](response.body)
     body.code shouldBe 200
-    body.data.data.expireAt isBefore ZonedDateTime.now() shouldBe true
+    body.data.data.expireAt isAfter ZonedDateTime.now() shouldBe true
 
     val responseAboutMe = get(req(userId(body.data.data.token).toString), body.data.data.token).asString
     responseAboutMe.code shouldBe 200

@@ -1,6 +1,7 @@
 package io.sportadvisor.http.user
 
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.http.scaladsl.model.StatusCodes.BadRequest
 import io.sportadvisor.BaseE2ETest
 import io.sportadvisor.core.auth.AuthModels.AuthToken
 import io.sportadvisor.http.Response.{DataResponse, ErrorResponse, FormError, ObjectData}
@@ -20,13 +21,13 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
 
     val newPassword = user.password + "1"
     val response = put(req(user.id + "/password"),
-                       s"""{"password": "${user.password}", "newPassword": "$newPassword" }""",
+                       s"""{"password": "${user.password}", "newPassword": "$newPassword"}""",
                        token1).timeout(10.seconds).asString
     response.code shouldBe 200
 
     val signInResponse2 = post(
       req("sign-in"),
-      s"""{"email": "${user.email}", "password": "$newPassword", "remember": true""").asString
+      s"""{"email": "${user.email}", "password": "$newPassword", "remember": true}""").asString
     signInResponse2.code shouldBe 200
 
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](signInResponse2.body)
@@ -48,10 +49,10 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
     val newPassword = user.password + "1"
     val response = put(req(user.id + "/password"),
                        s"""{"password": "${user.password}1", "newPassword": "$newPassword" }""", token).asString
-    response.code shouldBe 400
+    response.code shouldBe BadRequest.intValue
 
     val body = r[ErrorResponse[FormError]](response.body)
-    body.code shouldBe 400
+    body.code shouldBe BadRequest.intValue
     body.errors should (contain(FormError("password", UserRoute.passwordIncorrect)) and have size 1)
   }
 
@@ -66,10 +67,10 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
     val newPassword = "weak"
     val response = put(req(user.id + "/password"),
                        s"""{"password": "${user.password}", "newPassword": "$newPassword" }""", token).asString
-    response.code shouldBe 400
+    response.code shouldBe BadRequest.intValue
 
     val body = r[ErrorResponse[FormError]](response.body)
-    body.code shouldBe 400
+    body.code shouldBe BadRequest.intValue
     body.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
   }
 

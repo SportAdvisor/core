@@ -12,7 +12,7 @@ class UserSignInTest extends BaseE2ETest with UserMappings with DefaultUsersData
   "POST /api/users/sign-in with valid data (remember = true)" should "return 200 code and an auth token" in {
     val response = post(
       req("sign-in"),
-      s"""{"email": "${user.email}", "password": "${user.password}", "remember": true""").asString
+      s"""{"email": "${user.email}", "password": "${user.password}", "remember":true}""").asString
     response.code shouldBe 200
 
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](response.body)
@@ -31,7 +31,7 @@ class UserSignInTest extends BaseE2ETest with UserMappings with DefaultUsersData
   "POST /api/users/sign-in with valid data (remember = false)" should "return 200 code and an auth token" in {
     val response = post(
       req("sign-in"),
-      s"""{"email": "${user.email}", "password": "${user.password}", "remember": false""").asString
+      s"""{"email": "${user.email}", "password": "${user.password}", "remember": false}""").asString
     response.code shouldBe 200
 
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](response.body)
@@ -50,14 +50,14 @@ class UserSignInTest extends BaseE2ETest with UserMappings with DefaultUsersData
   "POST /api/users/sign-in with invalid password" should "return 400" in {
     val response = post(
       req("sign-in"),
-      s"""{"email": "${user.email}", "password": "${user.password}1", "remember": true""").asString
+      s"""{"email": "${user.email}", "password": "${user.password}1", "remember": true}""").asString
     response.code shouldBe 400
   }
 
   "POST /api/users/sign-in with not registered email" should "return 400" in {
     val response = post(
       req("sign-in"),
-      s"""{"email": "${user.email}1", "password": "${user.password}", "remember": true""").asString
+      s"""{"email": "${user.email}1", "password": "${user.password}", "remember": true}""").asString
     response.code shouldBe 400
   }
 }

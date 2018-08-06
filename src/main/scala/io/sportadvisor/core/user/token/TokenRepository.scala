@@ -1,18 +1,14 @@
 package io.sportadvisor.core.user.token
 
-import java.sql.SQLException
 import java.time.LocalDateTime
 
 import io.sportadvisor.core.user.UserModels.{ChangeMailToken, ResetPasswordToken, UserID}
 import io.sportadvisor.exception.ApiError
-import io.sportadvisor.exception.Exceptions.{DuplicateException, UnhandledException}
 import io.sportadvisor.util.db.DatabaseConnector
-import cats.instances.string._
-import cats.syntax.eq._
 import io.sportadvisor.typeclass.{Isomorphism => SAIso}
+import io.sportadvisor.util.db.Extractors.handleDuplicate
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -37,15 +33,7 @@ abstract class SqlTokenRepository[T](val connector: DatabaseConnector)(
   import connector.profile.api._
 
   override def save(token: T): Future[Either[ApiError, T]] = {
-    db.run((tokens += iso.map(token)).asTry)
-      .map {
-        case Success(_) => Right(token)
-        case Failure(e: SQLException) =>
-          if (e.getSQLState === "23505") { Left(new DuplicateException) } else {
-            Left(UnhandledException(e))
-          }
-        case Failure(e) => Left(UnhandledException(e))
-      }
+    db.run((tokens += iso.map(token)).asTry).map(handleDuplicate(_, (_: Int) => token))
   }
 
   override def get(token: String): Future[Option[T]] =

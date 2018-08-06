@@ -330,7 +330,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 404 if user not found" in new Context {
-        when(userService.getById(testUserId))
+        when(userService.findUser(testUserId))
           .thenReturn(Future.successful(None))
         Get(s"/api/users/$testUserId")
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
@@ -340,7 +340,7 @@ class UserRouteTest extends BaseTest {
       }
 
       "return 200 and user data" in new Context {
-        when(userService.getById(testUserId))
+        when(userService.findUser(testUserId))
           .thenReturn(Future.successful(
             Option(UserData(testUserId, "testemail", "testpassword", "testname", Some("ru")))))
         Get(s"/api/users/$testUserId")
@@ -520,7 +520,7 @@ class UserRouteTest extends BaseTest {
       "return 200 if confirmation succeed" in new Context {
         val requestEntity =
           HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"P1sswwqard"}""")
-        when(userService.setNewPassword("token", "P1sswwqard"))
+        when(userService.confirmResetPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Right(())))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]
@@ -532,7 +532,7 @@ class UserRouteTest extends BaseTest {
       "return 400 if password is too weak" in new Context {
         val requestEntity =
           HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"test"}""")
-        when(userService.setNewPassword("token", "test"))
+        when(userService.confirmResetPassword("token", "test"))
           .thenReturn(Future.successful(Right(())))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           println(response)
@@ -545,7 +545,7 @@ class UserRouteTest extends BaseTest {
       "return 200 if confirmation failed (token doesn't exist)" in new Context {
         val requestEntity =
           HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"P1sswwqard"}""")
-        when(userService.setNewPassword("token", "P1sswwqard"))
+        when(userService.confirmResetPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Left(TokenDoesntExist("reset password"))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
@@ -558,7 +558,7 @@ class UserRouteTest extends BaseTest {
       "return 200 if confirmation failed (token expired)" in new Context {
         val requestEntity =
           HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"P1sswwqard"}""")
-        when(userService.setNewPassword("token", "P1sswwqard"))
+        when(userService.confirmResetPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Left(TokenExpired("reset password"))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]] // Your password reset link has expired. Please initiate a new password reset
@@ -570,7 +570,7 @@ class UserRouteTest extends BaseTest {
       "return 200 if confirmation failed (User Not Found)" in new Context {
         val requestEntity =
           HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"P1sswwqard"}""")
-        when(userService.setNewPassword("token", "P1sswwqard"))
+        when(userService.confirmResetPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Left(ResourceNotFound(-1L))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           val resp = r[EmptyResponse]

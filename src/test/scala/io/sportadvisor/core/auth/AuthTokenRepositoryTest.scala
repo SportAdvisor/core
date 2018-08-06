@@ -34,7 +34,7 @@ class AuthTokenRepositoryTest extends BaseTest {
         val token: RefreshTokenData =
           awaitForResult(tokenRepository.save(CreateRefreshToken(1L, "token", remember = true, currentTime)))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
-        val tokens1: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(1L))
+        val tokens1: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(1L))
         tokens1 shouldBe Vector(RefreshTokenData(token.id, 1L, "token", remember = true, currentTime))
       }
 
@@ -42,7 +42,7 @@ class AuthTokenRepositoryTest extends BaseTest {
         awaitForResult(
           tokenRepository.save(CreateRefreshToken(1L, "token", remember = true, currentTime.minusDays(15L))))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
-        val tokens2: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(2L))
+        val tokens2: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(2L))
         tokens2 shouldBe Vector()
       }
 
@@ -50,7 +50,7 @@ class AuthTokenRepositoryTest extends BaseTest {
         val token: RefreshTokenData =
           awaitForResult(tokenRepository.save(CreateRefreshToken(3L, "token", remember = false, currentTime)))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
-        val tokens3: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(3L))
+        val tokens3: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(3L))
         tokens3 shouldBe Vector(RefreshTokenData(token.id, 3L, "token", remember = false, currentTime))
       }
 
@@ -59,7 +59,7 @@ class AuthTokenRepositoryTest extends BaseTest {
           tokenRepository.save(
             CreateRefreshToken(4L, "token", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeByDate(rememberExpired, notRememberExpired))
-        val tokens4: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(4L))
+        val tokens4: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(4L))
         tokens4 shouldBe Vector()
       }
     }
@@ -72,7 +72,7 @@ class AuthTokenRepositoryTest extends BaseTest {
           tokenRepository.save(
             CreateRefreshToken(5L, "t1232", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeByUser(100L))
-        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(5L))
+        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(5L))
         tokens.size shouldBe 2
       }
 
@@ -83,7 +83,7 @@ class AuthTokenRepositoryTest extends BaseTest {
           tokenRepository.save(
             CreateRefreshToken(6L, "t1232", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeByUser(6L))
-        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(6L))
+        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(6L))
         tokens.isEmpty shouldBe true
       }
     }
@@ -93,7 +93,7 @@ class AuthTokenRepositoryTest extends BaseTest {
         val token: RefreshTokenData = awaitForResult(
           tokenRepository.save(CreateRefreshToken(7L, "t123", remember = false, currentTime.minusHours(14L))))
         awaitForResult(tokenRepository.removeById(token.id))
-        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.getByUserId(7L))
+        val tokens: Seq[RefreshToken] = awaitForResult(tokenRepository.findByUserId(7L))
         tokens.isEmpty shouldBe true
       }
     }

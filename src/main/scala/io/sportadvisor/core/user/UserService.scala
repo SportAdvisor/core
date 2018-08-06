@@ -80,8 +80,8 @@ abstract class UserService(userRepository: UserRepository,
         case Some(u) => sendResetPasswordToken(u, redirectUrl)
       }
 
-  def setNewPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
-    val eitherT = for {
+  def confirmResetPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
+    val user = for {
       tokenFromDb <- EitherT
         .fromOptionF(resetPasswordTokenRepository.get(token), TokenDoesntExist("reset password"))
       decodedToken <- EitherT.fromOption[Future](decodeResetPasswordToken(tokenFromDb.token, secret),
@@ -90,12 +90,12 @@ abstract class UserService(userRepository: UserRepository,
                                   ResourceNotFound(decodedToken.email))
       result <- updatePassword(user, password)
     } yield result
-    eitherT
+    user
       .semiflatMap(u => resetPasswordTokenRepository.removeByUser(u.id).toSuccess(()))
       .value
   }
 
-  def getById(id: UserID): Future[Option[UserData]] = userRepository.get(id)
+  def findUser(id: UserID): Future[Option[UserData]] = userRepository.get(id)
 
   def changeAccount(userID: UserID, name: String, language: Option[String]): Future[Option[UserData]] =
     OptionT(userRepository.get(userID))

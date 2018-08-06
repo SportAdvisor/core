@@ -174,7 +174,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     validate[ConfirmPassword].apply { request =>
       selectLanguage() { language =>
         complete(
-          setNewPassword(request.token, request.password)
+          confirmResetPassword(request.token, request.password)
             .map {
               case Left(e)  => handleResetPasswordErrors(e, "token", language)
               case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
@@ -194,7 +194,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         complete(
-          getById(id).map {
+          findUser(id).map {
             case Some(u) => r(Response.data(userView(u), Option(s"/api/users/$userId")))
             case _       => r(Response.empty(StatusCodes.NotFound.intValue))
           }

@@ -1,10 +1,9 @@
 package io.sportadvisor.http.user
 
-import akka.http.scaladsl.model.StatusCodes.OK
-import akka.http.scaladsl.model.StatusCodes.BadRequest
+import akka.http.scaladsl.model.StatusCodes._
 import io.sportadvisor.BaseE2ETest
 import io.sportadvisor.core.auth.AuthModels.AuthToken
-import io.sportadvisor.http.Response.{DataResponse, ErrorResponse, FormError, ObjectData}
+import io.sportadvisor.http.Response.{DataResponse, EmptyResponse, ErrorResponse, FormError, ObjectData}
 import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
 
 import scala.concurrent.duration._
@@ -23,19 +22,21 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
     val response = put(req(user.id + "/password"),
                        s"""{"password": "${user.password}", "newPassword": "$newPassword"}""",
                        token1).timeout(10.seconds).asString
-    response.code shouldBe 200
+    response.code shouldBe OK.intValue
 
     val signInResponse2 = post(
       req("sign-in"),
       s"""{"email": "${user.email}", "password": "$newPassword", "remember": true}""").asString
-    signInResponse2.code shouldBe 200
+    signInResponse2.code shouldBe OK.intValue
 
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](signInResponse2.body)
-    body.code shouldBe 200
+    body.code shouldBe OK.intValue
 
     val token2 = body.data.data.token
     val aboutMeResponse = get(req(userId(token2).toString), token2).asString
-    aboutMeResponse.code shouldBe 200
+    aboutMeResponse.code shouldBe OK.intValue
+
+    user = user.copy(password = newPassword)
   }
 
   "PUT /api/users/{id}/password with a wrong old password" should "return 400 code" in {
@@ -86,24 +87,22 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
     val userId = user.id + 1
     val response = put(req(userId + "/password"),
                        s"""{"password": "${user.password}", "newPassword": "$newPassword" }""", token).asString
-    response.code shouldBe 403
+    response.code shouldBe Forbidden.intValue
 
     val body = r[ErrorResponse[FormError]](response.body)
-    body.code shouldBe 403
+    body.code shouldBe Forbidden.intValue
     body.errors should (contain(FormError("password", UserRoute.authError)) and have size 1)
   }
 
   "PUT /api/users/{id}/password unauthorized request" should "return 401 code" in {
-
     val newPassword = user.password + "1"
     val response = put(req(user.id + "/password"),
       s"""{"password": "${user.password}", "newPassword": "$newPassword" }""").timeout(10.seconds).asString
-    response.code shouldBe 401
+    response.code shouldBe Unauthorized.intValue
 
-    val body = r[ErrorResponse[FormError]](response.body)
-    body.code shouldBe 403
+    val body = r[EmptyResponse](response.body)
+    body.code shouldBe Unauthorized.intValue
 
-    body.errors should (contain(FormError("password", UserRoute.authError)) and have size 1)
   }
 
 }

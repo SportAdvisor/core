@@ -10,6 +10,7 @@ import io.sportadvisor.core.auth.AuthModels._
 import scala.concurrent.duration._
 import io.sportadvisor.core.user.UserModels.{UserData, UserID}
 import io.sportadvisor.exception.ApiError
+import io.sportadvisor.exception.Exceptions.TokenDoesntExist
 import io.sportadvisor.util.JwtUtil
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,12 +26,8 @@ class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPe
     val refreshToken =
       JwtUtil.encode(RefreshTokenContent(user.id, new Date().getTime), secretKey, None)
     val time = LocalDateTime.now()
-    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map(_.id) map {
-      refreshTokenId =>
-        val expTime = time.plusNanos(expPeriod.toNanos)
-        val token =
-          JwtUtil.encode(AuthTokenContent(refreshTokenId, user.id), secretKey, Option(expTime))
-        AuthToken(token, refreshToken, expTime.atZone(ZoneId.systemDefault()))
+    tokenRepository.save(CreateRefreshToken(user.id, refreshToken, remember, time)).map { refreshTokenData =>
+      createAuthToken(refreshTokenData)
     }
   }
 
@@ -44,4 +41,25 @@ class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPe
 
   def userId(token: String): Option[UserID] =
     JwtUtil.decode[AuthTokenContent](token, secretKey).map(_.userID)
+
+  def refreshAccessToken(token: String): Future[Either[ApiError, AuthToken]] = {
+    tokenRepository.find(token).flatMap {
+      case Some(refreshTokenData) =>
+        tokenRepository
+          .save(refreshTokenData.copy(lastTouch = LocalDateTime.now()))
+          .map(createAuthToken)
+          .map(Right(_))
+      case None => Future.successful(Left(TokenDoesntExist("RefreshAuthToken")))
+    }
+  }
+
+  private def createAuthToken(refreshTokenData: RefreshTokenData): AuthToken = {
+    val time = LocalDateTime.now()
+    val expTime = time.plusNanos(expPeriod.toNanos)
+    val token =
+      JwtUtil.encode(AuthTokenContent(refreshTokenData.id, refreshTokenData.userId),
+                     secretKey,
+                     Option(expTime))
+    AuthToken(token, refreshTokenData.token, expTime.atZone(ZoneId.systemDefault()))
+  }
 }

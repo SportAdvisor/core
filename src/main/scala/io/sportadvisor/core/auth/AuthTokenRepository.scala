@@ -13,13 +13,15 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 trait AuthTokenRepository {
 
+  def find(token: String): Future[Option[RefreshTokenData]]
+
   def save(token: RefreshToken): Future[RefreshTokenData]
 
   def removeByUser(id: UserID): Future[Unit]
 
   def removeByDate(dateRemember: LocalDateTime, dateNotRemember: LocalDateTime): Future[Int]
 
-  def getByUserId(userID: UserID): Future[Seq[RefreshToken]]
+  def findByUserId(userID: UserID): Future[Seq[RefreshToken]]
 
   def removeById(refreshTokenId: Long): Future[Unit]
 }
@@ -62,7 +64,7 @@ class AuthTokenRepositorySQL(val connector: DatabaseConnector)(implicit executio
     db.run(query.delete)
   }
 
-  override def getByUserId(userID: UserID): Future[Seq[RefreshToken]] = {
+  override def findByUserId(userID: UserID): Future[Seq[RefreshToken]] = {
     val query = tokens.filter(_.userId === userID)
     db.run(query.result)
   }
@@ -70,5 +72,9 @@ class AuthTokenRepositorySQL(val connector: DatabaseConnector)(implicit executio
   override def removeById(refreshTokenId: Long): Future[Unit] = {
     val query = tokens.filter(_.id === refreshTokenId)
     db.run(query.delete).map(_ => ())
+  }
+
+  override def find(token: String): Future[Option[RefreshTokenData]] = {
+    db.run(tokens.filter(t => t.token === token).take(1).result.headOption)
   }
 }

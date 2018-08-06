@@ -3,6 +3,7 @@ package io.sportadvisor.http.user
 import java.sql.DriverManager
 
 import com.roundeights.hasher.Implicits._
+import io.sportadvisor.core.auth.AuthModels.AuthToken
 import io.sportadvisor.core.user.UserModels.UserData
 import io.sportadvisor.{BaseE2ETest, Preconditions}
 
@@ -35,5 +36,7 @@ trait DefaultUsersData extends Preconditions { self: BaseE2ETest =>
     user = UserData(id, email, password, name, Some(lang))
     super.setup()
   }
+
+  def auth(): AuthToken = auth(user.email, user.password, true)
 
 }

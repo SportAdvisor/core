@@ -8,10 +8,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
-import io.sportadvisor.core.user.UserService
 import io.sportadvisor.core.auth.AuthModels._
 import io.sportadvisor.core.auth.AuthService
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
@@ -44,10 +44,17 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           post {
             handleSignUp()
           }
-        } ~ path("sign-in") {
-          post {
-            handleSignIn()
-          }
+        } ~ pathPrefix("sign-in") {
+          pathEnd {
+            post {
+              handleSignIn()
+            }
+          } ~
+            path("refresh") {
+              post {
+                handleRefreshToken()
+              }
+            }
         } ~ pathPrefix(LongNumber) { userId =>
           path("email") {
             put {
@@ -167,7 +174,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     validate[ConfirmPassword].apply { request =>
       selectLanguage() { language =>
         complete(
-          setNewPassword(request.token, request.password)
+          confirmResetPassword(request.token, request.password)
             .map {
               case Left(e)  => handleResetPasswordErrors(e, "token", language)
               case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
@@ -187,7 +194,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         complete(
-          getById(id).map {
+          findUser(id).map {
             case Some(u) => r(Response.data(userView(u), Option(s"/api/users/$userId")))
             case _       => r(Response.empty(StatusCodes.NotFound.intValue))
           }
@@ -230,6 +237,19 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
             )
           }
         }
+      }
+    }
+  }
+
+  def handleRefreshToken(): Route = {
+    entity(as[TokenRefresh]) { refreshToken =>
+      selectLanguage() { lang =>
+        complete(
+          authService.refreshAccessToken(refreshToken.refreshToken).map {
+            case Left(e)          => handleRefreshTokenError(e, lang)
+            case Right(tokenData) => r(Response.data(tokenData, None))
+          }
+        )
       }
     }
   }
@@ -280,6 +300,14 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
         log.error(s"Api error: ${exception.msg}", e)
       }
       r(Response.fail(None))
+  }
+
+  private def handleRefreshTokenError(err: ApiError, lang: Language): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case TokenDoesntExist(_) | TokenExpired(_) =>
+        r(Response.empty(StatusCodes.BadRequest.intValue))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
   }
 
 }

@@ -76,5 +76,4 @@ trait Decoders extends AutoDerivation{
   }
 
   implicit val userViewDecoder: Decoder[UserView] = deriveDecoder
-
 }

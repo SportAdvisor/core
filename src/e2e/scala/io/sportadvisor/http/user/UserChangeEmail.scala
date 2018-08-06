@@ -1,7 +1,6 @@
 package io.sportadvisor.http.user
 
 import akka.http.scaladsl.model.StatusCodes._
-import io.sportadvisor.core.auth.AuthModels.AuthToken
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.UserRouteValidators
@@ -20,14 +19,7 @@ class UserChangeEmail
 
   "User change email with correct email" should "return ok" in {
     val newMail = "test123@sportadvisor.io"
-
-    val resp = post(
-      req("sign-in"),
-      s"""{"email": "${user.email}", "password": "${user.password}", "remember":true}""").asString
-    resp.code shouldBe OK.intValue
-
-    val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](resp.body)
-    val token = body.data.data.token
+    val token = auth().token
     val changeEmailResp =
       put(req(s"${user.id}/email"),
           s"""{"email": "$newMail", "redirectUrl": ""}""",
@@ -55,13 +47,7 @@ class UserChangeEmail
   }
 
   "User change with broken email" should "return 400 and form error" in {
-    val resp = post(
-      req("sign-in"),
-      s"""{"email": "${user.email}", "password": "${user.password}", "remember":true}""").asString
-    resp.code shouldBe OK.intValue
-
-    val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](resp.body)
-    val token = body.data.data.token
+    val token = auth().token
     val changeEmailResp =
       put(req(s"${user.id}/email"),
         s"""{"email": "bad-email", "redirectUrl": ""}""",
@@ -73,13 +59,7 @@ class UserChangeEmail
   }
 
   "User change another email" should "return 403" in {
-    val resp = post(
-      req("sign-in"),
-      s"""{"email": "${user.email}", "password": "${user.password}", "remember":true}""").asString
-    resp.code shouldBe OK.intValue
-
-    val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](resp.body)
-    val token = body.data.data.token
+    val token = auth().token
     val changeEmailResp =
       put(req(s"${user.id + 1}/email"),
         s"""{"email": "email@sportadvisor.io", "redirectUrl": ""}""",

@@ -201,6 +201,44 @@ class UserRouteTest extends BaseTest {
       }
     }
 
+    "POST /api/users/sign-in/refresh" should {
+      "return 200 and token if refresh was succesful" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"refreshToken": "token"}""")
+        when(authService.refreshAccessToken("token"))
+          .thenReturn(Future.successful(Right(AuthToken("token", "token", ZonedDateTime.now()))))
+        Post("/api/users/sign-in/refresh", requestEntity) ~> userRoute ~> check {
+          val resp = r[DataResponse[AuthToken, ObjectData[AuthToken]]]
+          resp.code should be(200)
+          val data = resp.data.data
+          data.token should not be null
+          data.refreshToken should not be null
+          data.expireAt should not be null
+
+          status.isSuccess should be(true)
+        }
+      }
+
+      "return 400 if was error" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"refreshToken": "token"}""")
+        when(authService.refreshAccessToken("token"))
+          .thenReturn(Future.successful(Left(TokenExpired("RefreshAuthToken"))))
+        Post("/api/users/sign-in/refresh", requestEntity) ~> userRoute ~> check {
+          val resp = r[EmptyResponse]
+          resp.code should be(400)
+        }
+      }
+
+      "return 500 if was internal error" in new Context {
+        val requestEntity = HttpEntity(MediaTypes.`application/json`, s"""{"refreshToken": "token"}""")
+        when(authService.refreshAccessToken("token"))
+          .thenThrow(new RuntimeException)
+        Post("/api/users/sign-in/refresh", requestEntity) ~> userRoute ~> check {
+          val resp = r[FailResponse]
+          resp.code should be(500)
+        }
+      }
+    }
+
     "PUT /api/users/{id}/email" should {
       "return 400 if email is exists" in new Context {
         val requestEntity =

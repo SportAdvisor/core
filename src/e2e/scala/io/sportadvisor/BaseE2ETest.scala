@@ -8,6 +8,8 @@ import com.dimafeng.testcontainers._
 import com.github.dockerjava.api.command.InspectContainerResponse
 import io.circe._
 import io.circe.parser._
+import io.sportadvisor.core.auth.AuthModels.AuthToken
+import io.sportadvisor.http.Response.{DataResponse, ObjectData}
 import org.scalatest.{FlatSpec, Matchers}
 import org.slf4s.Logging
 import org.testcontainers.containers.output.OutputFrame
@@ -64,6 +66,11 @@ trait BaseE2ETest
     }
   }
 
+  protected final def auth(email: String, pass: String, remember: Boolean): AuthToken =
+    r[DataResponse[AuthToken, ObjectData[AuthToken]]](post(
+      to("api/users/sign-in"),
+      s"""{"email": "$email", "password": "$pass", "remember":$remember}""").asString.body).data.data
+
   protected final def post(url: String, data: String, token: String = ""): HttpRequest =
     Http(url).postData(data).defaultHeaders(token).defaultTimeout
 
@@ -88,8 +95,8 @@ trait BaseE2ETest
     parse(payload).getOrElse(Json.Null).hcursor.downField("userID").as[Long].toOption.get
   }
 
-  protected def additionalContainer(
-      initial: Seq[LazyContainer[Container]]): Seq[LazyContainer[Container]] = initial
+  protected def additionalContainer(initial: Seq[LazyContainer[Container]]): Seq[LazyContainer[Container]] =
+    initial
 
   private def env(): Map[String, String] = Map(
     "SECRET_KEY" -> ("IntegrationTest" + Random.nextString(2)),

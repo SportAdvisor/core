@@ -17,6 +17,7 @@ object UserRouteProtocol {
   final case class ConfirmPassword(token: String, password: String)
   final case class AccountSettings(name: String, language: Option[String])
   final case class PasswordChange(password: String, newPassword: String)
+  final case class TokenRefresh(refreshToken: String)
 
   final case class UserView(id: Long, email: String, name: String, language: Option[String])
 
@@ -28,9 +29,9 @@ object UserRouteProtocol {
   implicit val confirmPasswordDecoder: Decoder[ConfirmPassword] = deriveDecoder
   implicit val accountSettingsDecoder: Decoder[AccountSettings] = deriveDecoder
   implicit val passwordChangeDecoder: Decoder[PasswordChange] = deriveDecoder
+  implicit val refreshTokenDecoder: Decoder[TokenRefresh] = deriveDecoder
 
   implicit val userViewEncoder: Encoder[UserView] = deriveEncoder
 
   def userView(user: UserData): UserView = UserView(user.id, user.email, user.name, user.language)
-
 }

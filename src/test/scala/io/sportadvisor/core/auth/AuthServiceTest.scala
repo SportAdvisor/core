@@ -1,8 +1,11 @@
 package io.sportadvisor.core.auth
 
+import java.time.LocalDateTime
+
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.auth.AuthModels.{AuthToken, CreateRefreshToken, RefreshToken, RefreshTokenData}
 import io.sportadvisor.core.user.UserModels.{UserData, UserID}
+import io.sportadvisor.exception.ApiError
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.mockito.invocation.InvocationOnMock
@@ -60,11 +63,33 @@ class AuthServiceTest extends BaseTest {
         authService.userId(authToken.token).isDefined shouldBe true
       }
     }
+
+    "refreshAccessToken" should {
+      "return AuthToken if refresh was success" in new Context {
+        val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
+        when(tokenRepository.find(authToken.refreshToken)).thenReturn(Future.successful(
+          Some(RefreshTokenData(testTokenId, testUserId, authToken.token, false, LocalDateTime.now()))))
+        val result: Either[ApiError, AuthToken] =
+          awaitForResult(authService.refreshAccessToken(authToken.refreshToken))
+        private val userId: Option[UserID] = authService.userId(result.right.get.token)
+        userId.get shouldBe testUserId
+        result.isRight shouldBe true
+      }
+
+      "return api error if token is invalid" in new Context {
+        val authToken: AuthToken = awaitForResult(authService.createToken(testUser, false))
+        when(tokenRepository.find(authToken.refreshToken)).thenReturn(Future.successful(None))
+        val result: Either[ApiError, AuthToken] =
+          awaitForResult(authService.refreshAccessToken(authToken.refreshToken))
+        result.isLeft shouldBe true
+      }
+    }
   }
 
   trait Context {
     val len = 10
 
+    val testTokenId: Long = Random.nextLong()
     val testUserId: Long = Random.nextLong()
     val testName: String = Random.nextString(len)
     val testEmail: String = Random.nextString(len)
@@ -78,9 +103,17 @@ class AuthServiceTest extends BaseTest {
 
     when(tokenRepository.save(any[RefreshToken])).thenAnswer((invocation: InvocationOnMock) => {
       val arguments = invocation.getArguments
-      val token = arguments(0).asInstanceOf[CreateRefreshToken]
-      Future.successful(
-        RefreshTokenData(Random.nextLong(), token.userId, token.token, token.remember, token.lastTouch))
+      arguments(0).asInstanceOf[RefreshToken] match {
+        case refreshToken: CreateRefreshToken =>
+          Future.successful(
+            RefreshTokenData(Random.nextLong(),
+                             refreshToken.userId,
+                             refreshToken.token,
+                             refreshToken.remember,
+                             refreshToken.lastTouch))
+        case refreshTokenData: RefreshTokenData =>
+          Future.successful(refreshTokenData)
+      }
     })
 
     val authService: AuthService = new AuthService(tokenRepository, secret, 5.seconds)

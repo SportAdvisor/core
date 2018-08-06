@@ -97,6 +97,16 @@ class AuthTokenRepositoryTest extends BaseTest {
         tokens.isEmpty shouldBe true
       }
     }
+
+    "find" should {
+      "find by id" in new Context {
+        val token: RefreshTokenData = awaitForResult(
+          tokenRepository.save(CreateRefreshToken(8L, "t123", remember = false, currentTime.minusHours(14L))))
+        val tokens: Option[RefreshTokenData] = awaitForResult(tokenRepository.find(token.token))
+        tokens.isDefined shouldBe true
+        tokens.get.token shouldEqual token.token
+      }
+    }
   }
 
   trait Context {

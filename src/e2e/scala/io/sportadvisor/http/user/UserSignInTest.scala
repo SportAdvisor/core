@@ -18,7 +18,7 @@ class UserSignInTest extends BaseE2ETest with UserMappings with DefaultUsersData
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](response.body)
     body.code shouldBe 200
 
-    body.data.data.expireAt isBefore ZonedDateTime.now() shouldBe true
+    body.data.data.expireAt isAfter ZonedDateTime.now() shouldBe true
     val token = body.data.data.token
     val aboutMeResponse = get(req(userId(token).toString), token).asString
     aboutMeResponse.code shouldBe 200
@@ -37,7 +37,7 @@ class UserSignInTest extends BaseE2ETest with UserMappings with DefaultUsersData
     val body = r[DataResponse[AuthToken, ObjectData[AuthToken]]](response.body)
     body.code shouldBe 200
 
-    body.data.data.expireAt isBefore ZonedDateTime.now() shouldBe true
+    body.data.data.expireAt isAfter ZonedDateTime.now() shouldBe true
     val token = body.data.data.token
     val aboutMeResponse = get(req(userId(token).toString), token).asString
     aboutMeResponse.code shouldBe 200

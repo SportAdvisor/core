@@ -8,7 +8,7 @@ import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.http.route.SystemRoute
 import io.sportadvisor.http.route.user.UserRoute
-import io.sportadvisor.util.I18nServiceImpl
+import io.sportadvisor.util.I18nService
 
 import scala.concurrent.ExecutionContext
 
@@ -16,9 +16,10 @@ import scala.concurrent.ExecutionContext
   * @author sss3 (Vladimir Alekseev)
   */
 class HttpRoute(userService: UserService)(implicit executionContext: ExecutionContext,
-                                          authService: AuthService) {
+                                          authService: AuthService,
+                                          i18nServiceImpl: I18nService) {
 
-  private val userRoute = new UserRoute(userService) with I18nServiceImpl
+  private val userRoute = new UserRoute(userService)
   private val systemRoute = new SystemRoute
 
   val route: Route =

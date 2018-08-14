@@ -2,7 +2,7 @@ package io.sportadvisor.http.route.user
 
 import io.sportadvisor.core.system.SystemService
 import io.sportadvisor.http.common.Validated.ValidationRule
-import io.sportadvisor.http.common.{Validated, ValidationResult}
+import io.sportadvisor.http.common.{CommonValidations, Validated, ValidationResult}
 
 /**
   * @author sss3 (Vladimir Alekseev)
@@ -12,7 +12,6 @@ object UserRouteValidators {
   import UserRouteProtocol._
 
   val emailInvalid = "Email is invalid"
-  val nameIsEmpty = "Name is required"
   val passwordIsWeak: String =
     "Your password must be at least 8 characters long, and include at least one lowercase letter, " +
       "one uppercase letter, and a number. Your password can't contain spaces"
@@ -21,7 +20,7 @@ object UserRouteValidators {
 
   implicit val regValidator: Validated[RegistrationModel] =
     Validated[RegistrationModel](
-      (u: RegistrationModel) => nameValidator("name")(u.name),
+      (u: RegistrationModel) => CommonValidations.requiredString("name")(u.name),
       (u: RegistrationModel) => emailValidator("email")(u.email),
       (u: RegistrationModel) => passwordValidator("password")(u.password),
       (u: RegistrationModel) =>
@@ -39,7 +38,7 @@ object UserRouteValidators {
 
   implicit val accountSettingsValidator: Validated[AccountSettings] =
     Validated[AccountSettings](
-      (a: AccountSettings) => nameValidator("name")(a.name),
+      (a: AccountSettings) => CommonValidations.requiredString("name")(a.name),
       (a: AccountSettings) =>
         a.language
           .map(l => SystemService.supportedLanguage().contains(l))
@@ -66,10 +65,6 @@ object UserRouteValidators {
     } else {
       None
     }
-  }
-
-  private def nameValidator(field: String): ValidationRule[String] = name => {
-    if (name.trim.isEmpty) { Some(ValidationResult(field, nameIsEmpty)) } else None
   }
 
   private def passwordValidator(field: String): ValidationRule[String] = password => {

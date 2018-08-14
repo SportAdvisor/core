@@ -16,6 +16,7 @@ import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.Response._
+import io.sportadvisor.http.route.ResourceRoute
 import io.sportadvisor.http.route.user.UserRoute._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
 import io.sportadvisor.http.route.user.UserRouteValidators._
@@ -32,69 +33,66 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
                                                    authService: AuthService)
     extends FailFastCirceSupport
     with I18nService
-    with Logging {
+    with Logging
+    with ResourceRoute {
 
   import http._
   import userService._
 
-  val route: Route = pathPrefix("users") {
-    handleExceptions(exceptionHandler) {
-      handleRejections(rejectionHandler) {
-        path("sign-up") {
+  override val route: Route = pathPrefix("users") {
+    path("sign-up") {
+      post {
+        handleSignUp()
+      }
+    } ~ pathPrefix("sign-in") {
+      pathEnd {
+        post {
+          handleSignIn()
+        }
+      } ~
+        path("refresh") {
           post {
-            handleSignUp()
-          }
-        } ~ pathPrefix("sign-in") {
-          pathEnd {
-            post {
-              handleSignIn()
-            }
-          } ~
-            path("refresh") {
-              post {
-                handleRefreshToken()
-              }
-            }
-        } ~ pathPrefix(LongNumber) { userId =>
-          path("email") {
-            put {
-              handleChangeEmail(userId)
-            }
-          } ~ get {
-            handleGetUser(userId)
-          } ~ put {
-            handleChangeAccount(userId)
-          } ~ path("password") {
-            put {
-              handleChangePassword(userId)
-            }
-          }
-        } ~ path("email-confirm") {
-          post {
-            handleConfirmEmail()
-          }
-        } ~ path("reset-password") {
-          post {
-            handleResetPassword()
-          }
-        } ~ path("password-confirm") {
-          post {
-            handleConfirmNewPassword()
-          }
-        } ~ path("me") {
-          get {
-            handleGetMe()
-          }
-        } ~ path("sign-out") {
-          post {
-            handleSignOut()
+            handleRefreshToken()
           }
         }
+    } ~ pathPrefix(LongNumber) { userId =>
+      path("email") {
+        put {
+          handleChangeEmail(userId)
+        }
+      } ~ get {
+        handleGetUser(userId)
+      } ~ put {
+        handleChangeAccount(userId)
+      } ~ path("password") {
+        put {
+          handleChangePassword(userId)
+        }
+      }
+    } ~ path("email-confirm") {
+      post {
+        handleConfirmEmail()
+      }
+    } ~ path("reset-password") {
+      post {
+        handleResetPassword()
+      }
+    } ~ path("password-confirm") {
+      post {
+        handleConfirmNewPassword()
+      }
+    } ~ path("me") {
+      get {
+        handleGetMe()
+      }
+    } ~ path("sign-out") {
+      post {
+        handleSignOut()
       }
     }
   }
 
-  def handleSignUp(): Route = {
+  private def handleSignUp(): Route = {
     validate[RegistrationModel].apply { request =>
       selectLanguage() { lang =>
         complete(
@@ -107,7 +105,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleSignIn(): Route = {
+  private def handleSignIn(): Route = {
     entity(as[EmailPassword]) { req =>
       complete(
         signIn(req.email, req.password, req.remember).map {
@@ -118,7 +116,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleChangeEmail(id: UserID): Route = {
+  private def handleChangeEmail(id: UserID): Route = {
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         validate[EmailChange].apply { request =>
@@ -135,7 +133,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleSignOut(): Route = {
+  private def handleSignOut(): Route = {
     optionalHeaderValueByName(authorizationHeader) {
       case Some(value) =>
         complete(logout(value).map {
@@ -146,7 +144,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleConfirmEmail(): Route = {
+  private def handleConfirmEmail(): Route = {
     entity(as[EmailToken]) { entity =>
       complete(
         confirmEmail(entity.token).map { res =>
@@ -156,7 +154,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleResetPassword(): Route = {
+  private def handleResetPassword(): Route = {
     validate[ResetPassword].apply { request =>
       selectLanguage() { lang =>
         complete(
@@ -170,7 +168,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleConfirmNewPassword(): Route = {
+  private def handleConfirmNewPassword(): Route = {
     validate[ConfirmPassword].apply { request =>
       selectLanguage() { language =>
         complete(
@@ -184,13 +182,13 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleGetMe(): Route = {
+  private def handleGetMe(): Route = {
     authenticate.apply { userId =>
       redirect(s"/api/users/$userId", StatusCodes.SeeOther)
     }
   }
 
-  def handleGetUser(id: UserID): Route = {
+  private def handleGetUser(id: UserID): Route = {
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         complete(
@@ -203,7 +201,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleChangeAccount(id: UserID): Route = {
+  private def handleChangeAccount(id: UserID): Route = {
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         validate[AccountSettings].apply { req =>
@@ -224,7 +222,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleChangePassword(id: UserID): Route = {
+  private def handleChangePassword(id: UserID): Route = {
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         validate[PasswordChange].apply { req =>
@@ -241,7 +239,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  def handleRefreshToken(): Route = {
+  private def handleRefreshToken(): Route = {
     entity(as[TokenRefresh]) { refreshToken =>
       selectLanguage() { lang =>
         complete(

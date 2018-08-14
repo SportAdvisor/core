@@ -17,6 +17,7 @@ import io.sportadvisor.http.Decoders._
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Response._
+import io.sportadvisor.http.common.CommonValidations
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
 import org.mockito.Mockito._
@@ -56,7 +57,7 @@ class UserRouteTest extends BaseTest {
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 1)
+          resp.errors should (contain(FormError("name", CommonValidations.requiredField)) and have size 1)
         }
       }
 
@@ -408,7 +409,7 @@ class UserRouteTest extends BaseTest {
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 1)
+          resp.errors should (contain(FormError("name", CommonValidations.requiredField)) and have size 1)
         }
       }
 

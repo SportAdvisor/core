@@ -21,9 +21,10 @@ private final class DefaultValidated[T](rules: Seq[ValidationRule[T]]) extends V
   }
 }
 
-final case class ValidationResult(field: String, msgId: String) {
-  def toFormError(i18n: I18n): FormError = {
-    FormError(field, i18n.t(msgId))
+final case class ValidationResult(field: String, msgId: String, args: Any*) {
+  def toFormError(i18n: I18n): FormError = args match {
+    case Seq() => FormError(field, i18n.t(msgId))
+    case _ => FormError(field, i18n.t(msgId, args))
   }
 }
 

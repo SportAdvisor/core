@@ -15,7 +15,7 @@ msgstr ""
 msgid "Email is invalid"
 msgstr ""
 
-msgid "Name is required"
+msgid "Field is required"
 msgstr ""
 
 msgid "Your password must be at least 8 characters long, and include at least one lowercase letter, one uppercase letter, and a number. Your password can't contain spaces"

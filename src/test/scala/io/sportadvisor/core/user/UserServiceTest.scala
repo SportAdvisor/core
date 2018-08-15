@@ -11,6 +11,7 @@ import io.sportadvisor.core.user.token.TokenRepository
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound, UnhandledException}
 import io.sportadvisor.exception._
 import io.sportadvisor.http.I18nStub
+import io.sportadvisor.util.I18nService
 import io.sportadvisor.util.i18n.I18n
 import io.sportadvisor.util.mail.MailModel.MailMessage
 import io.sportadvisor.util.mail.{MailRenderService, MailSenderService, MailService}
@@ -319,12 +320,13 @@ class UserServiceTest extends BaseTest {
       mock[TokenRepository[ResetPasswordToken]]
 
     val authService: AuthService = mock[AuthService]
+    implicit val i18n: I18nService = I18nStub
     val userService = new UserService(userRepository,
                                       authService,
                                       testSecretKey,
                                       mailService,
                                       mailChangesTokenRepository,
-                                      resetPasswordTokenRepository) with I18nStub
+                                      resetPasswordTokenRepository)
 
     val testUserId: Long = Random.nextLong()
     val testName: String = Random.nextString(10)

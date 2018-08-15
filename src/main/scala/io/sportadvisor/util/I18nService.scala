@@ -16,7 +16,7 @@ trait I18nService {
 
 }
 
-trait I18nServiceImpl extends I18nService {
+object I18nServiceImpl extends I18nService {
 
   override def errors(lang: Language): I18n = new I18nImpl(lang, "error")
 

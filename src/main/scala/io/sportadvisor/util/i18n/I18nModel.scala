@@ -9,7 +9,7 @@ import scala.collection.immutable
   */
 object I18nModel {
 
-  type I18nMap[T] = Map[Language, T]
+  type I18nMap = Map[Language, String]
 
   sealed trait Language extends EnumEntry
 
@@ -27,5 +27,16 @@ object I18nModel {
 
     case object RU extends Language
     case object EN extends Language
+  }
+
+  // scalastyle:off
+  object implicits {
+    implicit class I18nMapOps(val map: I18nMap) extends AnyVal {
+
+      def orDefault(language: Language): Option[String] = map.get(language).orElse(map.get(Language.default))
+
+      def anyText(): Option[String] = map.headOption.map(_._2)
+
+    }
   }
 }

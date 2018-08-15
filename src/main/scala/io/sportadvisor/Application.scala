@@ -13,7 +13,7 @@ import io.sportadvisor.core.user._
 import io.sportadvisor.core.user.token.{TokenRepository, TokenType}
 import io.sportadvisor.core.user.token.TokenRepository._
 import io.sportadvisor.http.HttpRoute
-import io.sportadvisor.util.{Config, I18nServiceImpl}
+import io.sportadvisor.util.{Config, I18nService, I18nServiceImpl}
 import io.sportadvisor.util.Config.ConfigReaderFailuresExt
 import io.sportadvisor.util.db.{DatabaseConnector, DatabaseMigration}
 import io.sportadvisor.util.mail.MailService
@@ -52,13 +52,14 @@ object Application extends Logging {
       TokenRepository[ResetPasswordToken](TokenType.ResetPassword, databaseConnector)
 
     implicit val authService: AuthService = new AuthService(tokenRepository, config.authKey)
+    implicit val i18nService: I18nService = I18nServiceImpl
     val userRepository = new UserRepositorySQL(databaseConnector)
     val usersService = new UserService(userRepository,
                                        authService,
                                        config.secretKey,
                                        mailService,
                                        mailTokenRepository,
-                                       resetPasswordTokenRepository) with I18nServiceImpl
+                                       resetPasswordTokenRepository)
 
     val httpRoute = new HttpRoute(usersService, new GisService)
 

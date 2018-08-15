@@ -28,15 +28,15 @@ import io.sportadvisor.core.user.token._
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-abstract class UserService(userRepository: UserRepository,
-                           authService: AuthService,
-                           secretKey: String,
-                           mailService: MailService[I18n, Throwable, _],
-                           mailTokenRepository: TokenRepository[ChangeMailToken],
-                           resetPasswordTokenRepository: TokenRepository[ResetPasswordToken])(
-    implicit executionContext: ExecutionContext)
-    extends Logging
-    with I18nService {
+class UserService(userRepository: UserRepository,
+                  authService: AuthService,
+                  secretKey: String,
+                  mailService: MailService[I18n, Throwable, _],
+                  mailTokenRepository: TokenRepository[ChangeMailToken],
+                  resetPasswordTokenRepository: TokenRepository[ResetPasswordToken])(
+    implicit executionContext: ExecutionContext,
+    i18nService: I18nService)
+    extends Logging {
 
   private[this] val mailChangeExpPeriod = 1.day
   private[this] val passwordResetExpPeriod = 1.day
@@ -151,8 +151,8 @@ abstract class UserService(userRepository: UserRepository,
                                   "user" -> user,
                                   "expAt" -> dateToString(time))
       val body =
-        mailService.mailRender.renderI18n("mails/reset-password.ssp", args, mails(user.lang))
-      val subject = mails(user.lang).t("Reset password on SportAdvisor")
+        mailService.mailRender.renderI18n("mails/reset-password.ssp", args, i18nService.mails(user.lang))
+      val subject = i18nService.mails(user.lang).t("Reset password on SportAdvisor")
       val msg = MailMessage(List(user.email), List(), List(), subject, HtmlContent(body))
       sendMessage(msg, Future.successful(Right(())))
     }.value
@@ -171,8 +171,8 @@ abstract class UserService(userRepository: UserRepository,
                                   "expAt" -> dateToString(time),
                                   "email" -> email)
       val body =
-        mailService.mailRender.renderI18n("mails/mail-change.ssp", args, mails(user.lang))
-      val subject = mails(user.lang).t("Change email on SportAdvisor")
+        mailService.mailRender.renderI18n("mails/mail-change.ssp", args, i18nService.mails(user.lang))
+      val subject = i18nService.mails(user.lang).t("Change email on SportAdvisor")
       val msg = MailMessage(List(email), List(), List(), subject, HtmlContent(body))
       sendMessage(msg, Future.successful(Right(())))
     }.value
@@ -191,8 +191,8 @@ abstract class UserService(userRepository: UserRepository,
                                           oldEmail: String): Future[Either[ApiError, Unit]] = {
     val args = Map[String, Any]("user" -> user, "oldEmail" -> oldEmail)
     val body =
-      mailService.mailRender.renderI18n("mails/mail-change-confirm.ssp", args, mails(user.lang))
-    val subject = mails(user.lang).t("Change email on SportAdvisor")
+      mailService.mailRender.renderI18n("mails/mail-change-confirm.ssp", args, i18nService.mails(user.lang))
+    val subject = i18nService.mails(user.lang).t("Change email on SportAdvisor")
     val msg = MailMessage(List(oldEmail), List(), List(user.email), subject, HtmlContent(body))
     mailService.mailSender.send(msg).map {
       case Left(t)  => Left(UnhandledException(t))

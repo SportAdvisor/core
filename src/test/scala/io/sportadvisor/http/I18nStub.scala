@@ -7,7 +7,7 @@ import io.sportadvisor.util.i18n.I18nModel.Language
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-trait I18nStub extends I18nService {
+object I18nStub extends I18nService {
 
   override def errors(lang: Language): I18n = new StubI18n(lang)
 

@@ -25,9 +25,9 @@ object UserRouteValidators {
       (u: RegistrationModel) => passwordValidator("password")(u.password),
       (u: RegistrationModel) =>
         if (!u.EULA) {
-          Some(ValidationResult("EULA", EUALIsRequired))
+          List(ValidationResult("EULA", EUALIsRequired))
         } else {
-          None
+          List()
       }
     )
 
@@ -44,6 +44,7 @@ object UserRouteValidators {
           .map(l => SystemService.supportedLanguage().contains(l))
           .filter(b => !b)
           .map(_ => ValidationResult("language", langNotSupported))
+          .toList
     )
 
   implicit val changePasswordValidator: Validated[PasswordChange] =
@@ -61,17 +62,17 @@ object UserRouteValidators {
 
   private def emailValidator(field: String): ValidationRule[String] = u => {
     if (!u.matches(".+@.+\\..+")) {
-      Some(ValidationResult(field, emailInvalid))
+      List(ValidationResult(field, emailInvalid))
     } else {
-      None
+      List()
     }
   }
 
   private def passwordValidator(field: String): ValidationRule[String] = password => {
     if (!password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[\\S]{8,}$")) {
-      Some(ValidationResult(field, passwordIsWeak))
+      List(ValidationResult(field, passwordIsWeak))
     } else {
-      None
+      List()
     }
   }
 

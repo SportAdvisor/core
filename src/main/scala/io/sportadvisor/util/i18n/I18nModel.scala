@@ -33,9 +33,9 @@ object I18nModel {
   object implicits {
     implicit class I18nMapOps(val map: I18nMap) extends AnyVal {
 
-      def text(language: Language): Option[String] = map.get(language).orElse(map.get(Language.default))
+      def orDefault(language: Language): Option[String] = map.get(language).orElse(map.get(Language.default))
 
-      def anyText(): Option[String] = map.headOption.map(_._2)
+      def anyText(): Option[String] = map.headOption.map { case (_, value) => value }
 
     }
   }

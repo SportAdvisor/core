@@ -9,6 +9,6 @@ object GisModels {
 
   final case class Coordinate(latitude: Double, longitude: Double)
   final case class Country(id: Long, name: I18nMap, coordinate: Coordinate)
-  final case class City(id: Long, name: String, coordinate: Coordinate, countryId: Long)
+  final case class City(id: Long, name: I18nMap, coordinate: Coordinate, countryId: Long)
 
 }

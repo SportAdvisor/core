@@ -1,7 +1,7 @@
 package io.sportadvisor.http.route.trainer
 
 
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 import io.circe.generic.semiauto._
 import io.circe.Decoder
@@ -12,7 +12,7 @@ import io.sportadvisor.core.gis.GisModels.Coordinate
   */
 object TrainerRouteProtocol {
 
-  final case class CreateTrainer(about: String, alias: String, birthday: ZonedDateTime,
+  final case class CreateTrainer(about: String, alias: String, birthday: LocalDate,
                                  sex: Int, sports: List[Int], groupTraining: Option[GroupTraining],
                                  personalTraining: Option[PersonalTraining], contacts: Contacts, workWithChild: Boolean,
                                  workWithInjured: Boolean, workWithAdults: Boolean, country: Place, city: Place,

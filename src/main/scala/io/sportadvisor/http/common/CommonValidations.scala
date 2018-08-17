@@ -9,38 +9,39 @@ import io.sportadvisor.http.common.Validated.ValidationRule
 object CommonValidations {
 
   val requiredField = "Field is required"
+  val invalidField = "Field is invalid"
   val minValueError = "Min value is %s"
   val maxValueError = "Max value is %s"
 
   def required(field: String): ValidationRule[Any] = t => {
     if (t == null) {
-      Some(ValidationResult(field, requiredField))
+      List(ValidationResult(field, requiredField))
     } else {
-      None
+      List()
     }
   }
 
   def requiredString(field: String): ValidationRule[String] = t => {
     if (t == null || t.trim.isEmpty) {
-      Some(ValidationResult(field, requiredField))
+      List(ValidationResult(field, requiredField))
     } else {
-      None
+      List()
     }
   }
 
   def validateMin[T: Order: Show](field: String, minVal: T): ValidationRule[T] = t => {
     if (Order[T].lt(t, minVal)) {
-      Some(ValidationResult(field, minValueError, Show[T].show(minVal)))
+      List(ValidationResult(field, minValueError, Show[T].show(minVal)))
     } else {
-      None
+      List()
     }
   }
 
   def validateMax[T: Order: Show](field: String, maxVal: T): ValidationRule[T] = t => {
     if (Order[T].gt(t, maxVal)) {
-      Some(ValidationResult(field, minValueError, Show[T].show(maxVal)))
+      List(ValidationResult(field, minValueError, Show[T].show(maxVal)))
     } else {
-      None
+      List()
     }
   }
 }

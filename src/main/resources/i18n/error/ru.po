@@ -35,3 +35,18 @@ msgstr "Неверный пароль"
 
 msgid "Your password reset link has expired. Please initiate a new password reset"
 msgstr "Ссылка для сброса пароля не действительна. Пожалуйста, повторите попытку сброса"
+
+msgid "There must be at least %s sport selected but not more than %s"
+msgstr "Необходимо выбрать как минимум %s, но не более %s видов спорта"
+
+msgid "At least 1 contact must be defined"
+msgstr "Необходимо указать как минимуму 1 контакт"
+
+msgid "Field is invalid"
+msgstr "Неверное значение"
+
+msgid "Min value is %s"
+msgstr "Минимальное значение %s"
+
+msgid "Max value is %s"
+msgstr "Максимальное значение %s"

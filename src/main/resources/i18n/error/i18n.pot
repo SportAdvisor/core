@@ -35,3 +35,18 @@ msgstr ""
 
 msgid "Your password reset link has expired. Please initiate a new password reset"
 msgstr ""
+
+msgid "There must be at least %s sport selected but not more than %s"
+msgstr ""
+
+msgid "At least 1 contact must be defined"
+msgstr ""
+
+msgid "Field is invalid"
+msgstr ""
+
+msgid "Min value is %s"
+msgstr ""
+
+msgid "Max value is %s"
+msgstr ""

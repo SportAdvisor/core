@@ -11,7 +11,7 @@ object Exceptions {
 
   final case class ResourceNotFound[T](id: T) extends ApiError(s"Resource [id = $id] not found", None)
 
-  final case class TokenDoesntExist(tokenType: String) extends ApiError(s"$tokenType doesnt exists", None)
+  final case class TokenDoesNotExist(tokenType: String) extends ApiError(s"$tokenType doesnt exists", None)
 
   final case class TokenExpired(tokenType: String) extends ApiError(s"$tokenType expired", None)
 }

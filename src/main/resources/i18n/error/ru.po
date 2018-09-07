@@ -50,3 +50,9 @@ msgstr "Минимальное значение %s"
 
 msgid "Max value is %s"
 msgstr "Максимальное значение %s"
+
+msgid "Page with sport '%s' already registered (%s)"
+msgstr "Страница с дисциплиной '%s' уже зарегистрирована (%s)"
+
+msgid "Exceeded the limit of trainers pages"
+msgstr "Превышин лимит страниц тренера"

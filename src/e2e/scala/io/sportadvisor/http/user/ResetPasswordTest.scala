@@ -61,9 +61,9 @@ class ResetPasswordTest
     val confirmResp = post(req("password-confirm"),
                            s"""{"token": "not-found", "password": "${user.password}"}""").asString
     confirmResp.code shouldBe BadRequest.intValue
-    val body = r[ErrorResponse[FormError]](confirmResp.body)
+    val body = r[ErrorResponse[FieldFormError]](confirmResp.body)
     body.errors should (contain(
-      FormError("token",
+      FieldFormError("token",
                 "Your password reset link has expired. Please initiate a new password reset"))
       and have size 1)
     body.code shouldBe BadRequest.intValue
@@ -86,9 +86,9 @@ class ResetPasswordTest
       post(req("password-confirm"), s"""{"token": "$token", "password": "$invalidPass"}""").asString
     confirmResp.code shouldBe BadRequest.intValue
 
-    val confirmBody = r[ErrorResponse[FormError]](confirmResp.body)
+    val confirmBody = r[ErrorResponse[FieldFormError]](confirmResp.body)
     confirmBody.code shouldBe BadRequest.intValue
-    confirmBody.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak))
+    confirmBody.errors should (contain(FieldFormError("password", UserRouteValidators.passwordIsWeak))
       and have size 1)
     confirmBody.code shouldBe BadRequest.intValue
 
@@ -147,10 +147,10 @@ class ResetPasswordTest
       post(req("password-confirm"), s"""{"token": "$token", "password": "$password"}""").asString
     confirmRespRepeat.code shouldBe BadRequest.intValue
 
-    val confirmBodyRepeat = r[ErrorResponse[FormError]](confirmRespRepeat.body)
+    val confirmBodyRepeat = r[ErrorResponse[FieldFormError]](confirmRespRepeat.body)
     confirmBodyRepeat.code shouldBe BadRequest.intValue
     confirmBodyRepeat.errors should (contain(
-      FormError("token",
+      FieldFormError("token",
                 "Your password reset link has expired. Please initiate a new password reset"))
       and have size 1)
   }
@@ -201,9 +201,9 @@ class ResetPasswordTest
       post(req("password-confirm"), s"""{"token": "$token2", "password": "$password"}""").asString
     confirmResp2.code shouldBe BadRequest.intValue
 
-    val confirmBody2 = r[ErrorResponse[FormError]](confirmResp2.body)
+    val confirmBody2 = r[ErrorResponse[FieldFormError]](confirmResp2.body)
     confirmBody2.code shouldBe BadRequest.intValue
-    confirmBody2.errors should (contain(FormError("token", "Your password reset link has expired. Please initiate a " +
+    confirmBody2.errors should (contain(FieldFormError("token", "Your password reset link has expired. Please initiate a " +
       "new password reset")) and have size 1)
   }
 

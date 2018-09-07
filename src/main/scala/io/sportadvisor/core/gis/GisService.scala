@@ -20,3 +20,14 @@ trait GisService {
                          coordinate: Coordinate,
                          countryId: Long): Future[Either[ApiError, City]]
 }
+
+object StubGisService extends GisService {
+  override def createCountryIfAbsent(name: String,
+                                     lang: Language,
+                                     coordinate: Coordinate): Future[Either[ApiError, Country]] = ???
+
+  override def createCityIfAbsent(name: String,
+                                  lang: Language,
+                                  coordinate: Coordinate,
+                                  countryId: Long): Future[Either[ApiError, City]] = ???
+}

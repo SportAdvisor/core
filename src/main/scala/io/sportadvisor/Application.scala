@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
 import io.sportadvisor.core.user.UserModels.{ChangeMailToken, ResetPasswordToken}
 import io.sportadvisor.core.auth.{AuthService, AuthTokenRepositorySQL}
-import io.sportadvisor.core.gis.GisService
+import io.sportadvisor.core.gis.StubGisService
 import io.sportadvisor.core.system.TokenCleaner
 import io.sportadvisor.core.user._
 import io.sportadvisor.core.user.token.{TokenRepository, TokenType}
@@ -61,7 +61,7 @@ object Application extends Logging {
                                        mailTokenRepository,
                                        resetPasswordTokenRepository)
 
-    val httpRoute = new HttpRoute(usersService, new GisService)
+    val httpRoute = new HttpRoute(usersService, StubGisService)
 
     val tokenCleaner =
       new TokenCleaner(tokenRepository, mailTokenRepository, resetPasswordTokenRepository)

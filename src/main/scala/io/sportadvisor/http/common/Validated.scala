@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import io.circe.Json
 import io.circe.syntax._
 import io.sportadvisor.http.Response
-import io.sportadvisor.http.Response.FormError
+import io.sportadvisor.http.Response.FieldFormError
 import io.sportadvisor.http.common.Validated.ValidationRule
 import io.sportadvisor.util.i18n.I18n
 
@@ -21,10 +21,10 @@ private final class DefaultValidated[T](rules: Seq[ValidationRule[T]]) extends V
   }
 }
 
-final case class ValidationResult(field: String, msgId: String, args: Any*) {
-  def toFormError(i18n: I18n): FormError = args match {
-    case Seq() => FormError(field, i18n.t(msgId))
-    case _ => FormError(field, i18n.t(msgId, args))
+final case class ValidationResult(field: String, msgId: String, args: String*) {
+  def toFormError(i18n: I18n): FieldFormError = args match {
+    case Seq() => FieldFormError(field, i18n.t(msgId))
+    case _     => FieldFormError(field, i18n.t(msgId, args))
   }
 }
 
@@ -33,14 +33,17 @@ object Validated {
 
   type ValidationRule[T] = T => List[ValidationResult]
 
-  def apply[T](rules: ValidationRule[T]*): Validated[T] =
-    new DefaultValidated[T](rules)
+  def build[T]: ValidatedVia[T] = new ValidatedVia[T]
 
   def apply[T](implicit v: Validated[T]): Validated[T] = v
 
+  class ValidatedVia[T] {
+    def apply(rules: ValidationRule[T]*): Validated[T] =
+      new DefaultValidated[T](rules)
+  }
 }
 
-final case class ValidationError(errors: List[FormError]) extends SARejection {
+final case class ValidationError(errors: List[FieldFormError]) extends SARejection {
   override def code: StatusCode = StatusCodes.BadRequest
 
   override def response: Json = Response.error(errors).asJson

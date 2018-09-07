@@ -14,7 +14,7 @@ trait Decoders extends AutoDerivation{
 
   implicit val emptyResponseDecoder: Decoder[EmptyResponse] = deriveDecoder[EmptyResponse]
   implicit val failResponseDecoder: Decoder[FailResponse] = deriveDecoder[FailResponse]
-  implicit val formErrorDecoder: Decoder[FormError] = deriveDecoder[FormError]
+  implicit val formErrorDecoder: Decoder[FieldFormError] = deriveDecoder[FieldFormError]
   implicit val errorDecoder: Decoder[Error] = (c: HCursor) => formErrorDecoder(c)
   implicit final def errorResponseDecoder[E <: Error](
                                                        implicit e: Decoder[E]): Decoder[ErrorResponse[E]] = (c: HCursor) => {

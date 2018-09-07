@@ -11,7 +11,9 @@ object I18nModel {
 
   type I18nMap = Map[Language, String]
 
-  sealed trait Language extends EnumEntry
+  sealed trait Language extends EnumEntry {
+    def name: String
+  }
 
   object Language extends Enum[Language] {
 
@@ -25,8 +27,12 @@ object I18nModel {
 
     def supported: Seq[Language] = values
 
-    case object RU extends Language
-    case object EN extends Language
+    case object RU extends Language {
+      val name: String = "Русский"
+    }
+    case object EN extends Language {
+      val name: String = "English"
+    }
   }
 
   // scalastyle:off

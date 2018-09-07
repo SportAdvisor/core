@@ -255,17 +255,17 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
   private def handleEmailDuplicate(err: ApiError, field: String, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case DuplicateException() =>
-        r(Response.error(List(FormError(field, i18nService.errors(lang).t(emailDuplication)))))
+        r(Response.error(List(FieldFormError(field, i18nService.errors(lang).t(emailDuplication)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
 
   private def handleResetPasswordErrors(err: ApiError, field: String, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
-      case TokenDoesntExist(_) =>
-        r(Response.error(List(FormError(field, i18nService.errors(lang).t(resetPwdExpired)))))
+      case TokenDoesNotExist(_) =>
+        r(Response.error(List(FieldFormError(field, i18nService.errors(lang).t(resetPwdExpired)))))
       case TokenExpired(_) =>
-        r(Response.error(List(FormError(field, i18nService.errors(lang).t(resetPwdExpired)))))
+        r(Response.error(List(FieldFormError(field, i18nService.errors(lang).t(resetPwdExpired)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -281,7 +281,7 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
   private def handlePasswordMismatch(err: ApiError, field: String, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case PasswordMismatch() =>
-        r(Response.error(List(FormError(field, i18nService.errors(lang).t(passwordIncorrect)))))
+        r(Response.error(List(FieldFormError(field, i18nService.errors(lang).t(passwordIncorrect)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -300,7 +300,7 @@ class UserRoute(userService: UserService)(implicit executionContext: ExecutionCo
 
   private def handleRefreshTokenError(err: ApiError, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
-      case TokenDoesntExist(_) | TokenExpired(_) =>
+      case TokenDoesNotExist(_) | TokenExpired(_) =>
         r(Response.empty(StatusCodes.BadRequest.intValue))
     }
     (handler orElse apiErrorHandler(lang))(err)

@@ -19,11 +19,11 @@ object UserRouteValidators {
   val langNotSupported = "Selected language not supported"
 
   implicit val regValidator: Validated[RegistrationModel] =
-    Validated[RegistrationModel](
-      (u: RegistrationModel) => CommonValidations.requiredString("name")(u.name),
-      (u: RegistrationModel) => emailValidator("email")(u.email),
-      (u: RegistrationModel) => passwordValidator("password")(u.password),
-      (u: RegistrationModel) =>
+    Validated.build[RegistrationModel](
+      u => CommonValidations.requiredString("name")(u.name),
+      u => emailValidator("email")(u.email),
+      u => passwordValidator("password")(u.password),
+      u =>
         if (!u.EULA) {
           List(ValidationResult("EULA", EUALIsRequired))
         } else {
@@ -32,14 +32,14 @@ object UserRouteValidators {
     )
 
   implicit val changeMailValidator: Validated[EmailChange] =
-    Validated[EmailChange](
+    Validated.build[EmailChange](
       (u: EmailChange) => emailValidator("email")(u.email)
     )
 
   implicit val accountSettingsValidator: Validated[AccountSettings] =
-    Validated[AccountSettings](
-      (a: AccountSettings) => CommonValidations.requiredString("name")(a.name),
-      (a: AccountSettings) =>
+    Validated.build[AccountSettings](
+      a => CommonValidations.requiredString("name")(a.name),
+      a =>
         a.language
           .map(l => SystemService.supportedLanguage().contains(l))
           .filter(b => !b)

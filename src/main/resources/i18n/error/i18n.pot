@@ -50,3 +50,9 @@ msgstr ""
 
 msgid "Max value is %s"
 msgstr ""
+
+msgid "Page with sport '%s' already registered (%s)"
+msgstr ""
+
+msgid "Exceeded the limit of trainers pages"
+msgstr ""

@@ -53,9 +53,9 @@ class UserChangeEmail
         s"""{"email": "bad-email", "redirectUrl": ""}""",
         token).asString
     changeEmailResp.code shouldBe BadRequest.intValue
-    val errors = r[ErrorResponse[FormError]](changeEmailResp.body)
+    val errors = r[ErrorResponse[FieldFormError]](changeEmailResp.body)
     errors.code shouldBe BadRequest.intValue
-    errors.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
+    errors.errors should (contain(FieldFormError("email", UserRouteValidators.emailInvalid)) and have size 1)
   }
 
   "User change another email" should "return 403" in {

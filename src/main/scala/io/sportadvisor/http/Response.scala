@@ -31,7 +31,8 @@ object Response extends Logging {
   final case class ErrorResponse[E <: Error](code: Int, errors: List[E]) extends Response[E]
   final case class FailResponse(code: Int, message: Option[String]) extends Response[Unit]
 
-  final case class FormError(field: String, msg: String) extends Error
+  final case class FieldFormError(field: String, msg: String) extends Error
+  final case class FormError(msg: String) extends Error
 
   final case class ObjectLinks(self: Link) extends Links
   final case class CollectionLinks(self: Link, first: Link, last: Link, previous: Link, next: Link)
@@ -95,9 +96,11 @@ object Response extends Logging {
 
     import io.circe.generic.semiauto._
 
-    implicit val formErrorEncoder: Encoder[FormError] = deriveEncoder[FormError]
+    implicit val fieldFormErrorEncoder: Encoder[FieldFormError] = deriveEncoder[FieldFormError]
+    implicit val formErrorEncoder: Encoder[FormError] = deriveEncoder
     implicit val errorEncoder: Encoder[Error] = {
-      case e: FormError => formErrorEncoder(e)
+      case e: FieldFormError => fieldFormErrorEncoder(e)
+      case e: FormError      => formErrorEncoder(e)
     }
 
     implicit val emptyResponseEncoder: Encoder[EmptyResponse] = deriveEncoder[EmptyResponse]

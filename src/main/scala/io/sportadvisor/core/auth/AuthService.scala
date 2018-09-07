@@ -10,7 +10,7 @@ import io.sportadvisor.core.auth.AuthModels._
 import scala.concurrent.duration._
 import io.sportadvisor.core.user.UserModels.{UserData, UserID}
 import io.sportadvisor.exception.ApiError
-import io.sportadvisor.exception.Exceptions.TokenDoesntExist
+import io.sportadvisor.exception.Exceptions.TokenDoesNotExist
 import io.sportadvisor.util.JwtUtil
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,7 +49,7 @@ class AuthService(tokenRepository: AuthTokenRepository, secretKey: String, expPe
           .save(refreshTokenData.copy(lastTouch = LocalDateTime.now()))
           .map(createAuthToken)
           .map(Right(_))
-      case None => Future.successful(Left(TokenDoesntExist("RefreshAuthToken")))
+      case None => Future.successful(Left(TokenDoesNotExist("RefreshAuthToken")))
     }
   }
 

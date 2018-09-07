@@ -13,16 +13,16 @@ object CommonValidations {
   val minValueError = "Min value is %s"
   val maxValueError = "Max value is %s"
 
-  def required(field: String): ValidationRule[Any] = t => {
-    if (t == null) {
-      List(ValidationResult(field, requiredField))
-    } else {
-      List()
+  def required[T](field: String): ValidationRule[T] =
+    t =>
+      if (isNull(t)) {
+        List(ValidationResult(field, requiredField))
+      } else {
+        List()
     }
-  }
 
   def requiredString(field: String): ValidationRule[String] = t => {
-    if (t == null || t.trim.isEmpty) {
+    if (isNull(t) || t.trim.isEmpty) {
       List(ValidationResult(field, requiredField))
     } else {
       List()
@@ -44,5 +44,9 @@ object CommonValidations {
       List()
     }
   }
-}
 
+  private def isNull[T](t: T) = Option(t) match {
+    case None => true
+    case _    => false
+  }
+}

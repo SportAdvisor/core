@@ -6,6 +6,8 @@ import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.core.gis.GisService
+import io.sportadvisor.core.sport.StubSportService
+import io.sportadvisor.core.trainer.StubTrainerService
 import io.sportadvisor.core.user.UserService
 import io.sportadvisor.http.route.SystemRoute
 import io.sportadvisor.http.route.trainer.TrainerRoute
@@ -19,10 +21,10 @@ import scala.concurrent.ExecutionContext
   */
 class HttpRoute(userService: UserService, gis: GisService)(implicit executionContext: ExecutionContext,
                                                            authService: AuthService,
-                                          i18nServiceImpl: I18nService) {
+                                                           i18nServiceImpl: I18nService) {
 
   private val userRoute = new UserRoute(userService)
-  private val trainerRoute = new TrainerRoute(gis)
+  private val trainerRoute = new TrainerRoute(gis, StubTrainerService, StubSportService)
   private val systemRoute = new SystemRoute
 
   val route: Route =

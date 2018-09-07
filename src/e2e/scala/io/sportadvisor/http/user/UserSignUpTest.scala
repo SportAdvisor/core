@@ -1,7 +1,7 @@
 package io.sportadvisor.http.user
 
 import io.sportadvisor.BaseE2ETest
-import io.sportadvisor.http.Response.{ErrorResponse, FormError}
+import io.sportadvisor.http.Response.{ErrorResponse, FieldFormError}
 import io.sportadvisor.http.route.user.UserRouteValidators
 
 /**
@@ -13,8 +13,8 @@ class UserSignUpTest extends BaseE2ETest with UserMappings {
     val resp = post(req("sign-up"), s"""{"email": "testtest.com", "password": "test123Q", "name":"test", "EULA":true}""").asString
     resp.code shouldBe 400
 
-    val body = r[ErrorResponse[FormError]](resp.body)
+    val body = r[ErrorResponse[FieldFormError]](resp.body)
     body.code shouldBe 400
-    body.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
+    body.errors should (contain(FieldFormError("email", UserRouteValidators.emailInvalid)) and have size 1)
   }
 }

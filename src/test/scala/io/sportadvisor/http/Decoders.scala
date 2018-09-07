@@ -14,8 +14,15 @@ object Decoders extends AutoDerivation {
 
   implicit val emptyResponseDecoder: Decoder[EmptyResponse] = deriveDecoder[EmptyResponse]
   implicit val failResponseDecoder: Decoder[FailResponse] = deriveDecoder[FailResponse]
-  implicit val formErrorDecoder: Decoder[FormError] = deriveDecoder[FormError]
-  implicit val errorDecoder: Decoder[Error] = (c: HCursor) => formErrorDecoder(c)
+  implicit val fieldFormErrorDecoder: Decoder[FieldFormError] = deriveDecoder[FieldFormError]
+  implicit val formErrorDecoder: Decoder[FormError] = deriveDecoder
+  implicit val errorDecoder: Decoder[Error] = (c: HCursor) => {
+    if (c.downField("field").succeeded) {
+      fieldFormErrorDecoder(c)
+    } else {
+      formErrorDecoder(c)
+    }
+  }
   implicit final def errorResponseDecoder[E <: Error](implicit e: Decoder[E]): Decoder[ErrorResponse[E]] =
     (c: HCursor) => {
       c.value.asObject.map { obj =>

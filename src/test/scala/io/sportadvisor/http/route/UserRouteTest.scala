@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.PathDirectives._
+import akka.http.scaladsl.server.Directives._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.auth.AuthModels._
 import io.sportadvisor.core.auth.AuthService
@@ -15,7 +15,7 @@ import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
 import io.sportadvisor.http.Decoders._
 import io.sportadvisor.http.HttpTestUtils._
-import io.sportadvisor.http.I18nStub
+import io.sportadvisor.http.{exceptionHandler, rejectionHandler, I18nStub}
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.common.CommonValidations
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
@@ -56,9 +56,9 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "test@test.com", "password": "test123Q", "name":"", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("name", CommonValidations.requiredField)) and have size 1)
+          resp.errors should (contain(FieldFormError("name", CommonValidations.requiredField)) and have size 1)
         }
       }
 
@@ -67,9 +67,9 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "testtest.com", "password": "test123Q", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
+          resp.errors should (contain(FieldFormError("email", UserRouteValidators.emailInvalid)) and have size 1)
         }
       }
 
@@ -78,9 +78,9 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "test@test.com", "password": "test123", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
+          resp.errors should (contain(FieldFormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
         }
       }
 
@@ -89,9 +89,9 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "test@test.com", "password": "Pass w0rd", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
+          resp.errors should (contain(FieldFormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
         }
       }
 
@@ -121,9 +121,9 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", UserRoute.emailDuplication)) and have size 1)
+          resp.errors should (contain(FieldFormError("email", UserRoute.emailDuplication)) and have size 1)
         }
       }
 
@@ -132,10 +132,10 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "testtest.com", "password": "test123", "name":"test", "EULA":true}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and contain(
-            FormError("password", UserRouteValidators.passwordIsWeak)) and have size 2)
+          resp.errors should (contain(FieldFormError("email", UserRouteValidators.emailInvalid)) and contain(
+            FieldFormError("password", UserRouteValidators.passwordIsWeak)) and have size 2)
         }
       }
 
@@ -156,9 +156,9 @@ class UserRouteTest extends BaseTest {
           HttpEntity(MediaTypes.`application/json`,
                      s"""{"email": "test@test.com", "password": "test123Q", "name":"test", "EULA":false}""")
         Post("/api/users/sign-up", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code should be(400)
-          resp.errors should (contain(FormError("EULA", UserRouteValidators.EUALIsRequired)) and have size 1)
+          resp.errors should (contain(FieldFormError("EULA", UserRouteValidators.EUALIsRequired)) and have size 1)
         }
       }
     }
@@ -249,9 +249,9 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(Left(DuplicateException())))
         Put(s"/api/users/$testUserId/email", requestEntity)
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("email", UserRoute.emailDuplication)) and have size 1)
+          resp.errors should (contain(FieldFormError("email", UserRoute.emailDuplication)) and have size 1)
         }
       }
 
@@ -262,9 +262,9 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(Left(DuplicateException())))
         Put(s"/api/users/$testUserId/email", requestEntity)
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("email", UserRouteValidators.emailInvalid)) and have size 1)
+          resp.errors should (contain(FieldFormError("email", UserRouteValidators.emailInvalid)) and have size 1)
         }
       }
 
@@ -408,9 +408,9 @@ class UserRouteTest extends BaseTest {
 
         Put(s"/api/users/$testUserId", requestEntity)
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("name", CommonValidations.requiredField)) and have size 1)
+          resp.errors should (contain(FieldFormError("name", CommonValidations.requiredField)) and have size 1)
         }
       }
 
@@ -420,9 +420,9 @@ class UserRouteTest extends BaseTest {
 
         Put(s"/api/users/$testUserId", requestEntity)
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("language", UserRouteValidators.langNotSupported)) and have size 1)
+          resp.errors should (contain(FieldFormError("language", UserRouteValidators.langNotSupported)) and have size 1)
         }
       }
 
@@ -473,9 +473,9 @@ class UserRouteTest extends BaseTest {
 
         Put(s"/api/users/$testUserId/password", requestEntity)
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("newPassword", UserRouteValidators.passwordIsWeak)) and have size 1)
+          resp.errors should (contain(FieldFormError("newPassword", UserRouteValidators.passwordIsWeak)) and have size 1)
         }
       }
 
@@ -486,9 +486,9 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(Left(PasswordMismatch())))
         Put(s"/api/users/$testUserId/password", requestEntity)
           .withHeaders(authHeader(testUserId)) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe 400
-          resp.errors should (contain(FormError("password", UserRoute.passwordIncorrect)) and have size 1)
+          resp.errors should (contain(FieldFormError("password", UserRoute.passwordIncorrect)) and have size 1)
         }
       }
 
@@ -576,8 +576,8 @@ class UserRouteTest extends BaseTest {
           .thenReturn(Future.successful(Right(())))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
           println(response)
-          val resp = r[ErrorResponse[FormError]]
-          resp.errors should (contain(FormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
+          val resp = r[ErrorResponse[FieldFormError]]
+          resp.errors should (contain(FieldFormError("password", UserRouteValidators.passwordIsWeak)) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -586,11 +586,11 @@ class UserRouteTest extends BaseTest {
         val requestEntity =
           HttpEntity(MediaTypes.`application/json`, s"""{"token": "token", "password":"P1sswwqard"}""")
         when(userService.confirmResetPassword("token", "P1sswwqard"))
-          .thenReturn(Future.successful(Left(TokenDoesntExist("reset password"))))
+          .thenReturn(Future.successful(Left(TokenDoesNotExist("reset password"))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]]
+          val resp = r[ErrorResponse[FieldFormError]]
           println(response)
-          resp.errors should (contain(FormError("token", UserRoute.resetPwdExpired)) and have size 1)
+          resp.errors should (contain(FieldFormError("token", UserRoute.resetPwdExpired)) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -601,8 +601,8 @@ class UserRouteTest extends BaseTest {
         when(userService.confirmResetPassword("token", "P1sswwqard"))
           .thenReturn(Future.successful(Left(TokenExpired("reset password"))))
         Post("/api/users/password-confirm", requestEntity) ~> userRoute ~> check {
-          val resp = r[ErrorResponse[FormError]] // Your password reset link has expired. Please initiate a new password reset
-          resp.errors should (contain(FormError("token", UserRoute.resetPwdExpired)) and have size 1)
+          val resp = r[ErrorResponse[FieldFormError]] // Your password reset link has expired. Please initiate a new password reset
+          resp.errors should (contain(FieldFormError("token", UserRoute.resetPwdExpired)) and have size 1)
           resp.code shouldBe 400
         }
       }
@@ -630,8 +630,12 @@ class UserRouteTest extends BaseTest {
     implicit val i18n: I18nService = I18nStub
     when(userService.secret).thenReturn(testSecret)
 
-    val userRoute: Route = pathPrefix("api") {
-      new UserRoute(userService).route
+    val userRoute: Route = handleExceptions(exceptionHandler) {
+      handleRejections(rejectionHandler) {
+        pathPrefix("api") {
+          new UserRoute(userService).route
+        }
+      }
     }
   }
 }

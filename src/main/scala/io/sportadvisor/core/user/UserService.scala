@@ -83,7 +83,7 @@ class UserService(userRepository: UserRepository,
   def confirmResetPassword(token: String, password: String): Future[Either[ApiError, Unit]] = {
     val user = for {
       tokenFromDb <- EitherT
-        .fromOptionF(resetPasswordTokenRepository.get(token), TokenDoesntExist("reset password"))
+        .fromOptionF(resetPasswordTokenRepository.get(token), TokenDoesNotExist("reset password"))
       decodedToken <- EitherT.fromOption[Future](decodeResetPasswordToken(tokenFromDb.token, secret),
                                                  TokenExpired("reset password"))
       user <- EitherT.fromOptionF(userRepository.find(decodedToken.email),

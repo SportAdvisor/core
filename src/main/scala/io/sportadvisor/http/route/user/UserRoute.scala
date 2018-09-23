@@ -8,10 +8,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
-import io.sportadvisor.core.user.UserService
 import io.sportadvisor.core.auth.AuthModels._
 import io.sportadvisor.core.auth.AuthService
+import io.sportadvisor.core.user.UserModels.{PasswordMismatch, UserID}
+import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
@@ -28,10 +28,10 @@ import scala.util.Success
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-abstract class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext,
-                                                   authService: AuthService)
+class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext,
+                                          authService: AuthService,
+                                          i18nService: I18nService)
     extends FailFastCirceSupport
-    with I18nService
     with Logging {
 
   import http._
@@ -44,10 +44,17 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
           post {
             handleSignUp()
           }
-        } ~ path("sign-in") {
-          post {
-            handleSignIn()
-          }
+        } ~ pathPrefix("sign-in") {
+          pathEnd {
+            post {
+              handleSignIn()
+            }
+          } ~
+            path("refresh") {
+              post {
+                handleRefreshToken()
+              }
+            }
         } ~ pathPrefix(LongNumber) { userId =>
           path("email") {
             put {
@@ -167,7 +174,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     validate[ConfirmPassword].apply { request =>
       selectLanguage() { language =>
         complete(
-          setNewPassword(request.token, request.password)
+          confirmResetPassword(request.token, request.password)
             .map {
               case Left(e)  => handleResetPasswordErrors(e, "token", language)
               case Right(_) => r(Response.empty(StatusCodes.OK.intValue))
@@ -187,7 +194,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     authenticate.apply { userId =>
       checkAccess(id, userId) {
         complete(
-          getById(id).map {
+          findUser(id).map {
             case Some(u) => r(Response.data(userView(u), Option(s"/api/users/$userId")))
             case _       => r(Response.empty(StatusCodes.NotFound.intValue))
           }
@@ -234,12 +241,23 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
     }
   }
 
-  private implicit def i18nService: I18nService = this
+  def handleRefreshToken(): Route = {
+    entity(as[TokenRefresh]) { refreshToken =>
+      selectLanguage() { lang =>
+        complete(
+          authService.refreshAccessToken(refreshToken.refreshToken).map {
+            case Left(e)          => handleRefreshTokenError(e, lang)
+            case Right(tokenData) => r(Response.data(tokenData, None))
+          }
+        )
+      }
+    }
+  }
 
   private def handleEmailDuplicate(err: ApiError, field: String, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case DuplicateException() =>
-        r(Response.error(List(FormError(field, errors(lang).t(emailDuplication)))))
+        r(Response.error(List(FormError(field, i18nService.errors(lang).t(emailDuplication)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -247,9 +265,9 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def handleResetPasswordErrors(err: ApiError, field: String, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case TokenDoesntExist(_) =>
-        r(Response.error(List(FormError(field, errors(lang).t(resetPwdExpired)))))
+        r(Response.error(List(FormError(field, i18nService.errors(lang).t(resetPwdExpired)))))
       case TokenExpired(_) =>
-        r(Response.error(List(FormError(field, errors(lang).t(resetPwdExpired)))))
+        r(Response.error(List(FormError(field, i18nService.errors(lang).t(resetPwdExpired)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -265,7 +283,7 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def handlePasswordMismatch(err: ApiError, field: String, lang: Language): (StatusCode, Json) = {
     val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
       case PasswordMismatch() =>
-        r(Response.error(List(FormError(field, errors(lang).t(passwordIncorrect)))))
+        r(Response.error(List(FormError(field, i18nService.errors(lang).t(passwordIncorrect)))))
     }
     (handler orElse apiErrorHandler(lang))(err)
   }
@@ -273,13 +291,21 @@ abstract class UserRoute(userService: UserService)(implicit executionContext: Ex
   private def apiErrorHandler(lang: Language): PartialFunction[ApiError, (StatusCode, Json)] = {
     case ResourceNotFound(id) =>
       log.warn(s"Api error. User with id $id not found")
-      val msg = errors(lang).t(authError)
+      val msg = i18nService.errors(lang).t(authError)
       r(Response.fail(Some(msg)))
     case exception =>
       exception.error.fold(log.error(s"Api error: ${exception.msg}")) { e =>
         log.error(s"Api error: ${exception.msg}", e)
       }
       r(Response.fail(None))
+  }
+
+  private def handleRefreshTokenError(err: ApiError, lang: Language): (StatusCode, Json) = {
+    val handler: PartialFunction[ApiError, (StatusCode, Json)] = {
+      case TokenDoesntExist(_) | TokenExpired(_) =>
+        r(Response.empty(StatusCodes.BadRequest.intValue))
+    }
+    (handler orElse apiErrorHandler(lang))(err)
   }
 
 }

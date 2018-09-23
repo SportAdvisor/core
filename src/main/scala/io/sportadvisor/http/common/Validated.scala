@@ -17,7 +17,7 @@ trait Validated[T] {
 
 private final class DefaultValidated[T](rules: Seq[ValidationRule[T]]) extends Validated[T] {
   override def validate(v1: T): List[ValidationResult] = {
-    rules.flatMap(rule => rule(v1).toList).toList
+    rules.flatMap(rule => rule(v1)).toList
   }
 }
 
@@ -30,7 +30,7 @@ final case class ValidationResult(field: String, msgId: String) {
 @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object Validated {
 
-  type ValidationRule[T] = T => Option[ValidationResult]
+  type ValidationRule[T] = T => List[ValidationResult]
 
   def apply[T](rules: ValidationRule[T]*): Validated[T] =
     new DefaultValidated[T](rules)

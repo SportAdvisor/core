@@ -20,8 +20,8 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
 
     val newPassword = user.password + "1"
     val response = put(req(user.id + "/password"),
-                       s"""{"password": "${user.password}", "newPassword": "$newPassword"}""",
-                       token1).timeout(10.seconds).asString
+      s"""{"password": "${user.password}", "newPassword": "$newPassword"}""",
+      token1).asString
     response.code shouldBe OK.intValue
 
     val signInResponse2 = post(
@@ -48,8 +48,8 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
 
     val newPassword = user.password + "1"
     val response = put(req(user.id + "/password"),
-                       s"""{"password": "${user.password}1", "newPassword": "$newPassword" }""",
-                       token).asString
+      s"""{"password": "${user.password}1", "newPassword": "$newPassword" }""",
+      token).asString
     response.code shouldBe BadRequest.intValue
 
     val body = r[ErrorResponse[FormError]](response.body)
@@ -66,8 +66,8 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
 
     val newPassword = "weak"
     val response = put(req(user.id + "/password"),
-                       s"""{"password": "${user.password}", "newPassword": "$newPassword" }""",
-                       token).asString
+      s"""{"password": "${user.password}", "newPassword": "$newPassword" }""",
+      token).asString
     response.code shouldBe BadRequest.intValue
 
     val body = r[ErrorResponse[FormError]](response.body)
@@ -85,8 +85,8 @@ class ChangePasswordTest extends BaseE2ETest with UserMappings with DefaultUsers
     val newPassword = user.password + "1"
     val userId = user.id + 1
     val response = put(req(userId + "/password"),
-                       s"""{"password": "${user.password}", "newPassword": "$newPassword" }""",
-                       token).asString
+      s"""{"password": "${user.password}", "newPassword": "$newPassword" }""",
+      token).asString
     response.code shouldBe Forbidden.intValue
 
     val body = r[EmptyResponse](response.body)

@@ -19,6 +19,7 @@ import io.sportadvisor.http.I18nStub
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 import io.sportadvisor.http.route.user.{UserRoute, UserRouteValidators}
+import io.sportadvisor.util.I18nService
 import org.mockito.Mockito._
 
 import scala.concurrent.Future
@@ -625,10 +626,11 @@ class UserRouteTest extends BaseTest {
     val testEmail: String = "test@test.com"
     val userService: UserService = mock[UserService]
     implicit val authService: AuthService = mock[AuthService]
+    implicit val i18n: I18nService = I18nStub
     when(userService.secret).thenReturn(testSecret)
 
     val userRoute: Route = pathPrefix("api") {
-      (new UserRoute(userService) with I18nStub).route
+      new UserRoute(userService).route
     }
   }
 }

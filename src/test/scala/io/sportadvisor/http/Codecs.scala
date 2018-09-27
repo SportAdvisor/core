@@ -1,16 +1,20 @@
 package io.sportadvisor.http
 
-import io.circe.{Decoder, HCursor}
+import io.circe.{Decoder, Encoder, HCursor}
 import io.circe.HCursor.fromJson
 import io.circe.generic.extras.AutoDerivation
-import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.sportadvisor.core.gis.GisModels.Coordinate
+import io.sportadvisor.core.trainer.TrainerModels._
 import io.sportadvisor.http.Response._
 import io.sportadvisor.http.route.user.UserRouteProtocol.UserView
 
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-object Decoders extends AutoDerivation {
+object Codecs extends AutoDerivation {
+
+  import io.circe.java8.time._
 
   implicit val emptyResponseDecoder: Decoder[EmptyResponse] = deriveDecoder[EmptyResponse]
   implicit val failResponseDecoder: Decoder[FailResponse] = deriveDecoder[FailResponse]
@@ -83,4 +87,11 @@ object Decoders extends AutoDerivation {
   }
 
   implicit val userViewDecoder: Decoder[UserView] = deriveDecoder
+
+  implicit val groupTrainingEncoder: Encoder[GroupTraining] = deriveEncoder
+  implicit val personalTrainingEncoder: Encoder[PersonalTraining] = deriveEncoder
+  implicit val coordinateEncoder: Encoder[Coordinate] = deriveEncoder
+  implicit val placeEncoder: Encoder[Place] = deriveEncoder
+  implicit val contactEncoder: Encoder[Contacts] = deriveEncoder
+  implicit val createTrainerEncoder: Encoder[CreateTrainer] = deriveEncoder
 }

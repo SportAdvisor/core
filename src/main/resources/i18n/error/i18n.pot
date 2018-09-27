@@ -56,3 +56,6 @@ msgstr ""
 
 msgid "Exceeded the limit of trainers pages"
 msgstr ""
+
+msgid "Not unique alias"
+msgstr ""

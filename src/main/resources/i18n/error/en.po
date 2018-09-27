@@ -56,3 +56,6 @@ msgstr "Page with sport '%s' already registered (%s)"
 
 msgid "Exceeded the limit of trainers pages"
 msgstr "Exceeded the limit of trainers pages"
+
+msgid "Not unique alias"
+msgstr "Not unique alias"

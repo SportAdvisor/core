@@ -1,7 +1,10 @@
 package io.sportadvisor
 
+import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromResponseUnmarshaller
+import io.circe.Encoder
+import io.circe.syntax._
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.mockito.MockitoSugar
 
@@ -22,6 +25,8 @@ trait BaseTest extends WordSpec with Matchers with ScalatestRouteTest with Mocki
   def r[T: FromResponseUnmarshaller: ClassTag]: T = responseAs[T]
 
   def sleep(t: Duration): Unit = Thread.sleep(t.toMillis)
+
+  def requestBody[T: Encoder](body: T): HttpEntity.Strict = HttpEntity(MediaTypes.`application/json`, body.asJson.noSpaces)
 
   val unitVal: Unit = ()
 

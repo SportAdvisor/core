@@ -4,7 +4,6 @@ import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.model.headers.Language
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json}
 import io.sportadvisor.http.Response._
 import io.circe.syntax._
@@ -20,7 +19,7 @@ import io.sportadvisor.util.i18n.I18nModel.{Language => SALanguage}
 /**
   * @author sss3 (Vladimir Alekseev)
   */
-package object http extends FailFastCirceSupport with Logging with Response.Encoders {
+package object http extends CirceSupport with Logging with Response.Encoders {
 
   import akka.http.scaladsl.server.directives.BasicDirectives._
   import akka.http.scaladsl.server.directives.RouteDirectives._

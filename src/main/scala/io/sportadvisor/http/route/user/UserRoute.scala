@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.HeaderDirectives.optionalHeaderValueByName
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.sportadvisor.core.auth.AuthModels._
 import io.sportadvisor.core.auth.AuthService
@@ -16,6 +15,7 @@ import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception._
 import io.sportadvisor.http
 import io.sportadvisor.http.Response._
+import io.sportadvisor.http.common.CirceSupport
 import io.sportadvisor.http.route.ResourceRoute
 import io.sportadvisor.http.route.user.UserRoute._
 import io.sportadvisor.http.route.user.UserRouteProtocol._
@@ -32,7 +32,7 @@ import scala.util.Success
 class UserRoute(userService: UserService)(implicit executionContext: ExecutionContext,
                                           authService: AuthService,
                                           i18nService: I18nService)
-    extends FailFastCirceSupport
+    extends CirceSupport
     with Logging
     with ResourceRoute {
 

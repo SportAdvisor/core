@@ -13,7 +13,7 @@ import io.sportadvisor.core.user.UserService
 import io.sportadvisor.exception.ApiError
 import io.sportadvisor.exception.Exceptions._
 import io.sportadvisor.exception.Exceptions.{DuplicateException, ResourceNotFound}
-import io.sportadvisor.http.Decoders._
+import io.sportadvisor.http.Codecs._
 import io.sportadvisor.http.HttpTestUtils._
 import io.sportadvisor.http.{exceptionHandler, rejectionHandler, I18nStub}
 import io.sportadvisor.http.Response._

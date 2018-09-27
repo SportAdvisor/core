@@ -4,7 +4,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.http.Response._
-import io.sportadvisor.http.Decoders._
+import io.sportadvisor.http.Codecs._
 
 /**
   * @author sss3 (Vladimir Alekseev)

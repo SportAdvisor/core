@@ -26,9 +26,9 @@ object SystemModels {
 
     def supported: Seq[Currency] = values
 
-    case object RUR extends AbstractId(1)
-    case object USD extends AbstractId(2)
-    case object EUR extends AbstractId(3)
+    case object RUR extends AbstractId(1) with Currency
+    case object USD extends AbstractId(2) with Currency
+    case object EUR extends AbstractId(3) with Currency
   }
 
   object Sex extends Enum[Sex] {
@@ -36,8 +36,8 @@ object SystemModels {
 
     override def values: immutable.IndexedSeq[Sex] = enums
 
-    case object MALE extends AbstractId(1)
-    case object FEMALE extends AbstractId(2)
+    case object MALE extends AbstractId(1) with Sex
+    case object FEMALE extends AbstractId(2) with Sex
   }
 
 }

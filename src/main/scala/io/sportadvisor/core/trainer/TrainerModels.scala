@@ -59,4 +59,6 @@ object TrainerModels {
       extends ApiError(s"Not unique sports ${sportAndPageAliases.keySet}", None)
 
   final case class LimitPagesOnUser() extends ApiError("Limit pages on user", None)
+
+  final case class NotUniqueAlias() extends ApiError("Alias not unique", None)
 }

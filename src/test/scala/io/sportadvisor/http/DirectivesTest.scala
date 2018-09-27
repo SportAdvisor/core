@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Directives._
 import io.sportadvisor.BaseTest
 import io.sportadvisor.core.auth.AuthService
 import io.sportadvisor.http.Response.EmptyResponse
-import io.sportadvisor.http.Decoders._
+import io.sportadvisor.http.Codecs._
 import io.sportadvisor.http.HttpTestUtils._
 import org.mockito.Mockito.when
 

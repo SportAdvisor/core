@@ -26,8 +26,6 @@ object TrainerRouteValidators {
     ct => validateBirthday("birthday")(ct.birthday),
     ct => validateSex("sex")(ct.sex),
     ct => validateSports("sports")(ct.sports),
-    ct => CommonValidations.required("city")(ct.city),
-    ct => CommonValidations.required("country")(ct.country),
     ct => CommonValidations.requiredString("alias")(ct.alias),
     ct => contactValidator("contacts")(ct.contacts),
     ct =>

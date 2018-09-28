@@ -32,13 +32,14 @@ import scala.concurrent.Future
   */
 class TrainerRouteTest extends BaseTest {
 
+  private val apiTrainers = "/api/trainers"
+
   "TrainerRoute" when {
     "POST /api/trainers" should {
       "return 201 and url to new trainer" in new Context {
         val entity: HttpEntity.Strict = requestBody(validRequestModel)
         when(trainerService.create(any[CreateTrainer](), anyLong()))
-          .thenReturn(Future.successful(Right(trainerValid)))
-        Post("/api/trainers", entity).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
+        Post(apiTrainers, entity).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe StatusCodes.Created.intValue
           response.status shouldBe StatusCodes.Created
@@ -49,7 +50,7 @@ class TrainerRouteTest extends BaseTest {
       }
 
       "return 401 if user unauthorized" in new Context {
-        Post("/api/trainers", requestBody(validRequestModel)) ~> trainerRoute ~> check {
+        Post(apiTrainers, requestBody(validRequestModel)) ~> trainerRoute ~> check {
           val resp = r[EmptyResponse]
           resp.code shouldBe StatusCodes.Unauthorized.intValue
           response.status shouldBe StatusCodes.Unauthorized
@@ -60,7 +61,7 @@ class TrainerRouteTest extends BaseTest {
         when(trainerService.create(any[CreateTrainer](), anyLong()))
           .thenReturn(Future.successful(Left(LimitPagesOnUser())))
         val req: HttpEntity.Strict = requestBody(validRequestModel)
-        Post("/api/trainers", req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
+        Post(apiTrainers, req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
           val resp = r[ErrorResponse[FormError]]
           resp.code shouldBe StatusCodes.BadRequest.intValue
           response.status shouldBe StatusCodes.BadRequest
@@ -73,7 +74,7 @@ class TrainerRouteTest extends BaseTest {
           .thenReturn(Future.successful(Left(NotUniqueSports(Map(1L -> "PageAlias")))))
         when(sportService.find(1L)).thenReturn(Some(Sport(1L, Map(Language.EN -> "Football"))))
         val req: HttpEntity.Strict = requestBody(validRequestModel)
-        Post("/api/trainers", req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
+        Post(apiTrainers, req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
           val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe StatusCodes.BadRequest.intValue
           response.status shouldBe StatusCodes.BadRequest
@@ -85,7 +86,7 @@ class TrainerRouteTest extends BaseTest {
 
       "return 400 if about is empty" in new Context {
         val req: HttpEntity.Strict = requestBody(validRequestModel.copy(about = "   "))
-        Post("/api/trainers", req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
+        Post(apiTrainers, req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
           val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe StatusCodes.BadRequest.intValue
           response.status shouldBe StatusCodes.BadRequest
@@ -96,7 +97,7 @@ class TrainerRouteTest extends BaseTest {
       "return 400 if birthday invalid" in new Context {
         val req: HttpEntity.Strict =
           requestBody(validRequestModel.copy(birthday = LocalDate.now().plusDays(1)))
-        Post("/api/trainers", req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
+        Post(apiTrainers, req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
           val resp = r[ErrorResponse[FieldFormError]]
           resp.code shouldBe StatusCodes.BadRequest.intValue
           response.status shouldBe StatusCodes.BadRequest
@@ -104,6 +105,13 @@ class TrainerRouteTest extends BaseTest {
         }
       }
 
+      "return 400 if sports is emtpy" in new Context {
+        val req: HttpEntity.Strict = requestBody(validRequestModel.copy(sports = List()))
+        Post(apiTrainers, req).withHeaders(authHeader(userId)) ~> trainerRoute ~> check {
+          val resp = r[ErrorResponse[FieldFormError]]
+
+        }
+      }
 
     }
   }

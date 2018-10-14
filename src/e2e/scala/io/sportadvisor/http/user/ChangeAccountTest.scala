@@ -41,8 +41,7 @@ class ChangeAccountTest extends BaseE2ETest with UserMappings with DefaultUsersD
     errorResponse.errors should (contain(FormError("name", UserRouteValidators.nameIsEmpty)) and have size 1)
   }
 
-  "Authorized user sets language to unsupported language" should "return 400 code and language not supported error"
-  in {
+  "Authorized user sets language to unsupported language" should "return 400 code and language not supported error" in {
     val token = auth().token
     val newName = "New name"
     val language = "Test"
